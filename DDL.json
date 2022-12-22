@@ -1,0 +1,63 @@
+{
+    "general": {
+        "demo_title": "Python Demo Template",
+        "requirements": "docker"
+    },
+    "build": {
+        "url": "git@github.com:mlbriefs/template-python.git",
+        "rev": "origin/main",
+        "dockerfile": ".ipol/Dockerfile"
+    },
+    "inputs": [
+        {
+            "description": "input",
+            "max_pixels": "3000*3000",
+            "dtype": "x8i",
+            "ext": ".png",
+            "type": "image"
+        }
+    ],
+    "params": [
+        {
+            "id": "sigma",
+            "label": "sigma",
+            "comments": "Noise standard deviation",
+            "type": "range",
+            "values": {
+                "default": "30",
+                "max": 300,
+                "min": 0,
+                "step": 0.1
+            }
+        }
+    ],
+    "results": [
+        {
+            "type": "gallery",
+            "contents": {
+                "Input": {
+                    "img": "input_0.png"
+                },
+                "Output": {
+                    "img": "output.png"
+                }
+            }
+        },
+        {
+            "contents": "stdout.txt",
+            "label": "<p>Output</p>",
+            "type": "text_file"
+        }
+    ],
+    "archive": {
+        "enable_reconstruct": true,
+        "files": {
+            "input_0.png": "Input",
+            "output.png": "Output"
+        },
+        "info": {
+            "run_time": "run time"
+        }
+    },
+    "run": "python $bin/main.py --input $input_0 --sigma $sigma --output output.png"
+}
