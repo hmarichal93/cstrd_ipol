@@ -5,3 +5,4 @@ opencv-python==4.5.1.48
 pandas==1.5.2
 scikit-learn==1.2.0
 shapely==1.7.0
+natsort==8.2.0
