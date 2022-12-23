@@ -36,10 +36,10 @@ if __name__ == "__main__":
     parser.add_argument("--sigma", type=float, required=True)
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
-
     parser.add_argument("--output", type=str, required=True)
 
     args = parser.parse_args()
-    main(args.input, args.output, args.sigma, args.cy, args.cx)
+    print(f"{args.input} {args.output} {args.sigma} {args.cy} {args.cx}")
+    #main(args.input, args.output, args.sigma, args.cy, args.cx)
 
 
