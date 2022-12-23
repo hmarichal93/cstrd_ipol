@@ -4,7 +4,7 @@
         "requirements": "docker"
     },
     "build": {
-        "url": "git@github.com:mlbriefs/template-python.git",
+        "url": "git@github.com:hmarichal93/ipol-template",
         "rev": "origin/main",
         "dockerfile": ".ipol/Dockerfile"
     },
