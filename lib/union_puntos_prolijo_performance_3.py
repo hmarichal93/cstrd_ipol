@@ -12,12 +12,14 @@ import matplotlib.pyplot as plt
 import logging
 import glob
 from natsort import natsorted
+import copy
 
 import lib.chain_v4 as ch
+from lib.celdas import ROJO
 from lib.io import write_json, load_json, load_data, save_dots, Nr, pliegoGrados
 from lib.utils import write_log
 from lib.interpolacion import completar_cadena_via_anillo_soporte, pegar_dos_cadenas_interpolando_via_cadena_soporte, \
-    generar_lista_puntos_entre_dos_distancias_radiales
+    generar_lista_puntos_entre_dos_distancias_radiales, interpolar_en_domino, calcular_dominio_de_interpolacion
 from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_derivada_maxima, \
     criterio_distribucion_radial, \
     hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, InfoBandaVirtual, \
@@ -317,20 +319,7 @@ class SystemStatus:
     def _state_changes_in_this_iteration(self):
         return self.chain_size_at_the_begining_of_iteration > self.chain_size_at_the_end_of_iteration
 
-    def generate_pdf(self):
-        pdf = FPDF()
-        pdf.set_font('Arial', 'B', 16)
 
-        figures = glob.glob(f"{self.path}/**/*.png", recursive=True)
-        for fig in tqdm(natsorted(figures)):
-            x, y = 0, 50
-            height = 150
-            width = 180
-
-            pdf.add_page()
-            pdf.image(fig, x, y, h=height, w=width)
-
-        pdf.output(f"{state.path}/debuggin.pdf", "F")
 
 
 def calcular_distancia_acumulada_vecindad(cadena_larga, cadena_candidata, extremo, cadena_soporte,
@@ -1784,19 +1773,6 @@ def actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1
     return 0
 
 
-def verificacion_de_vecindad(state):
-    lista_cadena_copy = [copy.deepcopy(cad) for cad in state.lista_cadenas]
-    actualizar_vecindad_cadenas_si_amerita(lista_cadena_copy, state.lista_puntos)
-    for idx in range(len(state.lista_cadenas)):
-        cadena = state.lista_cadenas[idx]
-        cadena_copy = lista_cadena_copy[idx]
-        if cadena.is_center:
-            continue
-        if cadena.A_up == cadena_copy.A_up and cadena.A_down and cadena_copy.A_down and cadena.B_down == cadena_copy.B_down and cadena.B_up == cadena_copy.B_up:
-            continue
-        return cadena
-    return None
-
 
 # verificacion de vecindad
 def verificacion_vecindad(state, lista_puntos_generados):
@@ -1930,10 +1906,9 @@ def cadenas_se_intersectan(cadena1, cadena2, costo=False):
 
 
 def calcular_matriz_intersecciones_old(listaCadenas, costo=False, debug=False):
-    from tqdm import tqdm
     # M_int = np.zeros((len(listaCadenas), len(listaCadenas)))
     M_int = np.eye(len(listaCadenas))
-    for i in tqdm(range(M_int.shape[0]), desc='Calcular Matriz Interseccion'):
+    for i in range(M_int.shape[0]):
         cad_i = [cad for cad in listaCadenas if cad.id == i][0]  # ch.getChain(i, listaCadenas)
 
         for j in range(M_int.shape[0]):
@@ -1947,10 +1922,10 @@ def calcular_matriz_intersecciones_old(listaCadenas, costo=False, debug=False):
 
 
 def calcular_matriz_intersecciones(listaCadenas, listaPuntos, debug=False):
-    from tqdm import tqdm
+
 
     M_int = np.eye(len(listaCadenas))
-    for angulo in tqdm(np.arange(0, 360, 360 / Nr), desc='Calcular Matriz Interseccion'):
+    for angulo in np.arange(0, 360, 360 / Nr):
         cadenas_ids_en_direccion = np.unique([punto.cadenaId for punto in listaPuntos if punto.angulo == angulo])
         x, y = np.meshgrid(cadenas_ids_en_direccion, cadenas_ids_en_direccion)
         M_int[x, y] = 1
@@ -1959,12 +1934,6 @@ def calcular_matriz_intersecciones(listaCadenas, listaPuntos, debug=False):
 
 
 ############### criterio celdas
-import copy
-from objetos import Interseccion
-from celdas import Celda, ROJO
-from dibujar import Dibujar
-from interpolacion import calcular_dominio_de_interpolacion, interpolar_en_domino
-import cv2
 
 
 def get_puntos_lista_cadenas(lista_cadenas):
