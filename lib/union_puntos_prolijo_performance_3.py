@@ -21,7 +21,7 @@ from natsort import natsorted
 import lib.chain_v4 as ch
 from lib.io import write_json, load_json, load_data, save_dots, Nr, pliegoGrados
 from lib.utils import write_log
-from interpolacion import completar_cadena_via_anillo_soporte, pegar_dos_cadenas_interpolando_via_cadena_soporte, \
+from lib.interpolacion import completar_cadena_via_anillo_soporte, pegar_dos_cadenas_interpolando_via_cadena_soporte, \
     generar_lista_puntos_entre_dos_distancias_radiales
 from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_derivada_maxima, \
     criterio_distribucion_radial, \
