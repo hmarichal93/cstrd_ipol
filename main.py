@@ -36,7 +36,7 @@ def main(img_name,output_file, sigma, cy, cx):
     ##save results
     listaCadenas, img = results['listaCadenas'], results['img']
     ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, output_file, labels=True
+        listaCadenas, img, output_file, labels=False
     )
 
     return results
