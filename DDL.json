@@ -1,6 +1,6 @@
 {
     "general": {
-        "demo_title": "Python Demo Template",
+        "demo_title": "Tree Ring Detection Over Wood Slices",
         "requirements": "docker"
     },
     "build": {
@@ -28,6 +28,30 @@
                 "max": 300,
                 "min": 0,
                 "step": 0.1
+            }
+        },
+        {
+            "id": "cy",
+            "label": "Cy",
+            "comments": "center y coordinate",
+            "type": "range",
+            "values": {
+                "default": "1000",
+                "max": 2000,
+                "min": 0,
+                "step": 1
+            }
+        },
+        {
+            "id": "cx",
+            "label": "Cx",
+            "comments": "center x coordinate",
+            "type": "range",
+            "values": {
+                "default": "1000",
+                "max": 2000,
+                "min": 0,
+                "step": 1
             }
         }
     ],
@@ -59,5 +83,5 @@
             "run_time": "run time"
         }
     },
-    "run": "python $bin/main.py --input $input_0 --sigma $sigma --output output.png"
+    "run": "python $bin/main.py --input $input_0 --sigma $sigma --center_y $cy --center_x $cx --output output.png"
 }
