@@ -639,7 +639,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
         plt.title(titulo)
         plt.axis('off')
         if save:
-            plt.savefig(f"{save}/{titulo}.png")
+            plt.savefig(f"{titulo}")
         
     else:
         plt.figure(figsize=figsize)
