@@ -28,8 +28,10 @@ def main(img_name,output_file, sigma, cy, cx):
     print(f'Execution Time {tf-to:.1f}')
 
     print("Step 3.0: Muestreo de bordes")
+    to = time.time()
     spyder.main(results)
-
+    tf = time.time()
+    print(f'Execution Time {tf-to:.1f}')
 
     ##save results
     listaCadenas, img = results['listaCadenas'], results['img']
