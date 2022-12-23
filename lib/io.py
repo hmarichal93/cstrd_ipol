@@ -55,6 +55,7 @@ def levantar_imagen(image_name, cy, cx, sigma):
     results['save_path'] = './output'
     results['sigma'] = sigma
     results['M'] = M
+    results['debug'] = False
 
     results['N'] = N
 
