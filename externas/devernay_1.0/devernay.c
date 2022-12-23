@@ -305,11 +305,11 @@ static void compute_gradient( double * Gx, double * Gy, double * modG,
     /* saving matrix */
     // Allocates storage
     char *string = (char*)malloc(255 * sizeof(char));
-    sprintf(string, "./externas/devernay_1.0/gx_%d.txt", n);
+    sprintf(string, "/home/ipol/gx_%d.txt", n);
     save_matrix_to_file(string,Gx,X,Y);
-    sprintf(string, "./externas/devernay_1.0/gy_%d.txt", n);
+    sprintf(string, "/home/ipol/gy_%d.txt", n);
     save_matrix_to_file(string,Gy,X,Y);
-    sprintf(string, "./externas/devernay_1.0/mod_%d.txt", n);
+    sprintf(string, "/home/ipol/mod_%d.txt", n);
     save_matrix_to_file(string,modG,X,Y);
     free(string);
 }
@@ -812,13 +812,13 @@ void devernay( double ** x, double ** y, int * N, int ** curve_limits, int * M,
 
   compute_edge_points(Ex, Ey, modG, Gx, Gy, nonMax, X, Y);
   char *string = (char*)malloc(255 * sizeof(char));
-  sprintf(string, "./externas/devernay_1.0/gx_%d.txt", n);
+  sprintf(string, "/home/ipol/gx_%d.txt", n);
   save_matrix_to_file(string,Gx,X,Y);
-  sprintf(string, "./externas/devernay_1.0/gy_%d.txt", n);
+  sprintf(string, "/home/ipol/gy_%d.txt", n);
   save_matrix_to_file(string,Gy,X,Y);
-  sprintf(string, "./externas/devernay_1.0/mod_%d.txt", n);
+  sprintf(string, "/home/ipol/mod_%d.txt", n);
   save_matrix_to_file(string,modG,X,Y);
-  sprintf(string, "./externas/devernay_1.0/nonMax_%d.txt", n);
+  sprintf(string, "/home/ipol/nonMax_%d.txt", n);
   save_matrix_to_file(string,nonMax,X,Y);
   free(string);
 
