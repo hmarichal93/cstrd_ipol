@@ -83,5 +83,5 @@
             "run_time": "run time"
         }
     },
-    "run": "python $bin/main.py --input $input_0 --sigma $sigma --center_y $cy --center_x $cx --output output.png"
+    "run": "python $bin/main.py --input $input_0 --sigma $sigma --cy $cy --cx $cx --output output.png"
 }
