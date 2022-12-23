@@ -15,10 +15,8 @@ import os
 import imageio
 import logging
 from shapely.geometry import LineString, Point
-from fpdf import FPDF
 import glob
 from natsort import natsorted
-from tqdm import tqdm
 
 import lib.chain_v4 as ch
 from lib.io import write_json, load_json, load_data, save_dots, Nr, pliegoGrados
