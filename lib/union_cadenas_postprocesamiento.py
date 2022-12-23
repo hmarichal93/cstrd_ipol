@@ -1,29 +1,12 @@
 
-import shutil
-from tqdm import tqdm
 from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import argparse
-from skimage import img_as_ubyte
-import sys
-from skimage.morphology import square, disk, rectangle
-from skimage.filters.rank import median
-from skimage.color import rgb2gray, separate_stains, hpx_from_rgb
-from skimage.color import hpx_from_rgb, rgb_from_hpx
-from skimage.exposure import rescale_intensity, equalize_adapthist
-from skimage import filters
-import cv2
-from copy import deepcopy
-import os
-from skimage import feature
-import logging
-import time
 
-# propias
-# from spectralClustering_v2_2 import spectralClusteringByScrach
+import cv2
+
+
 from lib.io import (
     write_json,
     load_json,
@@ -34,20 +17,12 @@ from lib.io import (
     ANGLE_THRESHOLD,
     pliegoGrados,
 )
-from lib import utils
-from crecimiento_cadenas import extender_cadenas
 import lib.chain_v4 as ch
-from lib.deteccion_de_bordes import deteccion_de_bordes
-from lib.edges_filter import filtrado_de_bordes
-from lib.io import levantar_imagen, save_system_status,load_system_status
+
 import lib.union_puntos_prolijo_performance_3 as union
-from lib.utils import save_results, write_log
-import generate_pdf_disk as pdf
-from interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino, pegar_dos_cadenas_interpolando_via_cadena_soporte
-from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_derivada_maxima, criterio_distribucion_radial,\
-    hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, \
-    InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging
-from dibujar import Dibujar
+from lib.interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino, pegar_dos_cadenas_interpolando_via_cadena_soporte
+from lib.propiedades_fundamentales import InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging
+from lib.dibujar import Dibujar
 
 def put_text(text, image, org, color=(0, 0, 0), fontScale=1 / 4):
     # font
