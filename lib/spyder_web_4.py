@@ -1,21 +1,18 @@
 import numpy as np
 import cv2
 from shapely.geometry import LineString, Point,Polygon
-from tqdm import tqdm
-import time
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 
+
 from lib.devernayEdgeDetector import devernayEdgeDetector
 from lib.io import Nr
-from celdas import Celda,distancia_entre_pixeles,OperacionesCelda,AMARILLO,VERDE,ROJO,NEGRO,NARANJA
-from dibujar import Dibujar
-#from metrica_uniformidad import Voronoi
-import lib.edges_filter as edges
+from lib.celdas import Celda,distancia_entre_pixeles,OperacionesCelda,AMARILLO,VERDE,ROJO,NEGRO,NARANJA
+from lib.dibujar import Dibujar
 from lib.utils import write_log
-from objetos import Distribucion,Interseccion,Rayo,Curva,Segmento
+from lib.objetos import Distribucion,Interseccion,Rayo,Curva,Segmento
 import lib.chain_v4 as ch
 
 MODULE = "spyder"
