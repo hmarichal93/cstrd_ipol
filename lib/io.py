@@ -163,7 +163,7 @@ def get_path(*args):
     Possible arguments: "data", "bader_data", "training", "results"
     :return: Path/s
     """
-    paths = load_json(f"{os.path.abspath(__file__)}/paths_config.json")
+    paths = load_json(f"{os.path.abspath(__file__)}/../paths_config.json")
     hostname = socket.gethostname()
     if '.'.join(hostname.split('.')[:-1]) == '192.168.1':
         hostname = '192.168.1.'
