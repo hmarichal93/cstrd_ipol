@@ -17,8 +17,7 @@ WORKDIR $bin
 COPY . .
 
 # compile libraries
-RUN cd $bin/externas/devernay_1.0 && make
-COPY paths_config.json .
+RUN  apt-get install glibc-source -y && cd $bin/externas/devernay_1.0 && make
 # the execution will happen in the folder /workdir/exec
 # it will be created by IPOL
 
