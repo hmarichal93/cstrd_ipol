@@ -78,8 +78,7 @@ def unir_cadenas(datos,step):
     import os
     if logs_1.exists() and debug_imgs:
         os.system(f"rm -rf {str(logs_1)}")
-    if debug_imgs:
-        logs_1.mkdir(parents=True, exist_ok=True)
+    logs_1.mkdir(parents=True, exist_ok=True)
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,gradFase,
                                              centro, path=str(logs_1), radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
@@ -90,17 +89,11 @@ def unir_cadenas(datos,step):
                                                                 distancia_angular_maxima=10
                                                                 )
     #listaCadenas,listaPuntos = ch.renombrarCadenas(listaCadenas, listaPuntos)
-    #MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_1',labels=False,save=SAVE_PATH)
-    #
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_1_labels',labels=True,save=SAVE_PATH)
-    # print(
-    #     f"listaPuntos {len(listaPuntos)} MatrizEtiquetas {np.where(MatrizEtiquetas>-1)[0].shape} cadenas {ch.contarPuntosListaCadenas(listaCadenas)}"
-    # )
+    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
+
     #% imagenes en gris
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_1_gris',labels=False,save=SAVE_PATH,gris=True)
     #%
-    #print("Step 2.6.1: Union Cadenas Criterios Fuertes: Interseccion Con menos restricciones")
+    print("Step 2.6.1: Union Cadenas Criterios Fuertes: Interseccion Con menos restricciones")
 
     #Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, debug=False)
     # hay_cambios,listaCadenas,listaPuntos,Matriz_intersecciones,MatrizEtiquetas = union.loop_unir_cadenas()
@@ -112,7 +105,7 @@ def unir_cadenas(datos,step):
     logs_1 = Path(SAVE_PATH) / "debug_2"
     if logs_1.exists() and debug_imgs:
         os.system(f"rm -rf {str(logs_1)}")
-    if debug_imgs: logs_1.mkdir(parents=True, exist_ok=True)
+    logs_1.mkdir(parents=True, exist_ok=True)
     ch.verificacion_complitud(listaCadenas)
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             gradFase, centro,path=str(logs_1), radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
@@ -125,20 +118,14 @@ def unir_cadenas(datos,step):
     ch.verificacion_complitud(listaCadenas)
     tf = time.time()
     # listaCadenas,listaPuntos = ch.renombrarCadenas(listaCadenas, listaPuntos)
-    # MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_2',labels=False,save=SAVE_PATH)
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_2_labels',labels=True,save=SAVE_PATH)
-    # print(
-    #     f"listaPuntos {len(listaPuntos)} MatrizEtiquetas {np.where(MatrizEtiquetas>-1)[0].shape} cadenas {ch.contarPuntosListaCadenas(listaCadenas)}"
-    # )
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_2_gris',labels=False,save=SAVE_PATH,gris=True)
+    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
 
 
 
     logs_1 = Path(SAVE_PATH) / "debug_3"
     if logs_1.exists() and debug_imgs:
         os.system(f"rm -rf {str(logs_1)}")
-    if debug_imgs: logs_1.mkdir(parents=True, exist_ok=True)
+    logs_1.mkdir(parents=True, exist_ok=True)
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
                                             centro, path = str(logs_1), radial_tolerance = 0.1, distancia_angular_maxima = 45,
@@ -162,21 +149,16 @@ def unir_cadenas(datos,step):
     #                                         centro,path=str(logs_1), radial_tolerance= 0.2, distancia_angular_maxima=90,
     #                                                             debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=3)
     tf = time.time()
-    # MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_3',labels=False,save=SAVE_PATH)
-    # ch.visualizarCadenasSobreDisco(listaCadenas,img,f'{step}-PegarCadenasInterseccion_3_labels',labels=True,save=SAVE_PATH)
-    # print(
-    #     f"listaPuntos {len(listaPuntos)} MatrizEtiquetas {np.where(MatrizEtiquetas>-1)[0].shape} cadenas {ch.contarPuntosListaCadenas(listaCadenas)}"
-    # )
+    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
+
 
     #%
     datos['union_tiempo'] = tf-to
     print(tf-to)
-
     print(f"El proceso de union tomo {datos['union_tiempo']/60:.2f}")
     datos['listaCadenas'] = listaCadenas
     datos['listaPuntos'] = listaPuntos
-    #datos['MatrizEtiquetas'] = MatrizEtiquetas
+    datos['MatrizEtiquetas'] = MatrizEtiquetas
 
     
     return 0
@@ -249,22 +231,11 @@ def postprocesamiento_etapa_2(datos,step):
     listaCadenas, listaPuntos = datos['listaCadenas'], datos['listaPuntos']
     listaCadenas,listaPuntos, MatrizEtiquetas = ch.renombrarCadenas(listaCadenas,listaPuntos, datos['M'], datos['N'])
     datos['listaCadenas'], datos['listaPuntos'] = listaCadenas,listaPuntos
-    SAVE_PATH, img = datos['save_path'], datos['img']
-    #ch.visualizarCadenasSobreDisco(listaCadenas, img, f'{step}-PegarCadenasInterseccion_4_labels_init', labels=True,
-    #                               save=SAVE_PATH)
-
-
     union_post.main_postprocesamiento(datos, debug=False)
 
     listaCadenas, listaPuntos, M, N = datos['listaCadenas'], datos['listaPuntos'], datos['M'], datos['N']
     img, SAVE_PATH, gradFase, centro = datos['img'], datos['save_path'], datos['gradFase'], datos['centro']
-    # ch.visualizarCadenasSobreDisco(listaCadenas, img, f'{step}-PegarCadenasInterseccion_4', labels=False,
-    #                                save=SAVE_PATH)
-    # ch.visualizarCadenasSobreDisco(listaCadenas, img, f'{step}-PegarCadenasInterseccion_4_labels', labels=True,
-    #                                save=SAVE_PATH)
-    #
-    ch.visualizarCadenasSobreDisco(listaCadenas, img, f'{step}-PegarCadenasInterseccion_4_gris', labels=False,
-                                   save=SAVE_PATH, gris=True)
+
 def convertir_cadena_shapely_a_cadena(cadenas_incompletas_shapely, cadenas_incompletas, subconjunto_cadenas_interiores_shapely):
     conjunto_cadenas_interiores = [cadenas_incompletas[cadenas_incompletas_shapely.index(cad_shapely)]
                                    for cad_shapely in subconjunto_cadenas_interiores_shapely]
