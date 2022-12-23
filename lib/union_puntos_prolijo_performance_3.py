@@ -7,14 +7,9 @@ Created on Wed Jan 26 20:15:54 2022
     Se realiza un profiler para el ejemplo8 (union_cadenas_prolijo_profiler.pstat)
 @author: henry
 """
-import json
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import os
-import imageio
 import logging
-from shapely.geometry import LineString, Point
 import glob
 from natsort import natsorted
 
@@ -27,7 +22,6 @@ from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_de
     criterio_distribucion_radial, \
     hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, InfoBandaVirtual, \
     hay_cadenas_superpuestas_en_banda, criterio_diferencia_radial_maxima, angulo_entre_extremos_cadenas
-from dibujar import Color, Dibujar
 
 MODULE_NAME = "union_chains"
 NOT_REPETING_CHAIN = -1
