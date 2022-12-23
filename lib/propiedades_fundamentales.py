@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import cv2
 import copy
 
-from dibujar import Color, Dibujar
-from interpolacion import pegar_dos_cadenas_interpolando_via_cadena_soporte, generar_lista_puntos_entre_dos_distancias_radiales
+from lib.dibujar import Color, Dibujar
+from lib.interpolacion import pegar_dos_cadenas_interpolando_via_cadena_soporte, generar_lista_puntos_entre_dos_distancias_radiales
 from lib.io import write_json,load_json, load_data, save_dots, Nr
 import lib.chain_v4 as ch
 from lib.utils import write_log
-from objetos import Interseccion
-from celdas import Celda, ROJO
-from interpolacion import interpolar_en_domino
+from lib.objetos import Interseccion
+from lib.celdas import Celda, ROJO
+from lib.interpolacion import interpolar_en_domino
 MODULE_NAME = 'propiedades_fundamentales'
 
 
