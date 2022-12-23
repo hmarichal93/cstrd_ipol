@@ -165,9 +165,7 @@ def get_path(*args):
     """
     dir_path = os.path.dirname(os.path.realpath(__file__))
     paths = load_json(f"{dir_path}/../paths_config.json")
-    hostname = socket.gethostname()
-    if '.'.join(hostname.split('.')[:-1]) == '192.168.1':
-        hostname = '192.168.1.'
+    hostname = 'henry-workstation'
     assert hostname in paths.keys(), "Current host: {}, Possible hosts: {}".format(hostname, paths.keys())
     assert all([arg in paths[hostname].keys() for arg in args]), "Args must be in {}".format(paths[hostname].keys())
     paths = tuple([Path(paths[hostname][arg]) for arg in args])

@@ -5,14 +5,7 @@
     "models": "../../models",
     "training": "../../training",
     "results": "/data/maestria/resultados",
-    "devernay": "/home/henry/Documents/repo/fing/devernay/devernay_1.0",
+    "devernay": "/workdir/bin/externas/devernay_1.0",
     "centro": "/home/henry/Documents/repo/fing/deteccion_centro/Ant_colony_for_pith_estimation/build"
-  },
-  "dsense": {
-    "data": "/media/data/maestria/datasets",
-    "models": "../../models",
-    "training": "../../training",
-    "results": "/media/data/maestria/resultados",
-    "devernay": "/home/henry/repos/devernay/devernay_1.0"
   }
 }
