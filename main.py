@@ -13,11 +13,12 @@ import time
 
 from lib.deteccion_de_bordes import deteccion_de_bordes
 from lib.io import levantar_imagen
-
+import lib.spyder_web_4 as spyder
+import lib.chain_v4 as ch
 
 VERSION = "v3.0.2.3_refinada_performance_centro"
 
-def main(img_name,output_dir, sigma, cy, cx):
+def main(img_name,output_file, sigma, cy, cx):
     to = time.time()
     results = levantar_imagen(img_name, cy, cx, sigma)
     edge_type = 'devernay'
@@ -25,6 +26,16 @@ def main(img_name,output_dir, sigma, cy, cx):
     deteccion_de_bordes(results, edges=edge_type)
     tf = time.time()
     print(f'Execution Time {tf-to:.1f}')
+
+    print("Step 3.0: Muestreo de bordes")
+    spyder.main(results)
+
+
+    ##save results
+    listaCadenas, img = results['listaCadenas'], results['img']
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, "cadenas_color", labels=True
+    )
 
     return results
 

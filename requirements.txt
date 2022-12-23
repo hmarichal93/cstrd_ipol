@@ -1,2 +1,7 @@
-numpy
-iio==0.0.3
+numpy==1.23.5
+matplotlib==3.6.2
+scikit-image==0.19.3
+opencv-python==4.5.1.48
+pandas==1.5.2
+scikit-learn==1.2.0
+
