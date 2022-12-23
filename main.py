@@ -16,6 +16,7 @@ from lib.io import levantar_imagen
 import lib.spyder_web_4 as spyder
 import lib.chain_v4 as ch
 import lib.unir_cadenas_prolijo_3 as union
+from lib.utils import save_results
 
 VERSION = "v3.0.2.3_refinada_performance_centro"
 
@@ -60,6 +61,7 @@ def main(img_name,output_file, sigma, cy, cx):
     ch.visualizarCadenasSobreDisco(
         listaCadenas, img, output_file, labels=False, gris=True
     )
+    save_results(results)
 
     return results
 

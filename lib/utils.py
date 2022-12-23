@@ -90,29 +90,13 @@ def save_results(datos):
     SAVE_PATH= datos['save_path']
     #df_radial, df_general = datos['df_radial'], datos['df_general']
     #% reporte union
-    anillos = [cad for cad in listaCadenas if cad.esta_completa()]
-    union_tiempo = -1
 
-
-    data_json = {}
-    total_tiempo = 0
-    for key in datos.keys():
-        if 'tiempo' in key:
-            data_json[key] = datos[key]
-            total_tiempo += data_json[key]
-
-    data_json['total'] = total_tiempo
-    #array = df_radial['total-inicial'].values
-    #mode = stats.mode(array)
-    #data_json['transformar_cadenas'] = {'moda': mode }
-    #print(data_json)
-    write_json(dict_to_save= data_json, filepath=f"{SAVE_PATH}/results.json")
 
     M = datos.get('M')
     N = datos.get('N')
     image_path = datos.get("image_path")
     labelme_json = chain_2_labelme_json(listaCadenas, image_path, M, N)
-    write_json(labelme_json, filepath=f"{SAVE_PATH}/labelme.json")
+    write_json(labelme_json, filepath=f"./labelme.json")
 
     
 import os
