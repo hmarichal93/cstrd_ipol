@@ -193,6 +193,8 @@ class devernayEdgeDetector:
             curve.add_pixel(i,j)
 
         self.curves_list = [curve for curve in self.curves_list if curve.size>0]
+
+        #self._graficar_curvas_devernay("curvas_devernay", labels=False, colors_type=False)
     
     @staticmethod
     def display_image_matrix(img,centro,save_path,title):
@@ -440,7 +442,7 @@ class devernayEdgeDetector:
                 org = curve.pixels_list[0]
                 img_curvas = self.put_text(str(curve.id),img_curvas,(int(org.x),int(org.y)))
 
-        cv2.imwrite(f"{self.save_path}/{name}.png",img_curvas)
+        cv2.imwrite(f"./edge_detector.png",img_curvas)
 
 
 

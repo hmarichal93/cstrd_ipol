@@ -33,12 +33,18 @@ def main(img_name,output_file, sigma, cy, cx):
     spyder.main(results)
     tf = time.time()
     print(f'Execution Time {tf-to:.1f}')
-
+    listaCadenas, img = results['listaCadenas'], results['img']
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, "./chains.png", labels=False, gris=True, color=True
+    )
     print("Step 6.0: Unir Cadenas")
     step = "Step6.0"
 
     union.unir_cadenas(results, step=step)
-
+    listaCadenas, img = results['listaCadenas'], results['img']
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, "./grouping_chains.png", labels=False, gris=True
+    )
     # save_results(results)
 
     # save_system_status(results)
