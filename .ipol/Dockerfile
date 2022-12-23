@@ -9,12 +9,15 @@ RUN apt-get update && apt-get install -y $(cat packages.txt) && rm -rf /var/lib/
 COPY requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
+
 # copy the code to $bin
 ENV bin /workdir/bin/
 RUN mkdir -p $bin
 WORKDIR $bin
 COPY . .
 
+# compile libraries
+RUN cd $bin/externas/devernay_1.0 && make
 # the execution will happen in the folder /workdir/exec
 # it will be created by IPOL
 
