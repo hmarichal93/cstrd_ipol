@@ -671,6 +671,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
             print(f"{save}/{titulo}.png")
             plt.savefig(f"{save}/{titulo}.png")
 
+    plt.savefig(f"{titulo}")
     if display: 
         plt.show()
     else:
