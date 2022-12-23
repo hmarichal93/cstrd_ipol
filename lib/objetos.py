@@ -1,15 +1,11 @@
 import numpy as np
-#from shapely.geometry import LineString, Point
 from shapely.geometry.point import Point
 from shapely.geometry.linestring import LineString
-import cv2
-from pathlib import Path
 
-#from metrica import MetricaBondadEnlace
-from celdas import distancia_entre_pixeles
+
+from lib.celdas import distancia_entre_pixeles
 from lib.io import Nr
-from dibujar import Dibujar
-from lib.utils import write_log
+from lib.dibujar import Dibujar
 
 def from_polar_to_cartesian(r,angulo,centro):
     y = centro[0] + r * np.cos(angulo * np.pi / 180)
