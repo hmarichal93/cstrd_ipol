@@ -13,10 +13,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 from scipy.interpolate import CubicSpline
 import logging 
 
-#from dentro_utils.io import write_json,load_json, load_data, save_dots, Nr
-import lib.utils
-
-Nr = 360
+from lib.utils import rgbToluminance
+from lib.io import Nr
 
 class Punto:
     def __init__(self,**params):
@@ -598,7 +596,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
     #figsize=(10,10)
     if gris:
         plt.figure(figsize=figsize)
-        imageGray = utils.rgbToluminance(img)
+        imageGray = rgbToluminance(img)
         plt.imshow(imageGray,cmap='gray')
         contador = 0
         for cadena in listaCadenas:
