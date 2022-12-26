@@ -626,8 +626,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
             cadenasSize.append(cadena.size)
         #plt.title(titulo)
         plt.axis('off')
-        if save:
-            plt.savefig(f"{titulo}")
+
         
     else:
         plt.figure(figsize=figsize)
@@ -653,12 +652,8 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
                 if labels:
                     plt.annotate(str(cadena.label_id), (y[0], x[0]),c='b')
                 cadenasSize.append(cadena.size)
-        #plt.title(titulo)
-        plt.axis('off')
-        if save:
-            print(f"{save}/{titulo}.png")
-            plt.savefig(f"{save}/{titulo}.png")
 
+    plt.tight_layout()
     plt.savefig(f"{titulo}")
     if display: 
         plt.show()
