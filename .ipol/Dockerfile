@@ -32,5 +32,5 @@ ENV PATH $outputdir:$PATH
 # $HOME is writable by the user `ipol`, but 
 ENV HOME /home/ipol
 # chmod 777 so that any user can use the HOME, in case the docker is run with -u 1001:1001
-RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME && chmod +R 777 $bin/outputdir
+RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME && chmod +R 777 $bin/output
 USER ipol
