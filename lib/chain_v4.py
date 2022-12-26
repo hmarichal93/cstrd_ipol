@@ -17,10 +17,10 @@ import logging
 def rgbToluminance(img):
     if img.ndim>2:
         M, N, C = img.shape
+        imageGray = np.zeros((M, N))
+        imageGray[:, :] = (img[:, :, 0] * 0.2126 + img[:, :, 1] * 0.7152 + img[:, :, 2] * 0.0722).reshape((M, N))
     else:
-        M,N = img.shape
-    imageGray = np.zeros((M, N))
-    imageGray[:, :] = (img[:, :, 0] * 0.2126 + img[:, :, 1] * 0.7152 + img[:, :, 2] * 0.0722).reshape((M, N))
+        imageGray = img
 
     return imageGray
 
