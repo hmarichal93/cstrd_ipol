@@ -40,12 +40,11 @@ def main(img_name,output_dir, sigma, cy, cx):
 
     ####################################################################################################################
     print("Step 4.0: Unir Cadenas")
-    step = "Step6.0"
-    union.unir_cadenas(results, step=step)
+    #union.unir_cadenas(results, step=step)
 
     ####################################################################################################################
     print("Step 5.0: Post procesamiento")
-    union.postprocesamiento_etapa_2(results, step)
+    #union.postprocesamiento_etapa_2(results, step)
 
     ####################################################################################################################
     print("Step 6.0: Saving Results")

@@ -52,7 +52,7 @@ def from_polar_to_cartesian(r,angulo,centro):
 
 
 
-def unir_cadenas(datos,step):
+def unir_cadenas(datos):
     listaCadenas, listaPuntos,  M,N = datos['listaCadenas'], datos['listaPuntos'],datos['M'], datos['N']
     img, SAVE_PATH, gradFase, centro =  datos['img'], datos['save_path'], datos['gradFase'], datos['centro']
     debug_imgs = datos['debug']
@@ -174,7 +174,7 @@ def buscar_cadenas_interiores_shapely(cadenas_incompletas_shapely, anillo_extern
     return subconjunto_cadenas_interiores_shapely
 
 
-def postprocesamiento_etapa_2(datos,step):
+def postprocesamiento_etapa_2(datos):
 
     listaCadenas, listaPuntos = datos['listaCadenas'], datos['listaPuntos']
     listaCadenas,listaPuntos, MatrizEtiquetas = ch.renombrarCadenas(listaCadenas,listaPuntos, datos['M'], datos['N'])
