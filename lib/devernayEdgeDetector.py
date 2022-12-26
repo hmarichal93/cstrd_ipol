@@ -8,17 +8,13 @@ Created on Mon Apr 18 11:18:32 2022
 
 import os
 import pandas as pd
-from skimage.util import view_as_windows
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt 
 import time
+import warnings
+warnings.filterwarnings("ignore")
 
-from lib.io import get_path,Nr
-import lib.edges_filter as edges
-import lib.chain_v4 as ch
-import lib.edges_filter as edges 
-from lib import utils as utils
+from lib.io import get_path
 from lib.io import pliegoGrados
 
 BACKGROUND_VALUE=-1
@@ -158,7 +154,6 @@ class devernayEdgeDetector:
 
     def _execute_command(self):
         command = f"{str(self.root_path)}/devernay  {self.image_path} -s {self.s} -l {self.l} -h {self.h} -t {self.outputtxt} -p {str(self.root_path)}/output.pdf -g {str(self.root_path)}/output.svg -n {self.nombre}"
-        print(command)
         os.system(command)
 
 
