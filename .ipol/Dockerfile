@@ -27,6 +27,7 @@ RUN cd $bin/externas/devernay_1.0 && make
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION python
 ENV PATH $bin:$PATH
+ENV PATH $outputdir:$PATH
 
 # $HOME is writable by the user `ipol`, but 
 ENV HOME /home/ipol
