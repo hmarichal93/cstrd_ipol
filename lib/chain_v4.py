@@ -595,29 +595,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
     cadenasSize = []
     #figsize = (30,15)
     figsize=(10,7)
-    if hist:
-        fig, axs = plt.subplots(1,2,figsize=figsize, gridspec_kw={'width_ratios': [3, 1]})
-        axs[0].imshow(img,cmap='gray')
-        for cadena in listaCadenas:
-            x,y = cadena.getDotsCoordinates()
-            #axs[0].plot(y,x,'-bo', markersize=2,linewidth=1)
-            if not color:
-                axs[0].plot(y,x,linewidth=2)
-            else:
-                axs[0].plot(y,x,'.r',linewidth=2)
-            if labels:
-                axs[0].annotate(str(cadena.label_id), (y[0], x[0]),c='b')
-            if cadena.is_center:
-                axs[0].scatter(y, x, 'r')
-            cadenasSize.append(cadena.size)
-        axs[0].set_title(titulo)
-        axs[0].axis('off')
-        
-        axs[1].hist(cadenasSize)
-        axs[1].set_title(f'Histograma tamaño cadenas. \n Cantidad cadenas {len(listaCadenas)}')
-        axs[1].grid(True)
-
-    elif gris:
+    if gris:
         plt.figure(figsize=figsize)
         plt.imshow(img[:,:,1],cmap='gray')
         contador = 0
@@ -636,7 +614,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
                 plt.scatter(y, x,s=2, zorder=10,c='r')
 
             cadenasSize.append(cadena.size)
-        plt.title(titulo)
+        #plt.title(titulo)
         plt.axis('off')
         if save:
             plt.savefig(f"{titulo}")
@@ -665,7 +643,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
                 if labels:
                     plt.annotate(str(cadena.label_id), (y[0], x[0]),c='b')
                 cadenasSize.append(cadena.size)
-        plt.title(titulo)
+        #plt.title(titulo)
         plt.axis('off')
         if save:
             print(f"{save}/{titulo}.png")
