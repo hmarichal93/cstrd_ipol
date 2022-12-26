@@ -594,7 +594,7 @@ def distancia_minima_entre_cadenas(c1,c2):
 def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=False,color=None,hist=None,save=None, gris = False, display=False):
     cadenasSize = []
     #figsize = (30,15)
-    figsize=(10,7)
+    figsize=(10,10)
     if gris:
         plt.figure(figsize=figsize)
         plt.imshow(img[:,:,1],cmap='gray')
