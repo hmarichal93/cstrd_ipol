@@ -12,9 +12,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 # copy the code to $bin
 ENV bin /workdir/bin/
-ENV outputdir $bin/output
 RUN mkdir -p $bin
-RUN mkdir -p $outputdir
 WORKDIR $bin
 COPY . .
 
@@ -32,5 +30,5 @@ ENV PATH $outputdir:$PATH
 # $HOME is writable by the user `ipol`, but 
 ENV HOME /home/ipol
 # chmod 777 so that any user can use the HOME, in case the docker is run with -u 1001:1001
-RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME && chmod +R 777 $bin/output
+RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME
 USER ipol
