@@ -13,8 +13,15 @@ from sklearn.metrics.pairwise import euclidean_distances
 from scipy.interpolate import CubicSpline
 import logging 
 
-from lib.utils import rgbToluminance
-from lib.io import Nr
+
+def rgbToluminance(img):
+    M, N, C = img.shape
+    imageGray = np.zeros((M, N))
+    imageGray[:, :] = (img[:, :, 0] * 0.2126 + img[:, :, 1] * 0.7152 + img[:, :, 2] * 0.0722).reshape((M, N))
+
+    return imageGray
+
+Nr = 360
 
 class Punto:
     def __init__(self,**params):
