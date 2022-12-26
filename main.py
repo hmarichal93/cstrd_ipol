@@ -21,10 +21,10 @@ import lib.preprocesamiento as preprocesamiento
 
 VERSION = "v3.0.2.3_refinada_performance_centro"
 
-def main(img_name,output_file, sigma, cy, cx):
+def main(img_name,output_dir, sigma, cy, cx):
     t0 = time.time()
     ####################################################################################################################
-    results = levantar_imagen(img_name, cy, cx, sigma)
+    results = levantar_imagen(img_name, cy, cx, sigma,output_dir)
 
     ####################################################################################################################
     print("Step 1.0 Preprocessing")
@@ -49,7 +49,7 @@ def main(img_name,output_file, sigma, cy, cx):
 
     ####################################################################################################################
     print("Step 6.0: Saving Results")
-    save_results(results, output_file)
+    save_results(results, results['save_path']/"output.png")
 
     ####################################################################################################################
     tf = time.time()
@@ -65,10 +65,10 @@ if __name__ == "__main__":
     parser.add_argument("--sigma", type=float, required=True)
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
-    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--outputdir", type=str, required=True)
 
     args = parser.parse_args()
 
-    main(args.input, args.output, args.sigma, args.cy, args.cx)
+    main(args.input, args.outputdir, args.sigma, args.cy, args.cx)
 
 

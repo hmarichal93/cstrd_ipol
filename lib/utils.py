@@ -102,6 +102,8 @@ def save_results(datos,output_file):
     ch.visualizarCadenasSobreDisco(
         [cad for cad in listaCadenas if cad.esta_completa() and not cad.is_center], img, output_file, labels=False, gris=True
     )
+    ch.visualizarCadenasSobreDisco(
+        [], img, SAVE_PATH/ "input.png", labels=False)
 
     return 0
 

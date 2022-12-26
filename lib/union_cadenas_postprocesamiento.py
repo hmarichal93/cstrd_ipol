@@ -243,8 +243,8 @@ def main_postprocesamiento(results, debug=False):
     for cad1 in listaCadenas:
         assert len(cad1.lista) == len([punto for punto in listaPuntos if punto.cadenaId == cad1.id])
 
-    save_path = Path(results['save_path']) / "post_debug_1"
-    save_path.mkdir(exist_ok=True)
+    #save_path = Path(results['save_path']) / "post_debug_1"
+    #save_path.mkdir(exist_ok=True)
     save_path = str(save_path)
     if debug:
         ch.visualizarCadenasSobreDisco(listaCadenas, image, f'picar_cadenas_inicio', labels=True, save=f"{save_path}")

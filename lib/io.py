@@ -40,7 +40,7 @@ def cargarImagen(filename):
     return imagen_original
 
 
-def levantar_imagen(image_name, cy, cx, sigma):
+def levantar_imagen(image_name, cy, cx, sigma, output_dir):
     centro = ( cy, cx)
 
     results = {}
@@ -52,7 +52,7 @@ def levantar_imagen(image_name, cy, cx, sigma):
     results['img'] = img
 
     results['centro'] = centro
-    results['save_path'] = get_path('results')
+    results['save_path'] = Path(output_dir)
     results['sigma'] = sigma
     results['M'] = M
     results['debug'] = False
