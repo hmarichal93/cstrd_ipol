@@ -52,7 +52,7 @@ def levantar_imagen(image_name, cy, cx, sigma):
     results['img'] = img
 
     results['centro'] = centro
-    results['save_path'] = './output'
+    results['save_path'] = get_path('results')
     results['sigma'] = sigma
     results['M'] = M
     results['debug'] = False

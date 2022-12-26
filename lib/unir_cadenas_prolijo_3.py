@@ -55,110 +55,58 @@ def from_polar_to_cartesian(r,angulo,centro):
 def unir_cadenas(datos,step):
     listaCadenas, listaPuntos,  M,N = datos['listaCadenas'], datos['listaPuntos'],datos['M'], datos['N']
     img, SAVE_PATH, gradFase, centro =  datos['img'], datos['save_path'], datos['gradFase'], datos['centro']
-    to = time.time()
     debug_imgs = datos['debug']
-    max_id_cad_puntos = sorted(listaPuntos,key=lambda  x : x.cadenaId,reverse=True)[0]
-    max_id_cad = sorted(listaCadenas, key=lambda x: x.id, reverse=True)[0]
-    print(f"lenCadenas {len(listaCadenas)} cad_max_lista_puntos {max_id_cad_puntos.cadenaId} cad_max_lista_cad {max_id_cad.id} ")
-    print(
-        f"listaPuntos {len(listaPuntos)}  listaCadenas {len(listaCadenas)} cadenas {ch.contarPuntosListaCadenas(listaCadenas)}"
-    )
 
-    check_chains_size(listaCadenas)
-    #if 'matrizIntersecciones' not in datos.keys():
+    to = time.time()
+
     Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, listaPuntos)
-    # else:
-    #     Matriz_intersecciones = datos['matrizIntersecciones']
-    #hay_cambios,listaCadenas,listaPuntos,Matriz_intersecciones,MatrizEtiquetas = union.loop_unir_cadenas()
-    for cadena in listaCadenas:
-        puntos_otro_id = [punto.cadenaId for punto in cadena.lista if punto.cadenaId != cadena.id ]
-        if len(puntos_otro_id) > 0:
-            raise
-    logs_1 = Path(SAVE_PATH) / "debug_1"
-    import os
-    if logs_1.exists() and debug_imgs:
-        os.system(f"rm -rf {str(logs_1)}")
-    logs_1.mkdir(parents=True, exist_ok=True)
+
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,gradFase,
-                                             centro, path=str(logs_1), radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
+                                             centro,  radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
                                                                 )
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,gradFase,
-                                             centro, path=str(logs_1), radial_tolerance = 0.2, debug_imgs=debug_imgs,ancho_std=2,
+                                             centro, radial_tolerance = 0.2, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
                                                                 )
-    #listaCadenas,listaPuntos = ch.renombrarCadenas(listaCadenas, listaPuntos)
-    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
 
-    #% imagenes en gris
-    #%
-    print("Step 2.6.1: Union Cadenas Criterios Fuertes: Interseccion Con menos restricciones")
-
-    #Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, debug=False)
-    # hay_cambios,listaCadenas,listaPuntos,Matriz_intersecciones,MatrizEtiquetas = union.loop_unir_cadenas()
-
-    ##############################33 control
-    for ch_up in listaCadenas:
-        assert len([punto for punto in ch_up.lista if punto.cadenaId != ch_up.id]) == 0
-    ##################################
-    logs_1 = Path(SAVE_PATH) / "debug_2"
-    if logs_1.exists() and debug_imgs:
-        os.system(f"rm -rf {str(logs_1)}")
-    logs_1.mkdir(parents=True, exist_ok=True)
-    ch.verificacion_complitud(listaCadenas)
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                            gradFase, centro,path=str(logs_1), radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
+                                            gradFase, centro, radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
 
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                                                  gradFase, centro, path=str(logs_1),
+                                                                  gradFase, centro,
                                                                   radial_tolerance=0.2, distancia_angular_maxima=22,
                                                                   debug_imgs=debug_imgs, ancho_std=3)
 
-    ch.verificacion_complitud(listaCadenas)
-    tf = time.time()
-    # listaCadenas,listaPuntos = ch.renombrarCadenas(listaCadenas, listaPuntos)
-    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-
-
-
-    logs_1 = Path(SAVE_PATH) / "debug_3"
-    if logs_1.exists() and debug_imgs:
-        os.system(f"rm -rf {str(logs_1)}")
-    logs_1.mkdir(parents=True, exist_ok=True)
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
-                                            centro, path = str(logs_1), radial_tolerance = 0.1, distancia_angular_maxima = 45,
+                                            centro, radial_tolerance = 0.1, distancia_angular_maxima = 45,
                                                                 debug_imgs=debug_imgs, todas_intersectantes=False, ancho_std=3)
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
-                                            centro,path=str(logs_1), radial_tolerance= 0.2, distancia_angular_maxima=45,
+                                            centro, radial_tolerance= 0.2, distancia_angular_maxima=45,
                                                                 debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=3)
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
-                                            centro,path=str(logs_1), radial_tolerance= 0.1, distancia_angular_maxima=22,
+                                            centro,radial_tolerance= 0.1, distancia_angular_maxima=22,
                                                                 debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=2, der_desde_centro= True)
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                                                   gradFase,
-                                                                  centro, path=str(logs_1), radial_tolerance=0.2,
+                                                                  centro, radial_tolerance=0.2,
                                                                   distancia_angular_maxima=45,
                                                                   debug_imgs=debug_imgs, todas_intersectantes=False,
                                                                   ancho_std=3, der_desde_centro=True)
 
-    # listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
-    #                                         centro,path=str(logs_1), radial_tolerance= 0.2, distancia_angular_maxima=90,
-    #                                                             debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=3)
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, f"{datos['save_path']}/grouping_chains.png", labels=False, gris=True, color=True
+    )
+
     tf = time.time()
-    MatrizEtiquetas = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-
-
-    #%
     datos['union_tiempo'] = tf-to
-    print(tf-to)
-    print(f"El proceso de union tomo {datos['union_tiempo']/60:.2f}")
+    print(f"Union: {datos['union_tiempo']:.1f}")
     datos['listaCadenas'] = listaCadenas
     datos['listaPuntos'] = listaPuntos
-    datos['MatrizEtiquetas'] = MatrizEtiquetas
 
     
     return 0

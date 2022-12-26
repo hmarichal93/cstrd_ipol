@@ -85,7 +85,7 @@ def chain_2_labelme_json(chain_list,image_path,image_height,image_width):
         labelme_json["shapes"].append(anillo)
     return labelme_json
 
-def save_results(datos):
+def save_results(datos,output_file):
     listaCadenas= datos['listaCadenas']
     SAVE_PATH= datos['save_path']
     #df_radial, df_general = datos['df_radial'], datos['df_general']
@@ -96,7 +96,14 @@ def save_results(datos):
     N = datos.get('N')
     image_path = datos.get("image_path")
     labelme_json = chain_2_labelme_json(listaCadenas, image_path, M, N)
-    write_json(labelme_json, filepath=f"./labelme.json")
+    write_json(labelme_json, filepath=f"{SAVE_PATH}/labelme.json")
+
+    listaCadenas, img = datos['listaCadenas'], datos['img']
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, output_file, labels=False, gris=True
+    )
+
+    return 0
 
     
 import os

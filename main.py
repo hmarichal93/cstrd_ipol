@@ -11,57 +11,49 @@ Created on Fri May 28 10:54:53 2021
 import time
 
 
-from lib.deteccion_de_bordes import deteccion_de_bordes
+import lib.devernayEdgeDetector as edge_detector
 from lib.io import levantar_imagen
-import lib.spyder_web_4 as spyder
+import lib.spyder_web_4 as muestreo
 import lib.chain_v4 as ch
 import lib.unir_cadenas_prolijo_3 as union
 from lib.utils import save_results
+import lib.preprocesamiento as preprocesamiento
 
 VERSION = "v3.0.2.3_refinada_performance_centro"
 
 def main(img_name,output_file, sigma, cy, cx):
-    to = time.time()
+    t0 = time.time()
+    ####################################################################################################################
     results = levantar_imagen(img_name, cy, cx, sigma)
-    edge_type = 'devernay'
+
+    ####################################################################################################################
+    print("Step 1.0 Preprocessing")
+    preprocesamiento.main(results)
+
+    ####################################################################################################################
     print("Step 2.0: Detectar bordes")
-    deteccion_de_bordes(results, edges=edge_type)
-    tf = time.time()
-    print(f'Execution Time {tf-to:.1f}')
+    edge_detector.main(results)
 
+    ####################################################################################################################
     print("Step 3.0: Muestreo de bordes")
-    to = time.time()
-    spyder.main(results)
-    tf = time.time()
-    print(f'Execution Time {tf-to:.1f}')
-    listaCadenas, img = results['listaCadenas'], results['img']
-    ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, "./chains.png", labels=False, gris=True, color=True
-    )
-    print("Step 6.0: Unir Cadenas")
+    muestreo.main(results)
+
+    ####################################################################################################################
+    print("Step 4.0: Unir Cadenas")
     step = "Step6.0"
-
     union.unir_cadenas(results, step=step)
-    listaCadenas, img = results['listaCadenas'], results['img']
-    ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, "./grouping_chains.png", labels=False, gris=True
-    )
-    # save_results(results)
 
-    # save_system_status(results)
-    # results = load_system_status(nro_imagen, False, VERSION, VERSION)
-    tf = time.time()
+    ####################################################################################################################
+    print("Step 5.0: Post procesamiento")
     union.postprocesamiento_etapa_2(results, step)
-    results['tiempo_post'] = time.time() - tf
-    tiempo_post = results['tiempo_post']
-    print(f'postproceso: {tiempo_post:0.1f}')
 
-    ##save results
-    listaCadenas, img = results['listaCadenas'], results['img']
-    ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, output_file, labels=False, gris=True
-    )
-    save_results(results)
+    ####################################################################################################################
+    print("Step 6.0: Saving Results")
+    save_results(results, output_file)
+
+    ####################################################################################################################
+    tf = time.time()
+    print(f'Total exec time: {tf-t0:.1f} seconds')
 
     return results
 
