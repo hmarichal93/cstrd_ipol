@@ -181,8 +181,12 @@ def postprocesamiento_etapa_2(datos,step):
     datos['listaCadenas'], datos['listaPuntos'] = listaCadenas,listaPuntos
     union_post.main_postprocesamiento(datos, debug=False)
 
-    listaCadenas, listaPuntos, M, N = datos['listaCadenas'], datos['listaPuntos'], datos['M'], datos['N']
-    img, SAVE_PATH, gradFase, centro = datos['img'], datos['save_path'], datos['gradFase'], datos['centro']
+    listaCadenas, img = datos['listaCadenas'], datos['img']
+    ch.visualizarCadenasSobreDisco(
+        listaCadenas, img, f"{datos['save_path']}/postprocessing.png", labels=False, gris=True
+    )
+
+    return 0
 
 def convertir_cadena_shapely_a_cadena(cadenas_incompletas_shapely, cadenas_incompletas, subconjunto_cadenas_interiores_shapely):
     conjunto_cadenas_interiores = [cadenas_incompletas[cadenas_incompletas_shapely.index(cad_shapely)]

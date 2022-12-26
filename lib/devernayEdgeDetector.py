@@ -73,7 +73,6 @@ class devernayEdgeDetector:
         gray = img*255 #cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
         gray = np.uint8(gray)
         # Write to disk
-        print(self.image_path)
         cv2.imwrite(self.image_path, gray)
         #data.save(f"{str(self.root_path)}/test.pgm"
 
