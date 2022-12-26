@@ -14,6 +14,7 @@ from scipy.interpolate import CubicSpline
 import logging 
 
 #from dentro_utils.io import write_json,load_json, load_data, save_dots, Nr
+import lib.utils
 
 Nr = 360
 
@@ -597,7 +598,8 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
     #figsize=(10,10)
     if gris:
         plt.figure(figsize=figsize)
-        plt.imshow(img[:,:,1],cmap='gray')
+        imageGray = utils.rgbToluminance(img)
+        plt.imshow(imageGray,cmap='gray')
         contador = 0
         for cadena in listaCadenas:
             x,y = cadena.getDotsCoordinates()
