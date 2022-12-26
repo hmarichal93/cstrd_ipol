@@ -179,12 +179,16 @@ def postprocesamiento_etapa_2(datos,step):
     listaCadenas, listaPuntos = datos['listaCadenas'], datos['listaPuntos']
     listaCadenas,listaPuntos, MatrizEtiquetas = ch.renombrarCadenas(listaCadenas,listaPuntos, datos['M'], datos['N'])
     datos['listaCadenas'], datos['listaPuntos'] = listaCadenas,listaPuntos
+    t0=time.time()
     union_post.main_postprocesamiento(datos, debug=False)
 
     listaCadenas, img = datos['listaCadenas'], datos['img']
     ch.visualizarCadenasSobreDisco(
         listaCadenas, img, f"{datos['save_path']}/postprocessing.png", labels=False, gris=True
     )
+    tf = time.time()
+    datos['time_post'] = tf-t0
+    print(f'Post: {tf-t0:.1f} seconds')
 
     return 0
 
