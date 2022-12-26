@@ -12,6 +12,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 # copy the code to $bin
 ENV bin /workdir/bin/
+ENV output_dir /home/ipol
 RUN mkdir -p $bin
 WORKDIR $bin
 COPY . .
