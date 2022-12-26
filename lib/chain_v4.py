@@ -15,7 +15,7 @@ import logging
 
 
 def rgbToluminance(img):
-    if img.dim>2:
+    if img.ndim>2:
         M, N, C = img.shape
     else:
         M,N = img.shape
