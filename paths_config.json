@@ -4,7 +4,7 @@
     "metadata": "/data/maestria/datasets",
     "models": "../../models",
     "training": "../../training",
-    "results": "/workdir/bin/output",
+    "results": "/home/ipol",
     "centro": "/home/henry/Documents/repo/fing/deteccion_centro/Ant_colony_for_pith_estimation/build",
     "devernay": "/workdir/bin/externas/devernay_1.0",
     "home" : "/home/ipol"
