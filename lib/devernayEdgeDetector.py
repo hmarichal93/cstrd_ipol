@@ -16,6 +16,7 @@ warnings.filterwarnings("ignore")
 
 from lib.io import get_path
 from lib.io import pliegoGrados
+import lib.chain_v4 as ch
 
 BACKGROUND_VALUE=-1
 
@@ -181,7 +182,10 @@ def main(datos):
     to = time.time()
     detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH)
     thetaMat, gradientMat, Gx, Gy, img_labels, lista_curvas = detector.detect()
-    cv2.imwrite(f"{SAVE_PATH}/edge_detector.png", np.where(img_labels > 0, 255, 0).astype(np.uint8))
+    #cv2.imwrite(f"{SAVE_PATH}/edge_detector.png", np.where(img_labels > 0, 255, 0).astype(np.uint8))
+    ch.visualizarCadenasSobreDisco(
+        [], np.where(img_labels > 0, 255, 0).astype(np.uint8),f"{SAVE_PATH}/edge_detector.png", labels=False, gris=True, color=True
+    )
     tf = time.time()
 
     datos['tiempo_bordes'] = tf - to
