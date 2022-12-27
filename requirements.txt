@@ -1,6 +1,6 @@
 numpy
 matplotlib
-opencv-python
+opencv-contrib-python-headless==4.5.5.64
 pandas
 scikit-learn
 natsort
