@@ -576,17 +576,17 @@ def recorrer_listas_algoritmo_lento(state,chain,recorrer_s_down, recorrer_s_up):
     return S_up, S_down
 def control_cadenas_en_ambos_grupos(state,S_up, S_down):
     up_down = [cad for cad in S_up if cad in S_down]
-    if len(up_down) > 0 :
-        ch.visualizarCadenasSobreDiscoTodas([state.chain] + S_up + S_down, state.img, state.lista_cadenas,
-                                            f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
-                                            save=state.path, labels=True)
-        state.iteracion += 1
-        ch.visualizarCadenasSobreDiscoTodas([state.chain] + up_down, state.img, state.lista_cadenas,
-                                            f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
-                                            save=state.path, labels=True)
-
-        state.iteracion += 1
-        print(up_down)
+    # if len(up_down) > 0 :
+    #     ch.visualizarCadenasSobreDiscoTodas([state.chain] + S_up + S_down, state.img, state.lista_cadenas,
+    #                                         f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
+    #                                         save=state.path, labels=True)
+    #     state.iteracion += 1
+    #     ch.visualizarCadenasSobreDiscoTodas([state.chain] + up_down, state.img, state.lista_cadenas,
+    #                                         f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
+    #                                         save=state.path, labels=True)
+    #
+    #     state.iteracion += 1
+    #     print(up_down)
 
     return up_down
 def armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,todas,fast=True):

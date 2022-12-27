@@ -49,7 +49,7 @@ class Curve:
 
 
 class devernayEdgeDetector:
-    def __init__(self,img,centro,save_path, sigma=1.5, lowthreshold=5, highthreshold=15, debug=False, nombre='0'):
+    def __init__(self,img,centro,save_path, sigma=4, lowthreshold=5, highthreshold=20, debug=False, nombre='0'):
         self.nombre = nombre
         self.s = sigma
         self.l = lowthreshold
@@ -180,7 +180,7 @@ def main(datos):
                                           datos['sigma']
     image = datos['img_prep']
     to = time.time()
-    detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH)
+    detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH, sigma=sigma)
     thetaMat, gradientMat, Gx, Gy, img_labels, lista_curvas = detector.detect()
     #cv2.imwrite(f"{SAVE_PATH}/edge_detector.png", np.where(img_labels > 0, 255, 0).astype(np.uint8))
     ch.visualizarCadenasSobreDisco(

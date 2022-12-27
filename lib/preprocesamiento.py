@@ -11,7 +11,7 @@ def main(datos, kernel_size = 21):
     t0 = time.time()
     imageGray = utils.rgbToluminance(img)
     img_eq = equalize_adapthist(np.uint8(imageGray), clip_limit=0.03)
-    img_blur = cv2.GaussianBlur(img_eq, (kernel_size, kernel_size), sigmaX=sigma, sigmaY=sigma)
+    img_blur = img_eq#cv2.GaussianBlur(img_eq, (kernel_size, kernel_size), sigmaX=sigma, sigmaY=sigma)
     #cv2.imwrite(f"{SAVE_PATH}/preprocessing_output.png", img_blur*255)
     ch.visualizarCadenasSobreDisco(
         [], img_blur*255,f"{SAVE_PATH}/preprocessing_output.png", labels=False, gris=True, color=True
