@@ -1,6 +1,6 @@
 # use one of the images from this repository: https://github.com/centreborelli/ipol-docker-images/
-#FROM registry.ipol.im/ipol:v1-py3.9
-FROM python:3.11
+FROM registry.ipol.im/ipol:v1-py3.9
+#FROM python:3.11
 
 # install additional debian packages
 COPY .ipol/packages.txt packages.txt
@@ -28,7 +28,7 @@ ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION python
 ENV PATH $bin:$PATH
 ENV PATH $outputdir:$PATH
 
-# $HOME is writable by the user `ipol`, but 
+# $HOME is writable by the user `ipol`, but
 ENV HOME /home/ipol
 # chmod 777 so that any user can use the HOME, in case the docker is run with -u 1001:1001
 RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME
