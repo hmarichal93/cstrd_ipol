@@ -1,6 +1,6 @@
 # use one of the images from this repository: https://github.com/centreborelli/ipol-docker-images/
-FROM registry.ipol.im/ipol:v1-py3.9
-#FROM python:3.11
+#FROM registry.ipol.im/ipol:v1-py3.9
+FROM python:3.11
 
 # install additional debian packages
 COPY .ipol/packages.txt packages.txt
