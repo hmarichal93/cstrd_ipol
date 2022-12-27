@@ -150,26 +150,3 @@ def main(datos):
     print(f'Sampling: {tf-t0:.1f} seconds')
 
     return 0
-
-if __name__=='__main__':
-    from skimage.exposure import  equalize_adapthist
-
-    image_file_name = "/media/data/maestria/datasets/FOTOS_DISCOS_1/segmentadas/F2A_CUT_up.tif"
-
-    #image_file_name = "/media/data/maestria/datasets/artificiales/segmentadas/example_10.tif"
-    image = cv2.imread(image_file_name)
-    (h, w) = image.shape[:2]
-    (cX, cY) = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D((cX, cY), 45, 1.0)
-    rotated = cv2.warpAffine(image, M, (w, h))
-    sigma = 4.5
-    high=15
-    low=5
-    centro = [1204,1264]
-    #centro = [500,500]
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    #img_seg = utils.segmentarImagen(gray, debug=False)
-    img_eq = equalize_adapthist(np.uint8(gray), clip_limit=0.03)
-    detector = devernayEdgeDetector(10,img_eq,centro[::-1],"./", sigma=sigma,highthreshold=high,lowthreshold=low)
-    img_bin,bin_sin_pliegos,thetaMat ,nonMaxImg,gradientMat,Gx,Gy,img_labels,listaCadenas,listaPuntos,lista_curvas = detector.detect()
-    spyder = SpyderWeb(Nr=360,img=image,lista_curvas=lista_curvas,centro=centro[::-1],save_path=".")

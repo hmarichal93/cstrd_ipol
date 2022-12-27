@@ -1,9 +1,8 @@
 numpy
-matplotlib==3.6.2
-scikit-image==0.19.3
-opencv-python==4.5.1.48
-pandas==1.5.2
-scikit-learn==1.2.0
-shapely==1.7.0
-natsort==8.2.0
-glob2==0.7
+matplotlib
+opencv-python
+pandas
+scikit-learn
+natsort
+glob2
+shapely==1.7

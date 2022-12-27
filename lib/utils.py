@@ -5,28 +5,20 @@ Created on Sun Feb  7 12:01:24 2021
 
 @author: henry
 """
-import matplotlib.pyplot as plt
-import numpy as np
-import imageio
 
+import imageio
+import os
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import skimage.data as data
-import skimage.segmentation as seg
-import skimage.filters as filters
-import skimage.draw as draw
-import skimage.color as color
-from scipy import stats
+
 from lib.io import Nr
-from skimage.transform import AffineTransform, warp
-from skimage.transform import rotate
+
 
 #segmentar
-from skimage.filters import median
-from skimage.morphology import disk
+
 from scipy import ndimage
 from scipy import ndimage as ndi
-from skimage.feature import canny
 import pandas as pd
 from PIL import Image
 import re
@@ -108,8 +100,7 @@ def save_results(datos,output_file):
     return 0
 
     
-import os
-from pathlib import Path
+
 
 def setup_log(nroImagen,VERSION):
     logname = f"./logs/{nroImagen}.log"
@@ -193,50 +184,6 @@ def image_show(image, nrows=1, ncols=1, cmap='gray'):
     ax.imshow(image, cmap='gray')
     ax.axis('off')
     return fig, ax
-
-def segmentarImagen(imageGray,debug=False):
-
-
-    I = median(imageGray,disk(5))
-    #image_show(I)
-    edges = canny(I/255.)
-    #fill_coins = ndi.binary_fill_holes(edges)
-    if debug:
-        image_show(edges)
-    
-    
-    
-    # Elemento estructura1 conectividad 8
-    struct2 = ndimage.generate_binary_structure(2,2)
-    
-    iteraciones=6
-    
-    dil = ndimage.binary_dilation(edges,structure=struct2,iterations=iteraciones).astype(edges.dtype)
-    
-    #image_show(dil)
-    
-    # llenar
-    
-    fill_coins = ndi.binary_fill_holes(dil)
-    #image_show(fill_coins)
-    
-    
-    
-    
-    iteraciones=30
-    
-    ero = ndimage.binary_erosion(fill_coins,structure=struct2,iterations=iteraciones).astype(fill_coins.dtype)
-    dil2 = ndimage.binary_dilation(ero,structure=struct2,iterations=iteraciones-5).astype(edges.dtype)
-    
-    #image_show(dil2)
-    
-    
-    tronco = np.where(dil2==True)
-    
-    img_seg = np.zeros(imageGray.shape)   
-    img_seg[tronco] = imageGray[tronco]
-
-    return img_seg
 
 def rgbToluminance(img):
         M,N,C = img.shape
