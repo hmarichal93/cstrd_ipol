@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--th_low", type=int, required=False)
 
     args = parser.parse_args()
-    save_config(args)
+    save_config(args, args.root)
 
     main(args.input, args.root, args.cy, args.cx)
 
