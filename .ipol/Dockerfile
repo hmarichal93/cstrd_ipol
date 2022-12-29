@@ -16,6 +16,7 @@ ENV bin /workdir/bin/
 RUN mkdir -p $bin
 WORKDIR $bin
 COPY . .
+RUN chmod -R 777 $bin && mkdir -p $bin/output
 
 # compile libraries
 RUN cd $bin/externas/devernay_1.0 && make
@@ -32,5 +33,5 @@ ENV PATH $outputdir:$PATH
 ENV HOME /home/ipol
 # chmod 777 so that any user can use the HOME, in case the docker is run with -u 1001:1001
 RUN groupadd -g 1000 ipol && useradd -m -u 1000 -g 1000 ipol -d $HOME && chmod -R 777 $HOME
-RUN chmod -R 777 $bin
+
 USER ipol
