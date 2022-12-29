@@ -9,7 +9,7 @@ Created on Fri May 28 10:54:53 2021
         - corrigue superposicion de cadenas azules con rojas.
 """
 import time
-
+from pathlib import Path
 
 import lib.devernayEdgeDetector as edge_detector
 from lib.io import load_image, get_path, load_json, write_json
@@ -54,8 +54,8 @@ def main(img_name,output_dir, cy, cx):
 
     return results
 
-def save_config(args, config_filename = './config/default.json'):
-    config = load_json(config_filename)
+def save_config(args, root_path):
+    config = load_json(Path(root_path) / './config/default.json')
     if args.nr:
         config['Nr'] = args.nr
 
