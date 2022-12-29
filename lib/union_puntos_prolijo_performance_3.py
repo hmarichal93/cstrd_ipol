@@ -414,7 +414,7 @@ def criterio_kmeans(cadena_candidata, cadena_origen, extremo, cadena_soporte, ve
                                             histograma_test=False), distancia_entre_bordes
 
 def main(chain_list, dot_list, intersections_matrix, img_orig, grad_phase, img_center, path=None, radial_tolerance=2,
-         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2,der_desde_centro=False, fast=False):
+         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2,der_desde_centro=False, fast=True):
     state = SystemStatus(dot_list, chain_list, intersections_matrix, grad_phase, img_center, img_orig, distancia_angular_maxima,
                          radio_limit=radial_tolerance,path=path,debug=debug_imgs, ancho_std = ancho_std, derivada_desde_centro= der_desde_centro)
     del dot_list
