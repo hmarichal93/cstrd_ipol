@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--input", type=str, required=True)
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
-    parser.add_argument("--outputdir", type=str, required=True)
+    parser.add_argument("--root", type=str, required=True)
 
     parser.add_argument("--sigma", type=float, required=True)
     parser.add_argument("--nr", type=int, required=False)
@@ -100,6 +100,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     save_config(args)
 
-    main(args.input, args.outputdir, args.cy, args.cx)
+    main(args.input, args.root, args.cy, args.cx)
 
 
