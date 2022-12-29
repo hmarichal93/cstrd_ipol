@@ -43,7 +43,7 @@ def load_image(image_name, cy, cx, working_dir,output_dir):
     results['config'] = config
     results['img'] = img
     results['centro'] = centro
-    results['save_path'] = output_dir
+    results['save_path'] = Path(output_dir)
     results['M'] = M
     results['debug'] = False
 
