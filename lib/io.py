@@ -7,13 +7,11 @@ import numpy as np
 import pandas as pd
 import imageio
 import matplotlib.pyplot as plt
+import cv2
 
 import lib.chain_v4 as ch
 
-Nr = 360
-ANGLE_THRESHOLD = 45
-pliegoGrados = 60
-UMBRAL_PEGAR = 0.1
+
 
 
 def img_show(img, centro, save=None, titulo=None, color="gray", debug=False):
@@ -32,28 +30,20 @@ def img_show(img, centro, save=None, titulo=None, color="gray", debug=False):
     plt.close()
     return fig
 
-
-def cargarImagen(filename):
-    # CARGAR IMAGENES DE INTERES
-    imagen_original = imageio.imread(filename)
-
-    return imagen_original
-
-
-def levantar_imagen(image_name, cy, cx, sigma, output_dir):
+def load_image(image_name, cy, cx, output_dir):
     centro = ( cy, cx)
-
+    config = load_json("./config/general.json")
     results = {}
 
-    img = cargarImagen(image_name)
+    img = cv2.imread(image_name)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     M, N, _ = img.shape
 
+    results['config'] = config
     results['img'] = img
-
     results['centro'] = centro
     results['save_path'] = Path(output_dir)
-    results['sigma'] = sigma
     results['M'] = M
     results['debug'] = False
 
@@ -196,7 +186,7 @@ def from_matrix_to_list_dots(matrix):
 
 
 def load_system_status(nroImagen, display, version_salvar, version_cargar):
-    results = levantar_imagen(nroImagen, display, version_cargar, version_salvar, debug=True)
+    results = load_image(nroImagen, display, version_cargar, version_salvar, debug=True)
     save_path = results['save_path']
     load_path = results['load_path']
     gradFase = np.genfromtxt(f"{load_path}/gradFase.csv")
