@@ -16,7 +16,7 @@ ENV bin /workdir/bin/
 RUN mkdir -p $bin
 WORKDIR $bin
 COPY . .
-RUN chmod -R 777 $bin && mkdir -p $bin/output
+RUN mkdir -p $bin/output && chmod -R 777 $bin
 
 # compile libraries
 RUN cd $bin/externas/devernay_1.0 && make
