@@ -60,7 +60,8 @@ def save_config(args, root_path):
         config['Nr'] = args.nr
 
     if args.hsize and args.wsize:
-        config['resize'] = [args.hsize, args.wsize]
+        if args.hsize>0 and args.wsize>0:
+            config['resize'] = [args.hsize, args.wsize]
 
     if args.min_lenght:
         config["min_chain_lenght"] = args.min_lenght
