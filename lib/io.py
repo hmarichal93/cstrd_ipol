@@ -32,7 +32,7 @@ def img_show(img, centro, save=None, titulo=None, color="gray", debug=False):
 
 def load_image(image_name, cy, cx, working_dir):
     centro = ( cy, cx)
-    config = load_json(f"{working_dir}./config/general.json")
+    config = load_json(f"{working_dir}/config/general.json")
     results = {}
 
     img = cv2.imread(image_name)
@@ -43,7 +43,7 @@ def load_image(image_name, cy, cx, working_dir):
     results['config'] = config
     results['img'] = img
     results['centro'] = centro
-    results['save_path'] = Path(working_dir / "output")
+    results['save_path'] = Path(working_dir) / "output"
     results['M'] = M
     results['debug'] = False
 
