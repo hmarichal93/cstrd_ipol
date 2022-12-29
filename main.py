@@ -12,19 +12,17 @@ import time
 
 
 import lib.devernayEdgeDetector as edge_detector
-from lib.io import levantar_imagen
+from lib.io import load_image, get_path, load_json, write_json
 import lib.spyder_web_4 as muestreo
-import lib.chain_v4 as ch
 import lib.unir_cadenas_prolijo_3 as union
 from lib.utils import save_results
 import lib.preprocesamiento as preprocesamiento
 
-VERSION = "v3.0.2.3_refinada_performance_centro"
 
-def main(img_name,output_dir, sigma, cy, cx):
+def main(img_name,output_dir, cy, cx):
     t0 = time.time()
     ####################################################################################################################
-    results = levantar_imagen(img_name, cy, cx, sigma,output_dir)
+    results = load_image(img_name, cy, cx, output_dir)
 
     ####################################################################################################################
     print("Step 1.0 Preprocessing")
@@ -56,18 +54,52 @@ def main(img_name,output_dir, sigma, cy, cx):
 
     return results
 
+def save_config(args, config_filename = './config/default.json'):
+    config = load_json(config_filename)
+    if args.nr:
+        config['Nr'] = args.nr
+
+    if args.hsize and args.wsize:
+        config['resize'] = [args.hsize, args.wsize]
+
+    if args.min_lenght:
+        config["min_chain_lenght"] = args.min_lenght
+
+    if args.edge_th:
+        config["edge_th"] = args.edge_th
+
+    if args.sigma:
+        config['sigma'] = args.sigma
+
+    if args.th_high:
+        config['th_high'] = args.th_high
+
+    if args.th_low:
+        config['th_low'] = args.th_low
+
+    write_json(config,get_path('config') / 'general.json')
+
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, required=True)
-    parser.add_argument("--sigma", type=float, required=True)
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
     parser.add_argument("--outputdir", type=str, required=True)
 
-    args = parser.parse_args()
+    parser.add_argument("--sigma", type=float, required=True)
+    parser.add_argument("--nr", type=int, required=False)
+    parser.add_argument("--hsize", type=int, required=False)
+    parser.add_argument("--wsize", type=int, required=False)
+    parser.add_argument("--min_lenght", type=int, required=False)
+    parser.add_argument("--edge_th", type=int, required=False)
+    parser.add_argument("--th_high", type=int, required=False)
+    parser.add_argument("--th_low", type=int, required=False)
 
-    main(args.input, args.outputdir, args.sigma, args.cy, args.cx)
+    args = parser.parse_args()
+    save_config(args)
+
+    main(args.input, args.outputdir, args.cy, args.cx)
 
 
