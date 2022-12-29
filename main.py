@@ -19,10 +19,10 @@ from lib.utils import save_results
 import lib.preprocesamiento as preprocesamiento
 
 
-def main(img_name,output_dir, cy, cx):
+def main(img_name,root_dir,output_dir, cy, cx):
     t0 = time.time()
     ####################################################################################################################
-    results = load_image(img_name, cy, cx, output_dir)
+    results = load_image(img_name, cy, cx, root_dir,output_dir)
 
     ####################################################################################################################
     print("Step 1.0 Preprocessing")
@@ -87,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
     parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, required=True)
 
     parser.add_argument("--sigma", type=float, required=True)
     parser.add_argument("--nr", type=int, required=False)
@@ -100,6 +101,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     save_config(args, args.root)
 
-    main(args.input, args.root, args.cy, args.cx)
+    main(args.input, args.root, args.output_dir,args.cy, args.cx)
 
 
