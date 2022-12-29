@@ -55,7 +55,7 @@ def main(img_name,output_dir, cy, cx):
     return results
 
 def save_config(args, root_path):
-    config = load_json(Path(root_path) / './config/default.json')
+    config = load_json(Path(root_path) / 'config/default.json')
     if args.nr:
         config['Nr'] = args.nr
 
@@ -77,7 +77,7 @@ def save_config(args, root_path):
     if args.th_low:
         config['th_low'] = args.th_low
 
-    write_json(config,get_path('config') / 'general.json')
+    write_json(config, Path(root_path) / 'config/general.json')
 
 
 if __name__ == "__main__":
