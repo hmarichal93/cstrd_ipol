@@ -1,6 +1,6 @@
 import numpy as np
+
 import lib.chain_v4 as ch
-from lib.io import Nr
 from lib.utils import write_log
 
 MODULE_NAME = 'interpolacion'
@@ -57,7 +57,7 @@ def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_t
 def calcular_dominio_de_interpolacion(extremo, extremo_cad1, extremo_cad2):
     dominio_de_interpolacion = []
 
-    step = 360 / Nr if extremo in 'B' else -360 / Nr
+    step = 360 / extremo_cad1.Nr if extremo in 'B' else -360 / extremo_cad1.Nr
     angulo_actual = extremo_cad1.angulo
     while angulo_actual %360 != extremo_cad2.angulo:
         angulo_actual += step
@@ -102,6 +102,7 @@ def generar_lista_puntos_entre_dos_distancias_radiales(r2, r1, total_de_puntos, 
             "radio": radio_inter,
             "gradFase": -1,
             "cadenaId": cad_id,
+            "Nr": cad.Nr
         }
 
         punto = ch.Punto(**params)

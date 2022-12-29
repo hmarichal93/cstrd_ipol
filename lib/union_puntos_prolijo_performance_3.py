@@ -19,13 +19,12 @@ import glob
 from natsort import natsorted
 
 import lib.chain_v4 as ch
-from lib.io import write_json,load_json, load_data, save_dots, Nr, pliegoGrados
+from lib.io import write_json,load_json, load_data, save_dots
 from lib.utils import write_log
 from lib.interpolacion import completar_cadena_via_anillo_soporte, pegar_dos_cadenas_interpolando_via_cadena_soporte, \
     generar_lista_puntos_entre_dos_distancias_radiales, calcular_dominio_de_interpolacion, interpolar_en_domino
 from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_derivada_maxima, criterio_distribucion_radial,\
-    hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, InfoBandaVirtual, \
-    hay_cadenas_superpuestas_en_banda, criterio_diferencia_radial_maxima,angulo_entre_extremos_cadenas
+    hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, InfoBandaVirtual
 from lib.dibujar import Color, Dibujar
 from lib.celdas import Celda, ROJO
 
@@ -34,7 +33,7 @@ NOT_REPETING_CHAIN = -1
 
 
 class SystemStatus:
-    def __init__(self,lista_puntos,lista_cadenas,matriz_intersecciones,grad_fase,centro_img,img,distancia_angular,
+    def __init__(self,lista_puntos,lista_cadenas,matriz_intersecciones,centro_img,img,distancia_angular,
                 path=None,radio_limit=0.1,debug=False, ancho_std=2, derivada_desde_centro = False):
         self.desde_el_centro = derivada_desde_centro
         self.path = path
@@ -45,7 +44,6 @@ class SystemStatus:
         self.angular_distance = distancia_angular
         self.__sort_chain_list_and_update_relative_position()
         self.matriz_intersecciones = matriz_intersecciones
-        self.grad_fase = grad_fase
         self.centro = centro_img
         self.img = img
         self.M = img.shape[0]
@@ -65,7 +63,7 @@ class SystemStatus:
 
     def buscar_cadena_comun_a_ambos_extremos(self, chain):
         dominio_angular_cadena_soporte = chain._completar_dominio_angular(chain)
-        dominio_a_completar = [angulo for angulo in np.arange(0,360,360/Nr) if angulo not in dominio_angular_cadena_soporte]
+        dominio_a_completar = [angulo for angulo in np.arange(0,360,360/chain.Nr) if angulo not in dominio_angular_cadena_soporte]
         dominio_a_completar += [chain.extA.angulo, chain.extB.angulo]
         cadenas_en_dominio_a_completar = []
         for cadena in self.lista_cadenas:
@@ -123,7 +121,7 @@ class SystemStatus:
         f"idx {self.next_chain_index} cad.id {self.lista_cadenas[self.next_chain_index].label_id} size "
         f"{self.lista_cadenas[self.next_chain_index].size} total_cadenas {len(self.lista_cadenas)}")
         self.chain_size_at_the_begining_of_iteration = len(self.lista_cadenas)
-        if chain.esta_completa(regiones=8) and chain.size < Nr:
+        if chain.esta_completa(regiones=8) and chain.size < chain.Nr:
             self.completar_cadena_si_no_hay_interseccion_con_otras(chain)
 
         return chain
@@ -413,9 +411,9 @@ def criterio_kmeans(cadena_candidata, cadena_origen, extremo, cadena_soporte, ve
                                             debug=None,
                                             histograma_test=False), distancia_entre_bordes
 
-def main(chain_list, dot_list, intersections_matrix, img_orig, grad_phase, img_center, path=None, radial_tolerance=2,
-         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2,der_desde_centro=False, fast=True):
-    state = SystemStatus(dot_list, chain_list, intersections_matrix, grad_phase, img_center, img_orig, distancia_angular_maxima,
+def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=None, radial_tolerance=2,
+         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2, der_desde_centro=False, fast=False):
+    state = SystemStatus(dot_list, chain_list, intersections_matrix, img_center, img_orig, distancia_angular_maxima,
                          radio_limit=radial_tolerance,path=path,debug=debug_imgs, ancho_std = ancho_std, derivada_desde_centro= der_desde_centro)
     del dot_list
     del chain_list
@@ -483,56 +481,13 @@ def main(chain_list, dot_list, intersections_matrix, img_orig, grad_phase, img_c
 
     #rellenar cadenas completas
     for chain in state.lista_cadenas:
-        if chain.esta_completa(regiones=8) and chain.size < Nr:
+        if chain.esta_completa(regiones=8) and chain.size < chain.Nr:
                 state.completar_cadena_si_no_hay_interseccion_con_otras(chain)
 
     #if debug_imgs:
     #    state.generate_pdf()
     control_puntos_cadenas(state.lista_cadenas)
     return state.lista_puntos, state.lista_cadenas, state.matriz_intersecciones
-
-def remover_intersectantes_segun_sentido(chain, S_up, state,sentido='up'):
-    label = 'remover_intersectantes_segun_sentido'
-    # 1.0 ordeno las cadenas por tamaño
-    S_up.sort(key=lambda x: x.size,reverse=True)
-    # 2.0 recorro las cadenas 1.1
-    idx = 0
-    tamaño_maximo_de_cadena_ruidosa_en_grados = 90
-    while idx < len(S_up):
-        ch_up = S_up[idx]
-        if ch_up.size <= tamaño_maximo_de_cadena_ruidosa_en_grados * Nr / 360:
-            idx+=1
-            continue
-
-        id_cadenas_intersectantes = np.where(state.matriz_intersecciones[ch_up.id] == 1)[0]
-        cadenas_intersectantes_s_up = [cad for cad in S_up if
-                                       cad.id in id_cadenas_intersectantes and ch_up.id != cad.id]
-
-        # elimino todas las cadenas que estan por arriba/abajo de ch_up si sentido up/down
-        for intersectante in cadenas_intersectantes_s_up:
-                res = ch_up.posicion_relativa(intersectante)
-                if res < 0:
-                    write_log(MODULE_NAME, label,
-                              f"S_up ch_up ({ch_up.label_id},size:{ch_up.size}) NO_INTERSECTA cad_intersectante ({intersectante.label_id},{intersectante.size})")
-
-                if res == 0:
-                    # cad_intersectante esta abajo
-                    if sentido not in 'up':
-                        if intersectante in S_up:
-                            inter_idx = S_up.index(intersectante)
-                            S_up.pop(inter_idx)
-
-                elif res > 0:
-                    # intersectante esta arriba
-                    if sentido in 'up':
-                        if intersectante in S_up:
-                            inter_idx = S_up.index(intersectante)
-                            S_up.pop(inter_idx)
-
-        idx = S_up.index(ch_up)
-        idx+=1
-
-
 
 def ordenar_cadenas(S_up,chain):
     #TODO ordenar con orden relativo a chain. Es decir, el elemento 0 es el elemento que incluye al angulo del extremoA de chain.
@@ -653,7 +608,7 @@ def buscar_cadena_candidata_a_pegar_con_simetria(state, chain, S_up, S_up_no_int
               f"iter: {state.iteracion} cad.id {ch_up.label_id} border {border} candidata {candidata_a.label_id if candidata_a is not None else None}")
     # if candidata_a is not None:
     #     state.buscar_cadena_candidata_a_pegar_add_data_to_hash_dict(chain, ch_up, candidata_a, border)
-    if candidata_a is not None and (candidata_a.size + ch_up.size) > Nr:
+    if candidata_a is not None and (candidata_a.size + ch_up.size) > candidata_a.Nr:
         candidata_a = None
 
     return candidata_a
@@ -996,7 +951,7 @@ def controles_de_verificacion( state, ch_up, next_chain, chain, border,  S_up, s
         return res
 
     #0. Criterio de size
-    if ch_up.size + next_chain.size > Nr:
+    if ch_up.size + next_chain.size > ch_up.Nr:
          return (False,-1)
 
     #1. Extremo valido de interseccion
@@ -1653,25 +1608,6 @@ def check_cumulative_radio(cadena,cadena_down_up,cadena_limite,extremo,umbral,de
         return True,np.abs(radio_acumulado_candidata - radio_acumulado)
     else:
         return False,-1
-import lib.edges_filter as edges
-
-def check_angle_between_borders(cadena,cadena_candidata,extremo):
-    label='check_angle_between_borders'
-    dot_1 = cadena.extA if extremo in 'A' else cadena.extB
-    dot_2 = cadena_candidata.extB if extremo in 'A' else cadena_candidata.extA
-    vector_1 = np.array([float(dot_2.x)-float(dot_1.x),float(dot_2.y)-float(dot_1.y)])
-
-    centro = cadena.centro
-    vector_2 = np.array([float(dot_1.x)-centro[0],float(dot_1.y)-centro[0]])
-    constanteRadianes2grados = 180 / np.pi
-    alpha = edges.angle_between(vector_1, vector_2) * constanteRadianes2grados
-
-    write_log(MODULE_NAME,label,f"cad.id {cadena.label_id} candidata {cadena_candidata.label_id} {extremo} angulo_entre_vectores= {alpha} ")
-
-    if 60 < alpha < 120:
-        return True
-
-    return False
 
 
 def actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2):
@@ -1769,26 +1705,27 @@ def update_intersecciones(state,chain,nuevos_angulos):
 
 
 def llenar_angulos(extA, extB):
-
+    step = 360/extA.Nr
     if extA.angulo < extB.angulo:
-        rango = np.arange(extA.angulo, extB.angulo + 1)
+        rango = np.arange(extA.angulo, extB.angulo + step)
     else:
         rango1 = np.arange(extA.angulo, 360)
-        rango2 = np.arange(0, extB.angulo + 1)
+        rango2 = np.arange(0, extB.angulo + step)
         rango = np.hstack((rango2, rango1))
     # print(rango)
     return rango.astype(int)
 
 def cadenas_se_intersectan(cadena1, cadena2, costo=False):
 
-    tabla = np.zeros(Nr)
+    tabla = np.zeros(cadena1.Nr)
     # dominioAngular1 = cadena1.getDotsAngles()
     dominioAngular1 = llenar_angulos(cadena1.extA, cadena1.extB)
     for angulo in dominioAngular1:
-       tabla[angulo] = 1
+       idx_tabla = angulo * cadena1.Nr//360
+       tabla[idx_tabla] = 1
     # dominioAngular2 = cadena2.getDotsAngles()
     dominioAngular2 = llenar_angulos(cadena2.extA, cadena2.extB)
-    pos_intersect = np.where(tabla[dominioAngular2] > 0)[0]
+    pos_intersect = np.where(tabla[dominioAngular2 * cadena1.Nr //360] > 0)[0]
     # hay cadenas que se intersectan en los extremos. No son el mismo punto
     # pero el angulo debido al redondeo si lo es.
     if pos_intersect.shape[0] > 0:
@@ -1810,7 +1747,7 @@ def calcular_matriz_intersecciones_old(listaCadenas, costo=False, debug=False):
 
     return M_int
 
-def calcular_matriz_intersecciones(listaCadenas, listaPuntos, debug=False):
+def calcular_matriz_intersecciones(listaCadenas, listaPuntos,Nr, debug=False):
 
     M_int = np.eye(len(listaCadenas))
     for angulo in np.arange(0,360,360/Nr):

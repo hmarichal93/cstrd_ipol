@@ -15,7 +15,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from lib.io import get_path
-from lib.io import pliegoGrados
 import lib.chain_v4 as ch
 
 BACKGROUND_VALUE=-1
@@ -49,11 +48,12 @@ class Curve:
 
 
 class devernayEdgeDetector:
-    def __init__(self,img,centro,save_path, sigma=4, lowthreshold=5, highthreshold=20, debug=False, nombre='0'):
+    def __init__(self,img,centro,save_path, config, debug=False, nombre='0'):
         self.nombre = nombre
-        self.s = sigma
-        self.l = lowthreshold
-        self.h = highthreshold
+        self.s = config['sigma']
+        self.l = config['th_low']
+        self.h = config['th_high']
+        self.edge_th = config['edge_th']
         self.debug = debug
         self.img = img
         self.root_path = get_path('devernay')
@@ -66,6 +66,7 @@ class devernayEdgeDetector:
         self.non_max_path = f"{str(self.home)}/nonMax_{nombre}.txt"
         self.centro = centro
         self.save_path = save_path
+
         
     def __convert_image_to_pgm(self,img):
         #self.display_image_matrix(img,self.centro, f"{self.save_path}/original.png", "original")
@@ -87,18 +88,12 @@ class devernayEdgeDetector:
     def gradient(self):
         Gx = np.zeros_like(self.img).astype(float)
         Gy = np.zeros_like(self.img).astype(float)
-        mod = np.zeros_like(self.img).astype(float)
-        theta = np.zeros_like(self.img).astype(float)
-        # Gx[1:-1,1:-1] = np.loadtxt(self.gx_path).T
-        # Gy[1:-1,1:-1] = np.loadtxt(self.gy_path).T
-        # mod[1:-1,1:-1] = np.loadtxt(self.mod_path).T
+
 
         Gx[1:-1,1:-1] = pd.read_csv(self.gx_path,delimiter=" ",header=None).values.T
         Gy[1:-1,1:-1] = pd.read_csv(self.gy_path,delimiter=" ",header=None).values.T
-        #mod[1:-1,1:-1] = pd.read_csv(self.mod_path,delimiter=" ",header=None).values.T
-        #el angulo se calcula asi.
-        #theta = np.arctan2(Gy, Gx)
-        return mod,theta,Gx,Gy
+
+        return Gx,Gy
 
     @staticmethod
     def normalized_matrix( matrix):
@@ -125,7 +120,7 @@ class devernayEdgeDetector:
         gradient_normed = self.normalized_matrix(gradient)
 
         theta = np.arccos(np.clip((gradient_normed * Xb_normed).sum(axis=1),-1.0,1.0)) * 180 / np.pi
-        threshold = 90 - pliegoGrados
+        threshold = 90 - self.edge_th
         X_edges_filtered = curve_bin.copy()
         X_edges_filtered[theta > threshold] = -1
 
@@ -156,7 +151,6 @@ class devernayEdgeDetector:
         command = f"{str(self.root_path)}/devernay  {self.image_path} -s {self.s} -l {self.l} -h {self.h} -t {self.outputtxt} -p {str(self.root_path)}/output.pdf -g {str(self.root_path)}/output.svg -n {self.nombre}"
         os.system(command)
 
-
     def _delete_files(self):
         files = [ self.outputtxt, self.image_path, self.gx_path, self.gy_path, self.mod_path, self.non_max_path,
                   f"{str(self.root_path)}/output.pdf", f"{str(self.root_path)}/output.svg"]
@@ -168,20 +162,19 @@ class devernayEdgeDetector:
     def detect(self):
         self.__convert_image_to_pgm(self.img)
         self._execute_command()
-        self.gradientMat, self.thetaMat,self.Gx,self.Gy = self.gradient()
+        self.Gx,self.Gy = self.gradient()
         self.__load_curve_points_to_image()
         self._delete_files()
 
-        return self.thetaMat ,self.gradientMat, self.Gx, self.Gy, self.img_bin,self.curves_list
+        return  self.Gx, self.Gy, self.img_bin,self.curves_list
 
 
 def main(datos):
-    M, N, img, centro, SAVE_PATH, sigma = datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path'], \
-                                          datos['sigma']
+    M, N, img, centro, SAVE_PATH= datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path']
     image = datos['img_prep']
     to = time.time()
-    detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH, sigma=sigma)
-    thetaMat, gradientMat, Gx, Gy, img_labels, lista_curvas = detector.detect()
+    detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH, config= datos['config'])
+    Gx, Gy, img_labels, lista_curvas = detector.detect()
     #cv2.imwrite(f"{SAVE_PATH}/edge_detector.png", np.where(img_labels > 0, 255, 0).astype(np.uint8))
     ch.visualizarCadenasSobreDisco(
         [], np.where(img_labels > 0, 255, 0).astype(np.uint8),f"{SAVE_PATH}/edge_detector.png", labels=False, gris=True, color=True
@@ -190,14 +183,7 @@ def main(datos):
 
     datos['tiempo_bordes'] = tf - to
     print(f'Edge Detector: {tf - to:.1f} seconds')
-    datos['gradFase'] = thetaMat
-    datos['modulo'] = gradientMat
     datos['Gy'] = Gy
     datos['Gx'] = Gx
     datos['lista_curvas'] = lista_curvas
     return 0
-
-
-    
-    
-    

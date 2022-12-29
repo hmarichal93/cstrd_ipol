@@ -12,11 +12,9 @@ import cv2
 from shapely.geometry import LineString, Point, Polygon
 import glob
 from natsort import natsorted
-import matplotlib.pyplot as plt
 
 
 #propias
-from lib.io import Nr
 import lib.chain_v4 as ch
 import lib.union_puntos_prolijo_performance_3 as union
 import lib.union_cadenas_postprocesamiento as union_post
@@ -54,45 +52,44 @@ def from_polar_to_cartesian(r,angulo,centro):
 
 def unir_cadenas(datos):
     listaCadenas, listaPuntos,  M,N = datos['listaCadenas'], datos['listaPuntos'],datos['M'], datos['N']
-    img, SAVE_PATH, gradFase, centro =  datos['img'], datos['save_path'], datos['gradFase'], datos['centro']
+    img, SAVE_PATH,  centro =  datos['img'], datos['save_path'],  datos['centro']
     debug_imgs = datos['debug']
 
     to = time.time()
 
-    Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, listaPuntos)
+    Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, listaPuntos, Nr = datos['config']['Nr'])
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,gradFase,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,
                                              centro,  radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
                                                                 )
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,gradFase,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,
                                              centro, radial_tolerance = 0.2, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
                                                                 )
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                            gradFase, centro, radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
+                                            centro, radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
 
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                                                  gradFase, centro,
+                                                                   centro,
                                                                   radial_tolerance=0.2, distancia_angular_maxima=22,
                                                                   debug_imgs=debug_imgs, ancho_std=3)
 
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro, radial_tolerance = 0.1, distancia_angular_maxima = 45,
                                                                 debug_imgs=debug_imgs, todas_intersectantes=False, ancho_std=3)
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro, radial_tolerance= 0.2, distancia_angular_maxima=45,
                                                                 debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=3)
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img, gradFase,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro,radial_tolerance= 0.1, distancia_angular_maxima=22,
                                                                 debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=2, der_desde_centro= True)
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                                                  gradFase,
                                                                   centro, radial_tolerance=0.2,
                                                                   distancia_angular_maxima=45,
                                                                   debug_imgs=debug_imgs, todas_intersectantes=False,

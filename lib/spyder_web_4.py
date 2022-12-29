@@ -1,18 +1,12 @@
 import numpy as np
 import cv2
-from shapely.geometry import LineString, Point,Polygon
 from pathlib import Path
 import os
-import matplotlib.pyplot as plt
-from scipy.interpolate import CubicSpline
 import time
 
-from lib.devernayEdgeDetector import devernayEdgeDetector
-from lib.io import Nr
-from lib.celdas import Celda,distancia_entre_pixeles,OperacionesCelda,AMARILLO,VERDE,ROJO,NEGRO,NARANJA
+from lib.celdas import distancia_entre_pixeles
 from lib.dibujar import Dibujar
-from lib.utils import write_log
-from lib.objetos import Distribucion,Interseccion,Rayo,Curva,Segmento
+from lib.objetos import Interseccion,Rayo,Curva
 import lib.chain_v4 as ch
 
 MODULE = "spyder"
@@ -108,9 +102,10 @@ class SpyderWeb:
 
 
 def main(datos):
-    M,N,img,centro,SAVE_PATH,sigma = datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path'] , datos['sigma']
+    M,N,img,centro,SAVE_PATH = datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path']
     lista_curvas = datos['lista_curvas']
     save_path = datos['save_path']
+    Nr = datos['config']['Nr']
     t0 = time.time()
     spyder = SpyderWeb(Nr=Nr, img=img, lista_curvas=lista_curvas, centro=centro[::-1], save_path=save_path)
     listaPuntos = []
@@ -120,20 +115,21 @@ def main(datos):
         i, j, angulo, radio = inter.y , inter.x, inter.rayo_id, inter.radio(centro[::-1])
         #params={'x':np.uint16(i),'y':np.uint16(j),'angulo':angulo,'radio':radio,'gradFase':-1,'cadenaId':inter.curva_id}
         params = {'x': i, 'y': j, 'angulo': angulo, 'radio': radio, 'gradFase': -1,
-                  'cadenaId': inter.curva_id}
+                  'cadenaId': inter.curva_id,'Nr': Nr}
         punto = ch.Punto(**params)
         if punto not in listaPuntos:
-            listaPuntos.append(punto)
+            if len( [dot for dot in listaPuntos if dot.cadenaId == punto.cadenaId and dot.angulo == punto.angulo ]) == 0:
+                listaPuntos.append(punto)
 
     #agregar puntos artificiales pertenecientes al centro
     for angulo in np.arange(0,360,360/Nr):
         params = {'x': centro[1], 'y': centro[0], 'angulo': angulo, 'radio': 0, 'gradFase': -1,
-                  'cadenaId': centro_id }
+                  'cadenaId': centro_id ,'Nr': Nr}
         punto = ch.Punto(**params)
         listaPuntos.append(punto)
 
 
-    listaCadenas = ch.asignarCadenas(listaPuntos, centro[::-1], M, N,centro_id=centro_id)
+    listaCadenas = ch.asignarCadenas(listaPuntos, centro[::-1], M, N,centro_id=centro_id, min_chain_lenght=datos['config']['min_chain_lenght'])
 
 
     listaCadenas, listaPuntos, MatrizEtiquetas = ch.renombrarCadenas(listaCadenas, listaPuntos, M, N)
@@ -145,6 +141,7 @@ def main(datos):
     ch.visualizarCadenasSobreDisco(
         listaCadenas, img, f"{datos['save_path']}/chains.png", labels=False, gris=True, color=True
     )
+
     tf = time.time()
     datos['tiempo_muestreo'] = tf - t0
     print(f'Sampling: {tf-t0:.1f} seconds')

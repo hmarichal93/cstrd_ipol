@@ -3,22 +3,9 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon
 import numpy as np
 import matplotlib.pyplot as plt
-
 import cv2
 
-
-from lib.io import (
-    write_json,
-    load_json,
-    load_data,
-    save_dots,
-    Nr,
-    get_path,
-    ANGLE_THRESHOLD,
-    pliegoGrados,
-)
 import lib.chain_v4 as ch
-
 import lib.union_puntos_prolijo_performance_3 as union
 from lib.interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino, pegar_dos_cadenas_interpolando_via_cadena_soporte
 from lib.propiedades_fundamentales import InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging
@@ -121,12 +108,12 @@ class ContextoDisco:
         self.debug = debug
         self.save_path = save_path
         self.img = img
-        self.cadenas_completas = [cad for cad in listaCadenas if cad.size>= Nr]
+        self.cadenas_completas = [cad for cad in listaCadenas if cad.size>= cad.Nr]
         self.cadenas_completas, self.cadenas_completas_poligonos = self._convertir_cadenas_completas_a_poligonos(
             self.cadenas_completas)
 
         #self.cadenas_incompletas = [cad for cad in listaCadenas if not cad.esta_completa(regiones=regions_cadena_completa)]
-        self.cadenas_incompletas = [cad for cad in listaCadenas if  cad.size < Nr]
+        self.cadenas_incompletas = [cad for cad in listaCadenas if  cad.size < cad.Nr]
         self.cadenas_incompletas_poligonos = self._convertir_cadenas_incompletas_a_poligonos(self.cadenas_incompletas)
         self.idx = 0 if idx_start is None else idx_start
 
@@ -572,14 +559,14 @@ def dividir_cadena(cadena, punto, nuevo_id):
         lista_puntos_cad2 = []
 
     if len(lista_puntos_cad1) > 1:
-        sub_cadena1 = ch.Cadena(cadena.id, cadena.centro, cadena.M, cadena.N)
+        sub_cadena1 = ch.Cadena(cadena.id, cadena.centro, cadena.M, cadena.N, cadena.Nr)
         for cad_punto in lista_puntos_cad1:
             cad_punto.cadenaId = sub_cadena1.id
         sub_cadena1.add_lista_puntos(lista_puntos_cad1)
     else:
         sub_cadena1 = None
     if len(lista_puntos_cad2)>1:
-        sub_cadena2 = ch.Cadena(nuevo_id, cadena.centro, cadena.M, cadena.N)
+        sub_cadena2 = ch.Cadena(nuevo_id, cadena.centro, cadena.M, cadena.N, cadena.Nr)
         for cad_punto in lista_puntos_cad2:
             cad_punto.cadenaId = sub_cadena2.id
         sub_cadena2.add_lista_puntos(lista_puntos_cad2)

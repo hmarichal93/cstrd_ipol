@@ -12,7 +12,6 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.io import Nr
 
 
 #segmentar

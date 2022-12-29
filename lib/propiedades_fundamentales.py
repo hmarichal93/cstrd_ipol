@@ -5,7 +5,6 @@ import copy
 
 from lib.dibujar import Color, Dibujar
 from lib.interpolacion import pegar_dos_cadenas_interpolando_via_cadena_soporte, generar_lista_puntos_entre_dos_distancias_radiales
-from lib.io import write_json,load_json, load_data, save_dots, Nr
 import lib.chain_v4 as ch
 from lib.utils import write_log
 from lib.objetos import Interseccion
@@ -35,7 +34,7 @@ class InfoBandaVirtual:
         self.extremo = extremo
         self.cad_soporte = cad_soporte
         self.centro = ch.Punto(x=self.cadena_origen.centro[0],y = self.cadena_origen.centro[1], radio=0,
-                               angulo = 0, gradFase = -1, cadenaId=-1)
+                               angulo = 0, gradFase = -1, cadenaId=-1,Nr=self.cadena_origen.Nr)
 
         if ancho_banda:
             ext1 = self.cadena_origen.extB if extremo in 'B' else self.cadena_origen.extA
@@ -146,21 +145,21 @@ class InfoBandaVirtual:
         return img
 
 
-def derivada( fxi_menos_1, fxi_mas_1, paso=2):
+def derivada( fxi_menos_1, fxi_mas_1, Nr,paso=2):
     dtheta = paso * 2 * np.pi / Nr
     dtheta = paso
     return np.abs((fxi_mas_1 - fxi_menos_1) / dtheta)
 
-def derivada_vector(f , paso=2):
+def derivada_vector(f , Nr,paso=2):
     return np.gradient(f)
     der = np.zeros(len(f))
     for idx in range(len(f)):
         if idx == 0 and len(f) > 1:
-            der[idx] = derivada( f[idx], f[idx+1], paso=1)
+            der[idx] = derivada( f[idx], f[idx+1],Nr, paso=1)
         elif 0 < idx < len(f)-1:
-            der[idx] = derivada( f[idx - 1], f[idx + 1])
+            der[idx] = derivada( f[idx - 1], f[idx + 1],Nr)
         else:
-            der[idx] = derivada( f[idx - 1], f[idx], paso=1)
+            der[idx] = derivada( f[idx - 1], f[idx], Nr,paso=1)
 
     return der
 
@@ -196,9 +195,9 @@ def derivada_maxima( cad_1, cad_2,extremo,puntos_virtuales, umbral=1,N=20,paso=2
     radios_virtuales = [punto.radio for punto in lista_puntos_totales]
     # dtheta = 2*np.pi/Nr
     # derivada_maxima = np.maximum(np.abs(np.gradient(radios_1)).max(), np.abs(np.gradient(radios_2)).max())
-    abs_der_1 = np.abs(derivada_vector(radios_1))
-    abs_der_2 = np.abs(derivada_vector(radios_2))
-    abs_der_3 = np.abs(derivada_vector(radios_virtuales))
+    abs_der_1 = np.abs(derivada_vector(radios_1,cad_2.Nr))
+    abs_der_2 = np.abs(derivada_vector(radios_2,cad_2.Nr))
+    abs_der_3 = np.abs(derivada_vector(radios_virtuales,cad_2.Nr))
     derivada_maxima_var = np.maximum(abs_der_1.max(), abs_der_2.max())
     # umbral = 15
     # derivada_maxima = np.maximum(abs_der_2.mean() + abs_der_2.std()*umbral,abs_der_1.mean() + abs_der_1.std()*umbral)
@@ -578,7 +577,6 @@ def criterio_distancia_radial_no_debugging(umbral,chain, cadena_origen, cadena_c
     return criterio, np.abs(media_origen-media_estadistico_cand), info_band
 
 from lib.devernayEdgeDetector import devernayEdgeDetector
-import lib.edges_filter as edges
 
 def angulo_entre_extremos_cadenas(ch_up, next_chain, border):
     extremo1 = ch_up.extA if border in 'A' else ch_up.extB
