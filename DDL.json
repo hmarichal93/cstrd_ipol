@@ -19,24 +19,12 @@
     ],
     "params": [
         {
-            "id": "sigma",
-            "label": "sigma",
-            "comments": "Noise standard deviation",
-            "type": "range",
-            "values": {
-                "default": "30",
-                "max": 300,
-                "min": 0,
-                "step": 0.1
-            }
-        },
-        {
             "id": "cy",
             "label": "Cy",
             "comments": "center y coordinate",
             "type": "range",
             "values": {
-                "default": "1000",
+                "default": "1204",
                 "max": 2000,
                 "min": 0,
                 "step": 1
@@ -48,11 +36,106 @@
             "comments": "center x coordinate",
             "type": "range",
             "values": {
-                "default": "1000",
+                "default": "1264",
                 "max": 2000,
                 "min": 0,
                 "step": 1
             }
+        },{
+            "label" : "<b>Advanced parameters</b>",
+            "type" : "label",
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "options",
+            "label": "Show advanced parameters",
+            "type": "checkbox",
+            "default_value": false
+        },
+        {
+            "id":"nr",
+            "label":"Nr",
+            "comments": "Define the radial sampling frecuency",
+            "type":"range",
+            "values":{
+                "default":360,
+                "max":720,
+                "min":2,
+                "step":10
+            },
+            "visible": "params.options=='1'"
+        },        {
+            "id": "sigma",
+            "label": "sigma",
+            "comments": "Noise standard deviation",
+            "type": "range",
+            "values": {
+                "default":1.5,
+                "max": 10,
+                "min": 1,
+                "step": 0.5
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "th_low",
+            "label": "Gradient threshold low",
+            "type": "range",
+            "values": {
+                "default": 5.0,
+                "max": 50,
+                "min": 0.0,
+                "step": 0.1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "th_high",
+            "label": "Gradient threshold high",
+            "type": "range",
+            "values": {
+                "default": 20.0,
+                "max": 50,
+                "min": 0.0,
+                "step": 0.1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "output_zoom_factor",
+            "label": "ZOOM factor to render sub-pixel output",
+            "type": "range",
+            "values": {
+                "default": 2,
+                "max": 10,
+                "min": 1,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "hsize",
+            "label": "heigh size",
+            "type": "range",
+            "values": {
+                "default": 640,
+                "max": 3000,
+                "min": 0,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "wsize",
+            "label": "width size",
+            "type": "range",
+            "values": {
+                "default": 640,
+                "max": 3000,
+                "min": 0,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
         }
     ],
     "results": [
@@ -60,12 +143,40 @@
             "type": "gallery",
             "contents": {
                 "Input": {
-                    "img": "input_0.png"
+                    "img": "input.png"
                 },
                 "Output": {
                     "img": "output.png"
                 }
             }
+        },
+        {
+            "contents": {
+                "preprocessing": {
+                    "img": "preprocessing_output.png"
+                },
+                "edges": {
+                    "img": "edge_detector.png"
+                },
+                "chains": {
+                    "img": "chains.png"
+                },
+                "grouping chains": {
+                    "img": "grouping_chains.png"
+                },
+                "post processing": {
+                    "img": "postprocessing.png"
+                }
+            },
+            "type": "gallery",
+            "label": "<b>Intermediary results</b>"
+        },
+        {
+            "contents": {
+                "json file": "labelme.json"
+            },
+            "label": "You can download the Json file containing rings positions (labelme format)",
+            "type": "file_download"
         },
         {
             "contents": "stdout.txt",
@@ -76,12 +187,18 @@
     "archive": {
         "enable_reconstruct": true,
         "files": {
-            "input_0.png": "Input",
-            "output.png": "Output"
+            "input.png": "Input",
+            "output.png": "Output",
+            "preprocessing_output.png": "preprocessing",
+            "edge_detector.png": "edges",
+            "chains.png": "chains",
+            "grouping_chains.png": "grouping_chains",
+            "postprocessing.png": "post processing"
+
         },
         "info": {
             "run_time": "run time"
         }
     },
-    "run": "python $bin/main.py --input $input_0 --sigma $sigma --cy $cy --cx $cx --output output.png"
+    "run": "python $bin/main.py --input $input_0 --sigma $sigma --cy $cy --cx $cx --root /workdir/bin --output_dir ./ --nr $nr --th_low $th_low --th_high $th_high --hsize $hsize --wsize $wsize "
 }
