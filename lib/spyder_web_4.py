@@ -42,7 +42,7 @@ class SpyderWeb:
         self.lista_curvas = self.convertir_formate_lista_curvas(lista_curvas)
         self.lista_rayos = self.construir_rayos(Nr,M,N,centro)
         self.lista_intersecciones = self.construir_intersecciones(self.lista_rayos,self.lista_curvas)
-
+        #self.dibujar_curvas_rayos_e_intersecciones(img)
 
 
     def dibujar_curvas_rayos_e_intersecciones(self,img):

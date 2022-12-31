@@ -61,10 +61,10 @@ def unir_cadenas(datos):
 
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,
                                              centro,  radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
-                                                                distancia_angular_maxima=10
+                                                                distancia_angular_maxima=10,path=SAVE_PATH
                                                                 )
 
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos,Matriz_intersecciones,img,
                                              centro, radial_tolerance = 0.2, debug_imgs=debug_imgs,ancho_std=2,
                                                                 distancia_angular_maxima=10
                                                                 )

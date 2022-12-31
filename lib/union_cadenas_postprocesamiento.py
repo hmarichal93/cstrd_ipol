@@ -980,9 +980,9 @@ def seleccionar_cadena_soporte(cadena_anillo_exterior, cadena_anillo_interior, p
         cadena_soporte = cadena_anillo_exterior if cadena_anillo_exterior is not None else cadena_anillo_interior
 
     else:
-        cadena_soporte = ch.getChain(dot_list_in_radial_direction[np.argmin(distancia)].cadenaId,
-                                     chains_in_radial_direction)
-
+        # cadena_soporte = ch.getChain(dot_list_in_radial_direction[np.argmin(distancia)].cadenaId,
+        #                              chains_in_radial_direction)
+        cadena_soporte = [cad for cad in chains_in_radial_direction if cad.id == dot_list_in_radial_direction[np.argmin(distancia)].cadenaId][0]
     return cadena_soporte
 
 

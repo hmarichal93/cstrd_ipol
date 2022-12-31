@@ -148,6 +148,8 @@ class Cadena:
         self.B_down = B_down
         self.is_center = is_center
         self.Nr = Nr
+        self.extA = None
+        self.extB = None
 
     def get_borders_chain(self, extremo):
         if extremo in 'A':
@@ -189,7 +191,7 @@ class Cadena:
         if self.size<2:
             return False
         dominio_angular = self._completar_dominio_angular(self)
-        if len(dominio_angular)>= (regiones - 1)*360/regiones:
+        if len(dominio_angular)>= (regiones - 1)*self.Nr/regiones:
             return True
         else:
             return False
@@ -252,12 +254,10 @@ class Cadena:
     def __repr__(self):
         return (f'(id_l:{self.label_id},id:{self.id}, size {self.size}')
 
-
-
-
-
     def __encontrarExtremos(self):
         diff = np.zeros(self.size)
+        extA_init = self.extA if self.extA is not None else None
+        extB_init = self.extB if self.extB is not None else None
         #lista tiene que estar ordenada en orden creciente
         self.lista.sort(key=lambda x: x.angulo, reverse=False)
         diff[0] = (self.lista[0].angulo + 360 - self.lista[-1].angulo) % 360
@@ -278,33 +278,30 @@ class Cadena:
             extremo1 = extremo2 = 0
         self.extAind = extremo1
         self.extBind = extremo2
+
+        change_border = True if (extA_init is None or extB_init is None) or \
+                            (extA_init != self.lista[extremo1] or extB_init != self.lista[extremo2]) else False
         self.extA = self.lista[extremo1]
         self.extB = self.lista[extremo2]
+
+        return change_border
 
     def add_lista_puntos(self,lista_puntos):
         assert len([punto for punto in lista_puntos if punto.cadenaId != self.id]) ==  0
         self.lista += lista_puntos
-        self.update()
+        change_border = self.update()
+        return change_border
 
-    def add_punto(self, punto: Punto):
-        if punto.cadenaId == self.id:
-            if punto not in self.lista:
-                self.lista.append(punto)
-                se_pego = True
-            else:
-                raise
-        else:
-            raise
-        return se_pego
 
-            
     def update(self):
         self.size = len(self.lista)
         if self.size>1:
-            self.__encontrarExtremos()
+            change_border = self.__encontrarExtremos()
             self.puntos_ordenados_horario = self._sort_dots(sentido='horario')
         else:
             raise
+
+        return change_border
 
 
     def getDotsCoordinates(self):
@@ -539,18 +536,6 @@ def visualizarCadenasSobreDiscoTodas(listaCadenas, img,lista_cadenas_todas, titu
     print(f"{save}/{titulo}.png")
     cv2.imwrite(f"{save}/{titulo}.png",img_curvas)
     return
-
-
-
-
-
-def getChain(chainId,lista):
-    for x in lista:
-        if x.id == chainId:
-            return deepcopy(x)
-    return None
-
-
 
 def getAngleFromCoordinates(i,j,centro):
     centro = np.array([float(centro[0]),float(centro[1])])

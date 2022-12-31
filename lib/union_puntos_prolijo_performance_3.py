@@ -21,12 +21,12 @@ from natsort import natsorted
 import lib.chain_v4 as ch
 from lib.io import write_json,load_json, load_data, save_dots
 from lib.utils import write_log
-from lib.interpolacion import completar_cadena_via_anillo_soporte, pegar_dos_cadenas_interpolando_via_cadena_soporte, \
-    generar_lista_puntos_entre_dos_distancias_radiales, calcular_dominio_de_interpolacion, interpolar_en_domino
+from lib.interpolacion import  pegar_dos_cadenas_interpolando_via_cadena_soporte,  calcular_dominio_de_interpolacion, interpolar_en_domino
 from lib.propiedades_fundamentales import criterio_distancia_radial, criterio_derivada_maxima, criterio_distribucion_radial,\
     hay_cadenas_superpuestas, dibujar_segmentoo_entre_puntos, InfoBandaVirtual
 from lib.dibujar import Color, Dibujar
 from lib.celdas import Celda, ROJO
+DEBUG=False
 
 MODULE_NAME="union_chains"
 NOT_REPETING_CHAIN = -1
@@ -85,6 +85,7 @@ class SystemStatus:
         extremo = 'B'
         lista_puntos_generados = []
         interpolar_en_domino(cadena_anillo_soporte, extremo_cad1, extremo_cad2, extremo, cad1, lista_puntos_generados)
+        assert len([dot for dot in cad1.lista if dot in lista_puntos_generados]) == 0
         self.add_list_to_system(cad1, lista_puntos_generados)
 
         return
@@ -99,6 +100,7 @@ class SystemStatus:
         chain_copy = ch.copiar_cadena(chain)
         interpolar_en_domino(chain_border, extremo_cad1, extremo_cad2, extremo, chain_copy, puntos_virtuales)
         ptos_virtuales_con_borde = [extremo_cad1] + puntos_virtuales + [extremo_cad2]
+        assert len([dot for dot in chain_copy.lista if dot in puntos_virtuales]) == 0
 
         info_band = InfoBandaVirtual( ptos_virtuales_con_borde,  chain, chain, extremo, chain_border, ancho_banda=0.1)
         hay_cadena = hay_cadenas_superpuestas(self, info_band)
@@ -239,43 +241,59 @@ class SystemStatus:
             chain_p.B_down = down_chain if down_chain is not None else dummy_chain
 
         return
+    @staticmethod
+    def filter_all_chains_with_border_in_direction( direction, chains_over_radial_direction):
+        cadenas_posibles_a_modificar = []
+        for cad_inter in chains_over_radial_direction:
+            if direction in [cad_inter.extA.angulo, cad_inter.extB.angulo]:
+                cadenas_posibles_a_modificar.append(cad_inter)
 
-    def add_list_to_system(self,chain,lista_puntos):
+        return cadenas_posibles_a_modificar
+    def add_list_to_system(self, chain, lista_puntos):
         lista_puntos_procesados = []
         for new_dot in lista_puntos:
-
             if chain.id != new_dot.cadenaId:
                 raise
 
             lista_puntos_procesados.append(new_dot)
+            if new_dot in self.lista_puntos:
+                raise
             self.lista_puntos.append(new_dot)
-
-            cadenas_id_intersectantes = self._chains_id_over_radial_direction(new_dot.angulo)
+            # 1.0 Update chain list intersection
+            cadenas_id_intersectantes, chains_over_radial_direction = self._chains_id_over_radial_direction(new_dot.angulo)
             self.matriz_intersecciones[chain.id, cadenas_id_intersectantes] = 1
             self.matriz_intersecciones[cadenas_id_intersectantes, chain.id] = 1
-            # actualizar todas las cadenas que tienen extremos en este angulo
-            cadenas_direccion = [dot.cadenaId for dot in self.lista_puntos if dot.angulo == new_dot.angulo]
-            cadenas_posibles_a_modificar = []
-            for cad_id in cadenas_direccion:
-                cad = [cad for cad in self.lista_cadenas if cad.id == cad_id][0]
-                if new_dot.angulo in [cad.extA.angulo, cad.extB.angulo]:
-                    cadenas_posibles_a_modificar.append(cad)
 
-            self.actualizar_vecindad_cadenas_si_amerita(cadenas_posibles_a_modificar)
+            # 2.0 Update boundary chains above and below.
+            dots_over_direction = [dot for chain in chains_over_radial_direction for dot in chain.lista if dot.angulo == new_dot.angulo]
+            dots_over_direction.append(new_dot)
+            dots_over_direction.sort(key= lambda x: x.radio)
+            idx_new_dot = dots_over_direction.index(new_dot)
 
+            up_dot = dots_over_direction[idx_new_dot+1] if idx_new_dot < len(dots_over_direction)-1 else None
+            if up_dot is not None:
+                up_chain = [chain for chain in chains_over_radial_direction if chain.id == up_dot.cadenaId][0]
+                if up_dot == up_chain.extA:
+                    up_chain.A_down = chain
+                elif up_dot == up_chain.extB:
+                    up_chain.B_down = chain
 
-        chain.add_lista_puntos(lista_puntos_procesados)
+            down_dot = dots_over_direction[idx_new_dot - 1] if idx_new_dot > 0 else None
+            if down_dot is not None:
+                down_chain = [chain for chain in chains_over_radial_direction if chain.id == down_dot.cadenaId][
+                    0]
+                if down_dot == down_chain.extA:
+                    down_chain.A_up = chain
+                elif down_dot == down_chain.extB:
+                    down_chain.B_up = chain
+
+        change_border = chain.add_lista_puntos(lista_puntos_procesados)
+        self.actualizar_vecindad_cadenas_si_amerita([chain])
 
     def update_state(self,chain,S_up,S_down):
         self.chain_size_at_the_end_of_iteration = len(self.lista_cadenas)
 
         if self._state_changes_in_this_iteration():
-            # if chain.label_id == 76:
-            #     import time
-            #     ids_intersect = np.where(self.matriz_intersecciones[chain.id] == 1)[0]
-            #     chain_ids_intersect = [ch for ch in self.lista_cadenas if ch.id in ids_intersect]
-            #     ch.visualizarCadenasSobreDisco(chain_ids_intersect, self.img, f'End-{time.time()}', labels=True,
-            #                                    save='./')
             self.lista_cadenas = sorted(self.lista_cadenas, key=lambda x: x.size, reverse=True)
             self.iterations_since_last_change = 0
 
@@ -293,28 +311,14 @@ class SystemStatus:
 
     def _chains_id_over_radial_direction(self,angle):
         chains_in_radial_direction = get_chains_within_angle(angle, self.lista_cadenas)
-        dot_list_in_radial_direction = get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
-            chains_in_radial_direction, angle)
+        chains_id_over_radial_direction = [cad.id for cad in chains_in_radial_direction]
 
-        chains_id_over_radial_direction = list(set([dot.cadenaId for dot in dot_list_in_radial_direction]))
-        return chains_id_over_radial_direction
+        return chains_id_over_radial_direction, chains_in_radial_direction
 
     def __sort_chain_list_and_update_relative_position(self):
         self.lista_cadenas = sorted(self.lista_cadenas, key=lambda x: x.size, reverse=True)
         self.actualizar_vecindad_cadenas_si_amerita(self.lista_cadenas)
-        #dummy_chain = None
-        # for chain in self.lista_cadenas:
-        #     border = 'A'
-        #     down_chain, up_chain, dot_border = get_up_and_down_chains(self.lista_puntos, self.lista_cadenas, chain,
-        #                                                          border)
-        #     #ch.Cadena(cadenaId=-1,centro=[-1,-1],M=-1,N=-1)
-        #     chain.A_up = up_chain if up_chain is not None else dummy_chain
-        #     chain.A_down = down_chain if down_chain is not None else dummy_chain
-        #     border = 'B'
-        #     down_chain, up_chain, dot_border = get_up_and_down_chains(self.lista_puntos, self.lista_cadenas, chain,
-        #                                                               border)
-        #     chain.B_up = up_chain if up_chain is not None else dummy_chain
-        #     chain.B_down = down_chain if down_chain is not None else dummy_chain
+
 
     def _state_changes_in_this_iteration(self):
         return self.chain_size_at_the_begining_of_iteration > self.chain_size_at_the_end_of_iteration
@@ -412,9 +416,10 @@ def criterio_kmeans(cadena_candidata, cadena_origen, extremo, cadena_soporte, ve
                                             histograma_test=False), distancia_entre_bordes
 
 def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=None, radial_tolerance=2,
-         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2, der_desde_centro=False, fast=False):
+         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2, der_desde_centro=False, fast=True):
     state = SystemStatus(dot_list, chain_list, intersections_matrix, img_center, img_orig, distancia_angular_maxima,
                          radio_limit=radial_tolerance,path=path,debug=debug_imgs, ancho_std = ancho_std, derivada_desde_centro= der_desde_centro)
+    #check_duplicate_dots(state.lista_puntos)
     del dot_list
     del chain_list
     label = 'main'
@@ -422,15 +427,12 @@ def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=
               f"\n\n\n\n\n\nradial_tolerance={radial_tolerance}\n\n\n\n\n\n\n\n")
     while state.continue_in_loop():
         chain = state.get_current_chain()
-        control_puntos_cadenas(state.lista_cadenas)
+        #control_puntos_cadenas(state.lista_cadenas)
         recorrer_s_up = True; recorrer_s_down = True
         while True:
-            S_up, S_down = armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,todas = todas_intersectantes,fast=fast)
-            control_puntos_cadenas(S_up)
-            control_puntos_cadenas(S_down)
-
-            #recorrer_s_up = state.new_data_in_hash_dict(chain, S_up)
-            #recorrer_s_down = state.new_data_in_hash_dict(chain, S_down)
+            S_up, S_down = armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,fast=fast)
+            #control_puntos_cadenas(S_up)
+            #control_puntos_cadenas(S_down)
 
             if recorrer_s_up:
                 #S_up = buscar_cadenas_faltantes_si_amerita( state, 'up', S_up, chain, debug=debug_imgs, img=state.img)
@@ -498,6 +500,8 @@ def recorrer_listas_algoritmo_rapido(state, chain, recorrer_s_down, recorrer_s_u
     S_up = []
     S_down = []
     for ch_cand in state.lista_cadenas:
+        if ch_cand == chain:
+            continue
         a_up, b_up, a_down, b_down = ch_cand.A_up, ch_cand.B_up, ch_cand.A_down, ch_cand.B_down
 
         if (recorrer_s_up and (ch_cand not in S_up) and ((a_down is not None and chain is a_down) or
@@ -528,34 +532,50 @@ def recorrer_listas_algoritmo_lento(state,chain,recorrer_s_down, recorrer_s_up):
             if punto_arriba in [cadena_arriba.extA, cadena_arriba.extB] and cadena_arriba not in S_up:
                 S_up.append(cadena_arriba)
 
+
     return S_up, S_down
 def control_cadenas_en_ambos_grupos(state,S_up, S_down):
     up_down = [cad for cad in S_up if cad in S_down]
-    # if len(up_down) > 0 :
-    #     ch.visualizarCadenasSobreDiscoTodas([state.chain] + S_up + S_down, state.img, state.lista_cadenas,
-    #                                         f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
-    #                                         save=state.path, labels=True)
-    #     state.iteracion += 1
-    #     ch.visualizarCadenasSobreDiscoTodas([state.chain] + up_down, state.img, state.lista_cadenas,
-    #                                         f'{state.iteracion}_soporte_{state.chain.label_id}_cadenas_en_ambos_grupos',
-    #                                         save=state.path, labels=True)
-    #
-    #     state.iteracion += 1
-    #     print(up_down)
 
     return up_down
-def armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,todas,fast=True):
-    label='armar_listas_up_and_down'
+
+def control_lista_iguales(lista1,lista2):
+    iguales = True
+    lista1.sort(key=lambda  x: x.id)
+    lista2.sort(key=lambda x: x.id)
+    for cad1, cad2 in zip(lista1,lista2):
+        if not (cad1 == cad2):
+            iguales = False
+            break
+    return iguales
+def armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,fast=True):
+    if DEBUG:
+        S_up_lento, S_down_lento = recorrer_listas_algoritmo_lento(state, chain, recorrer_s_down, recorrer_s_up)
+        S_up, S_down = recorrer_listas_algoritmo_rapido(state, chain, recorrer_s_down, recorrer_s_up)
+
+        iguales = control_lista_iguales(S_down_lento, S_down)
+        if not iguales:
+            ch.visualizarCadenasSobreDiscoTodas([chain]+S_down,state.img,[],'rapido',labels=True,save=state.path)
+            ch.visualizarCadenasSobreDiscoTodas([chain]+S_down_lento,state.img,[],'lento',labels=True,save=state.path)
+            raise
+
+        iguales = control_lista_iguales(S_up_lento, S_up)
+        if not iguales:
+            ch.visualizarCadenasSobreDiscoTodas([chain]+S_up,state.img,[],'rapido',labels=True,save=state.path)
+            ch.visualizarCadenasSobreDiscoTodas([chain]+S_up_lento,state.img,[],'lento',labels=True,save=state.path)
+            raise
+
     if not fast:
         S_up, S_down = recorrer_listas_algoritmo_lento(state,chain,recorrer_s_down, recorrer_s_up)
 
     else:
         S_up, S_down = recorrer_listas_algoritmo_rapido(state, chain, recorrer_s_down, recorrer_s_up)
 
-    write_log(MODULE_NAME, label,
-              f"cad.id {chain.label_id} S_up {[cad.label_id for cad in S_up]} S_down {[cad.label_id for cad in S_down]} ")
-    # if control_cadenas_en_ambos_grupos(state, S_up, S_down):
-    #     raise
+    if state.debug:
+        label = 'armar_listas_up_and_down'
+        write_log(MODULE_NAME, label,
+                  f"cad.id {chain.label_id} S_up {[cad.label_id for cad in S_up]} S_down {[cad.label_id for cad in S_down]} ")
+
     up_down = control_cadenas_en_ambos_grupos(state,S_up, S_down)
     for cad in up_down:
         S_up.remove(cad)
@@ -677,6 +697,7 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
                 puntos = [punto for punto in closest_chain.lista if punto.cadenaId != closest_chain.id]
                 if len(puntos) > 0:
                     raise
+
             border = 'A' if closest_chain == candidata_a else 'B'
             se_pego_cadena = union_2_chains(state, ch_up, closest_chain, border, S_up)
             if state.debug and se_pego_cadena:
@@ -696,7 +717,7 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
         if curr_index >= len(S_up):
 
             break
-    control_puntos_cadenas(S_up)
+    #control_puntos_cadenas(S_up)
     lenght_s_up_final = len(S_up)
     return lenght_s_up_final < lenght_s_up_init
 
@@ -825,50 +846,6 @@ def buscar_cadena_candidata_a_pegar(state, chain, S_up, S_up_no_inter, ch_up,
     return cadena_para_pegar
 
 
-def esta_cadena_incluida_en_intervalo_angular(cad1,cad2,cad3,border):
-    label='esta_cadena_incluida_en_intervalo_angular'
-    incluida = False
-    paso = 360/Nr
-    if cad2 is not None:
-        if border in 'B':
-            ext1 = cad1.extB.angulo
-            ext2 = cad2.extA.angulo
-            if ext2 >= ext1:
-                intervalo_grande = list(np.arange(ext1, ext2 + paso, paso))
-            else:
-                intervalo_grande = list(np.arange(ext1, 360, paso))
-                intervalo_grande += list(np.arange(0, ext2 + paso, paso))
-        else:
-            ext2 = cad1.extA.angulo
-            ext1 = cad2.extB.angulo
-            if ext2 >= ext1:
-                intervalo_grande = list(np.arange(ext1, ext2 + paso, paso))
-            else:
-                intervalo_grande = list(np.arange(ext1, 360, paso))
-                intervalo_grande += list(np.arange(0, ext2 + paso, paso))
-    else:
-        #caso en que queremos controlar porque estamos para rellenar una cadena completa.
-        ext2 = cad1.extA.angulo
-        ext1 = cad1.extB.angulo
-        if ext2 >= ext1:
-            intervalo_grande = list(np.arange(ext1, ext2 + paso, paso))
-        else:
-            intervalo_grande = list(np.arange(ext1, 360, paso))
-            intervalo_grande += list(np.arange(0, ext2 + paso, paso))
-
-    o_ext1 = cad3.extA.angulo
-    o_ext2 = cad3.extB.angulo
-
-    if o_ext1<= o_ext2:
-        intervalo_chico = list(np.arange(o_ext1, o_ext2 + paso, paso))
-    else:
-        intervalo_chico = list(np.arange(o_ext1,360, paso))
-        intervalo_chico+= list(np.arange(0,o_ext2+paso, paso))
-    interseccion = np.intersect1d(intervalo_grande,intervalo_chico)
-    if len(interseccion)>0:
-        incluida = True
-        write_log(MODULE_NAME, label, f"ext1 {ext1} ext2 {ext2} oext1 {o_ext1} oext2 {o_ext2} cad.id {cad3.label_id}")
-    return incluida
 
 
 def verificar_extremos(chain,ch_up,next_chain,border,sentido,state):
@@ -880,64 +857,7 @@ def verificar_extremos(chain,ch_up,next_chain,border,sentido,state):
     interseccion = np.intersect1d(dominio_de_interpolacion,dominio_angular_cadena_soporte)
     return True if len(interseccion)==len(dominio_de_interpolacion) else False
 
-    # if border in 'B':
-    #     if ch_up.extB.angulo in dominio_angular_cadena_soporte and next_chain.extA.angulo in dominio_angular_cadena_soporte:
-    #         valido= True
-    #     else:
-    #         valido=False
-    # else:
-    #     if ch_up.extA.angulo in dominio_angular_cadena_soporte and next_chain.extB.angulo in dominio_angular_cadena_soporte:
-    #         valido=True
-    #     else:
-    #         valido=False
-    #
-    # if chain.esta_completa():
-    #     if chain.size == Nr:
-    #         return True
-    #
-    #     else:
-    #
-    #         if (chain.A_up is not None and chain.B_up is not None and chain.A_up.id == chain.B_up.id):
-    #             chain_border = chain.A_up
-    #
-    #         elif (chain.A_down is not None and chain.B_down is not None and chain.A_down.id == chain.B_down.id):
-    #             chain_border = chain.A_down
-    #
-    #         else:
-    #             chain_border = None
-    #
-    #         if chain_border is not None:
-    #             return True
-    #
-    # valido = False
-    # if border in 'B':
-    #     if sentido in 'up':
-    #         if ((ch_up.B_down is not None and ch_up.B_down.id == chain.id) and
-    #             (next_chain.A_down is not None and next_chain.A_down.id == chain.id)):
-    #             valido = True
-    #     else:
-    #         if ((ch_up.B_up is not None and ch_up.B_up.id == chain.id) and
-    #             (next_chain.A_up is not None and next_chain.A_up.id == chain.id)):
-    #             valido = True
-    # else:
-    #     if sentido in 'up':
-    #         if ((ch_up.A_down is not None and ch_up.A_down.id == chain.id) and
-    #                 (next_chain.B_down is not None and next_chain.B_down.id == chain.id)):
-    #             valido = True
-    #     else:
-    #         if ((ch_up.A_up is not None and ch_up.A_up.id == chain.id) and
-    #                 (next_chain.B_up is not None and next_chain.B_up.id == chain.id)):
-    #             valido = True
 
-    if sentido in 'up':
-        write_log(MODULE_NAME, label,
-                  f"cad.id {ch_up.label_id} UP Adown{ch_up.A_down} B_down{ch_up.B_down} border {border} cad.id {next_chain.label_id}  A_down {next_chain.A_down} B_down {next_chain.B_down}  cad_limite.id {chain.label_id} res={valido}")
-    else:
-        write_log(MODULE_NAME, label,
-                  f"cad.id {ch_up.label_id} DOWN A_up {ch_up.A_up} B_up {ch_up.B_up} border {border} cad.id {next_chain.label_id}  A_up {next_chain.A_up} B_up {next_chain.B_up} cad_limite.id {chain.label_id} res={valido}")
-
-
-    return valido
 
 
 
@@ -1005,53 +925,6 @@ def get_ids_chain_intersection(state,chain_id):
     ids_interseccion.remove(chain_id)
     return ids_interseccion
 
-def get_candidate_chain_using_only_chains_objects(s,chain,border='A'):
-    cadena_validada = None
-    best_border  = None
-    ids_subconjunto_cadenas_no_intersectantes = np.where(s.matriz_intersecciones[chain.id]!=1)[0]
-    if len(ids_subconjunto_cadenas_no_intersectantes)==0:
-        return None
-
-    subconjunto_cadenas_no_intersectantes = [cad for cad in s.lista_cadenas if cad.id in ids_subconjunto_cadenas_no_intersectantes]
-    #import time
-    #t0 = time.time()
-    down_chain, up_chain, dot_border = chain.get_borders_chain(border)#get_up_and_down_chains(s.lista_puntos, s.lista_cadenas, chain, border)
-    #tf = time.time()
-    #print(f"cad.id {chain.label_id} tiempo {tf-t0}")
-    if down_chain is not None and up_chain is not None:
-        # seleccionar mejor cadena
-        cadena_borde,sentido = get_best_chain(down_chain, dot_border, border, up_chain)
-    else:
-        cadena_borde,sentido = cadena_no_nula(down_chain,up_chain)
-
-    if cadena_borde is not None:
-            # interseccion por unico borde
-            ids_borde_interseccion = get_ids_chain_intersection(s, cadena_borde.id)
-            if chain.id in ids_borde_interseccion:
-                ids_borde_interseccion.remove(chain.id)
-
-            #filter chain by size
-            #chain_list_intersect = [ch.getChain(ch_id,s.lista_cadenas) for ch_id in ids_borde_interseccion if (chain.size + ch.getChain(ch_id,s.lista_cadenas).size) <= Nr]
-            chain_list_intersect_tmp = [cad for cad in s.lista_cadenas if cad.id in ids_borde_interseccion]
-            chain_list_intersect = [cad for cad in chain_list_intersect_tmp if (chain.size + cad.size) <= Nr]
-            #filtrado de cadens intersectantes por sentido. Es decir, si cadena_borde es down, quedarme con todas las que estan
-            # por arriba de down. Si es up, quedarme con las que estan por debajo
-            dot_list = get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
-                chain_list_intersect, dot_border.angulo)
-
-            punto_cadena_borde = get_closest_chain_dot_to_angle(cadena_borde, dot_border.angulo)
-
-            if sentido in 'down':
-                ids_borde_interseccion_filtrados = [dot.cadenaId for dot in dot_list if dot.radio > punto_cadena_borde.radio]
-            else:
-                ids_borde_interseccion_filtrados = [dot.cadenaId for dot in dot_list if
-                                                    dot.radio < punto_cadena_borde.radio]
-
-            cadena_validada = buscar_cadena_valida(ids_borde_interseccion_filtrados, subconjunto_cadenas_no_intersectantes,
-                                                   dot_border,  border, chain, cadena_borde, s.radio_limit)
-
-
-    return cadena_validada
 
 
 def get_lenght_forward(cadena_limite, angulo, extremo='A'):
@@ -1068,59 +941,10 @@ def get_lenght_forward(cadena_limite, angulo, extremo='A'):
         largo_down = len(dots_down) - dot_idx
 
     return largo_down
-def get_best_chain(cadena_down,dot_extremo,extremo,cadena_up):
-    best_border  = None
-    lenght_down = get_lenght_forward(cadena_down, dot_extremo.angulo, extremo)
-    lenght_up = get_lenght_forward(cadena_up, dot_extremo.angulo, extremo)
-    if lenght_down >= lenght_up:
-        best_border = cadena_down
-        sentido = 'down'
-    elif lenght_up > lenght_down:
-        best_border = cadena_up
-        sentido='up'
-    return best_border,sentido
-
-def buscar_cadena_valida(ids_intersection,subconjunto_cadenas_no_intersectantes,dot_border,border,chain, down_chain,radio_limit):
-    if len(ids_intersection) == 0:
-        return None
-    # me quedo con cadenas que no intersecta a chain y ademas intersectan a la cadena borde
-    cadenas_candidata = [cad for cad in subconjunto_cadenas_no_intersectantes if cad.id in ids_intersection]
-
-    cadenas_candidatas_ordenadas = ordenar_cadenas_candidatas_por_distancia_angular_entre_extremos(
-        cadenas_candidata, chain, border)
-
-    cadena_validada = buscar_cadena_valida_en_conjunto(chain, cadenas_candidatas_ordenadas, down_chain, border,
-                                                       radio_limit)
-
-    return cadena_validada
-
-def cadena_no_nula(down_chain, up_chain):
-    cadena_borde = None
-    sentido = None
-    if down_chain is None:
-        if up_chain is not None:
-            cadena_borde = up_chain
-            sentido = 'up'
-    else:
-        cadena_borde = down_chain
-        sentido = 'down'
-
-    return cadena_borde,sentido
 
 
-def buscar_cadena_valida_en_conjunto(chain,cadenas_candidatas_ordenadas,down_chain,border,radio_limit):
-    cadena_valida = None
-    for candidata in cadenas_candidatas_ordenadas:
-        valida,diff = check_cumulative_radio(chain,candidata,down_chain,border,umbral=radio_limit)
-        if  valida:
-            cadena_valida = candidata
-            break
-            #valida = check_angle_between_borders(chain, candidata, border)
-            #if valida:
-            #    cadena_valida = candidata
-            #    break
 
-    return cadena_valida
+
 def distancia_angular_entre_cadenas(cad_1,cad_2,border):
         label='distancia_angular_entre_cadenas'
         ext_cad_2 = cad_2.extB if border in 'A' else cad_2.extA
@@ -1140,32 +964,6 @@ def distancia_angular_entre_cadenas(cad_1,cad_2,border):
                 distancia = ext_cad_1.angulo - ext_cad_2.angulo
         write_log(MODULE_NAME, label, f"cad.id {cad_1.label_id} cad.id {cad_2.label_id} distancia = {distancia} border {border}")
         return distancia
-
-def ordenar_cadenas_candidatas_por_distancia_angular_entre_extremos(cadenas_candidata,cad_1,border):
-    class auxiliar:
-        def __init__(self,cadena_id,distancia):
-            self.cad_id = cadena_id
-            self.distancia = distancia
-
-        def __repr__(self):
-            return (f"id {self.cad_id},d {self.distancia}")
-
-    cadenas_ordenas_por_distancia = []
-
-    for cad_2 in cadenas_candidata:
-        distancia_entre_cadenas = distancia_angular_entre_cadenas(cad_1,cad_2,border)
-        cad_info = auxiliar(cad_2.id,distancia_entre_cadenas)
-        cadenas_ordenas_por_distancia.append(cad_info)
-
-    cadenas_ordenas_por_distancia.sort(key= lambda x: x.distancia )
-
-    #ordenar lista de cadenas
-    cadenas_ordenadas = []
-    for obj_aux in cadenas_ordenas_por_distancia:
-        cad = [cad for cad in cadenas_candidata if obj_aux.cad_id == cad.id][0]
-        cadenas_ordenadas.append(cad)
-
-    return cadenas_ordenadas
 
 
 
@@ -1303,83 +1101,33 @@ def inside_angle_interval(chain,angle):
 
     return ret
 
-# def add_interpolated_dots_to_chain_filling_empty_angles(state,chain,full_interval=True):
-#     spaced_angles = np.arange(0, 360, 360 / Nr)
-#     angles = [dot.angulo for dot in chain.lista]
-#     radios = [dot.radio for dot in chain.lista]
-#     if full_interval:
-#         missing_angles = [angle for angle in spaced_angles if angle not in angles]
-#     else:
-#         missing_angles = [angle for angle in spaced_angles if angle not in angles and inside_angle_interval(chain,angle)]
-#     missing_radials = lineal_by_part(angles, radios, missing_angles)
-#     lista_nuevos_puntos = []
-#     for ang,rad in zip(missing_angles,missing_radials):
-#         angle_rad = ang * np.pi / 180
-#         i = int(state.centro[1] + rad * np.cos(angle_rad))
-#         j = int(state.centro[0] + rad * np.sin(angle_rad))
-#
-#         if i >= state.M or j >= state.N:
-#             continue
-#
-#         phase = state.grad_fase[i, j]
-#         params = {"x": i,"y": j,"angulo": ang, "radio": rad, "gradFase": phase,
-#             "cadenaId": int(chain.id)}
-#
-#         new_dot = ch.Punto(**params)
-#         if state.is_new_dot_valid(new_dot):
-#             lista_nuevos_puntos.append(new_dot)
-#
-#     state.add_list_to_system(chain, lista_nuevos_puntos)
+def check_duplicate_dots(lista_puntos):
+    duplicate = None
+    for dot in lista_puntos:
+        if len([p for p in lista_puntos if p == dot])>1:
 
-
-
-
-def add_interpolated_dots_to_chain_filling_empty_angles_extern( lista_puntos, chain,full_interval=True):
-    spaced_angles = np.arange(0, 360, 360 / Nr)
-    angles = [dot.angulo for dot in chain.lista]
-    radios = [dot.radio for dot in chain.lista]
-    if full_interval:
-        missing_angles = [angle for angle in spaced_angles if angle not in angles]
-    else:
-        missing_angles = [angle for angle in spaced_angles if angle not in angles and inside_angle_interval(chain,angle)]
-    missing_radials = lineal_by_part(angles, radios, missing_angles)
-
-    added_dot = []
-    for ang,rad in zip(missing_angles,missing_radials):
-        angle_rad = ang * np.pi / 180
-        i = int(chain.centro[1] + rad * np.cos(angle_rad))
-        j = int(chain.centro[0] + rad * np.sin(angle_rad))
-
-        if i >= chain.M or j >= chain.N:
-            continue
-
-        phase = -1#state.grad_fase[i, j]
-        params = {"x": i,"y": j,"angulo": ang, "radio": rad, "gradFase": phase,
-            "cadenaId": int(chain.id)}
-
-        new_dot = ch.Punto(**params)
-        if new_dot in lista_puntos:
-            return False
-
-        if new_dot.x >= chain.M or new_dot.y >= chain.N or new_dot.x <0 or new_dot.y <0:
-            return False
-
-        if new_dot not in lista_puntos:
-            lista_puntos.append(new_dot)
-            added_dot.append(new_dot)
-
-    chain.add_lista_puntos(added_dot)
-
-
-
-
-
-
+            duplicate = dot
+            break
+    return duplicate
 def union_2_chains(s, cad_1, cad_2,border,S_up):
     se_pego = False
     if cad_2 is not None:
         if cad_1.id != cad_2.id:
+            # if cad_1.label_id == 79320:
+            #     lista = [cad_1.A_up,cad_1.B_down,cad_1.A_down,cad_1.B_up]
+            #     lista = [cad for cad in lista if cad is not None]
+            #     ch.visualizarCadenasSobreDiscoTodas( [cad_1] + lista, s.img, s.lista_cadenas, f'{s.iteracion}_antes_{border}', labels=True,
+            #                                         save=s.path)
+            #check_duplicate_dots(s.lista_puntos)
             pegar_2_cadenas(s, cad_1, cad_2,border,S_up)
+            #check_duplicate_dots(s.lista_puntos)
+
+            # if cad_1.label_id == 79320:
+            #     lista = [cad_1.A_up,cad_1.B_down,cad_1.A_down,cad_1.B_up]
+            #     lista = [cad for cad in lista if cad is not None]
+            #     ch.visualizarCadenasSobreDiscoTodas( [cad_1] + lista, s.img, s.lista_cadenas, f'{s.iteracion}_despues_{border}', labels=True,
+            #                                         save=s.path)
+            #     s.iteracion += 1
             se_pego = True
             s.remove_key_from_hash_dictionaries(s.chain,cad_1, cad_2)
 
@@ -1390,21 +1138,14 @@ def union_2_chains(s, cad_1, cad_2,border,S_up):
     return se_pego
 
 
-def get_last_chain_dots_sorter_by_border( chain, border, total_dots_in_grades = 1):
-    limite = np.round(total_dots_in_grades * 360 / Nr).astype(np.int)
-    puntos = chain.sort_dots(sentido='antihorario')[-limite:] if border in 'B' \
-             else chain.sort_dots(sentido='horario')[-limite:]    
-    return puntos
+
 
 def get_all_dots_on_radial_direction_sorted_by_ascending_distance_to_center(listaPuntos,dot_direccion):
     lista_puntos_perfil = [dot for dot in listaPuntos if dot.angulo == dot_direccion.angulo]
     lista_puntos_perfil= sorted(lista_puntos_perfil, key=lambda x: x.radio, reverse=False)
     return lista_puntos_perfil
 
-def get_border_chain_from_list_selecting_by_mode(chain_ids_list, listaCadenas):
-    border_id = get_mode(chain_ids_list)
-    border_chain = ch.getChain(border_id,listaCadenas) if border_id > -1 else None        
-    return border_chain
+
 
 
 def get_chains_within_angle(angle,lista_cadenas):
@@ -1421,6 +1162,7 @@ def get_chains_within_angle(angle,lista_cadenas):
 def get_closest_chain_dot_to_angle(chain,angle):
     label='get_closest_chain_dot_to_angle'
     chain_dots = chain.sort_dots(sentido='antihorario')
+    #return [dot for dot in chain_dots if dot.angulo == angle][0]
     A = chain.extA.angulo
     B = chain.extB.angulo
     dominio = chain._completar_dominio_angular(chain)
@@ -1459,27 +1201,14 @@ def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_t
     label = 'get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center'
     lista_puntos_perfil = []
     for chain in chains_list:
-        dot = get_closest_chain_dot_to_angle(chain, angle)
-        if dot is not None:
+        #dot = get_closest_chain_dot_to_angle(chain, angle)
+        dot =  [dot for dot in chain.lista if dot.angulo == angle][0]
+        if dot not in lista_puntos_perfil:
             lista_puntos_perfil.append(dot)
     #write_log(MODULE_NAME,label,f"{lista_puntos_perfil}")
     if len(lista_puntos_perfil)>0:
         lista_puntos_perfil= sorted(lista_puntos_perfil, key=lambda x: x.radio, reverse=False)
     return lista_puntos_perfil                
-
-def get_up_and_down_chains_relative_to_chain(chain,listaCadenas):
-    chains_boundary_list = []
-    for dot in chain.lista:
-        cadena_down = get_down_relative_to_chain(dot, listaCadenas)
-        cadena_up = get_up_relative_to_chain(dot, listaCadenas)
-        if cadena_up is not None:
-            if cadena_up not in chains_boundary_list:
-                chains_boundary_list.append(cadena_up)
-        if cadena_down is not None:
-            if cadena_down not in chains_boundary_list:
-                chains_boundary_list.append(cadena_down)
-    chains_boundary_list.sort(key=lambda x: x.size, reverse=True)
-    return chains_boundary_list
 
 def sort_chain_list_by_neighboorhood(chain,listaCadenas):
     listaCadenas.sort(key=lambda x: x.size, reverse=True)
@@ -1516,9 +1245,17 @@ def get_up_and_down_chains(listaPuntos,listaCadenas,cadena,extremo):
 def get_dots_in_radial_direction(dot_direccion,listaCadenas):
     label = 'get_dots_in_radial_direction'
     #write_log(MODULE_NAME,label,f"dot_direccion {dot_direccion}")
-    chains_in_radial_direction = get_chains_within_angle(dot_direccion.angulo,listaCadenas)
+    chains_in_radial_direction = get_chains_within_angle(dot_direccion.angulo, listaCadenas)
     #write_log(MODULE_NAME, label, f"chains_in_radial_direction {chains_in_radial_direction}")
     lista_puntos_perfil = get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_in_radial_direction,dot_direccion.angulo)
+    # duplicate = check_duplicate_dots(lista_puntos_perfil)
+    # if duplicate:
+    #     print(duplicate)
+    #     cad = [c for c in chains_in_radial_direction if c.id == duplicate.cadenaId][0]
+    #     print(cad)
+    #     if check_duplicate_dots(cad.lista):
+    #         raise
+    #     raise
     list_dot_chain_index = [idx for idx,dot in enumerate(lista_puntos_perfil) if dot.cadenaId == dot_direccion.cadenaId]
     if len(list_dot_chain_index)>0:
         dot_chain_index = list_dot_chain_index[0]
@@ -1527,40 +1264,6 @@ def get_dots_in_radial_direction(dot_direccion,listaCadenas):
         dot_chain_index = -1
 
     return dot_chain_index, lista_puntos_perfil
-
-def get_up_relative_to_chain(dot_direccion,listaCadenas):
-    up_chain = None
-    dot_chain_index, lista_puntos_perfil = get_dots_in_radial_direction(dot_direccion,listaCadenas)
-
-    if dot_chain_index < 0:
-        return up_chain, -1
-
-    if len(lista_puntos_perfil)-1 > dot_chain_index:
-        up_dot = lista_puntos_perfil[dot_chain_index + 1]
-        up_chain = ch.getChain(up_dot.cadenaId,listaCadenas)
-        radial_distance = np.abs(up_dot.radio - dot_direccion.radio)
-        
-    return up_chain,radial_distance
-
-def get_down_relative_to_chain(dot_direccion,listaCadenas):
-    down_chain = None
-    dot_chain_index, lista_puntos_perfil = get_dots_in_radial_direction(dot_direccion,listaCadenas)
-    if dot_chain_index < 0:
-        return down_chain, -1
-    if  dot_chain_index > 0:
-        down_dot = lista_puntos_perfil[dot_chain_index - 1]
-        down_chain = ch.getChain(down_dot.cadenaId,listaCadenas)
-        radial_distance = np.abs(down_dot.radio - dot_direccion.radio)
-
-    return down_chain, radial_distance
-
-def still_in_neighboorhood(indice):
-    max_distance_grades = 45
-    max_distance = max_distance_grades * Nr / 360
-    return False if indice>max_distance else True
-
-
-
 
 def find_start_index(angle,chain,sentido):
     dot = get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center([chain],angle)[0]
@@ -1610,13 +1313,14 @@ def check_cumulative_radio(cadena,cadena_down_up,cadena_limite,extremo,umbral,de
         return False,-1
 
 
-def actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2):
-    if extremo in 'A':
-        cad_1.A_up = cad_2.A_up
-        cad_1.A_down = cad_2.A_down
-    else:
-        cad_1.B_up = cad_2.B_up
-        cad_1.B_down = cad_2.B_down
+def actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2, update_border_chain_1=True):
+    # if update_border_chain_1:
+    #     if extremo in 'A':
+    #         cad_1.A_up = cad_2.A_up
+    #         cad_1.A_down = cad_2.A_down
+    #     else:
+    #         cad_1.B_up = cad_2.B_up
+    #         cad_1.B_down = cad_2.B_down
 
     for cad in state.lista_cadenas:
         if cad.A_up is not None:
@@ -1642,14 +1346,16 @@ def pegar_2_cadenas(state,cad_1,cad_2,extremo,S_up,intersecciones=True,debug=Fal
 
     #state.buscar_cadena_candidata_a_pegar_rm_data_from_hash_dict(state.chain, cad_1, extremo)
     # 1.0 identificar puntos
-    #puntos_cadenas_viejas = cad_2.lista
     lista_nuevos_puntos = []
-    pegar_dos_cadenas_interpolando_via_cadena_soporte(state.chain, cad_1, cad_2, lista_nuevos_puntos, extremo,add=False)
+    _, change_border = pegar_dos_cadenas_interpolando_via_cadena_soporte(state.chain, cad_1, cad_2, lista_nuevos_puntos, extremo,add=False)
+    if change_border:
+        state.actualizar_vecindad_cadenas_si_amerita([cad_1])
+        #raise
     state.add_list_to_system(cad_1, lista_nuevos_puntos)
     assert len(cad_1.lista) == len([punto for punto in state.lista_puntos if punto.cadenaId == cad_1.id])
 
     #apuntar cadenas bordes del extremo
-    actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2)
+    actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2,not change_border )
     # remover cad_2  de lista_cadenas
     cad_2_index = state.lista_cadenas.index(cad_2)
     del state.lista_cadenas[cad_2_index]
@@ -1685,6 +1391,30 @@ def pegar_2_cadenas(state,cad_1,cad_2,extremo,S_up,intersecciones=True,debug=Fal
         f"largoListaPunto {len(state.lista_puntos)} cadenas {ch.contarPuntosListaCadenas(state.lista_cadenas)}", debug=debug)
 
     assert len(cad_1.lista) == len([punto for punto in state.lista_puntos if punto.cadenaId == cad_1.id])
+
+    if DEBUG:
+        chain = cad_1
+        recorrer_s_down = recorrer_s_up = True
+        S_up_lento, S_down_lento = recorrer_listas_algoritmo_lento(state, chain, recorrer_s_down, recorrer_s_up)
+        S_up, S_down = recorrer_listas_algoritmo_rapido(state, chain, recorrer_s_down, recorrer_s_up)
+
+        iguales = control_lista_iguales(S_down_lento, S_down)
+        if not iguales:
+            ch.visualizarCadenasSobreDiscoTodas([chain] + S_down, state.img, state.lista_cadenas, 'rapido', labels=True, save=state.path)
+            ch.visualizarCadenasSobreDiscoTodas([chain] + S_down_lento, state.img, state.lista_cadenas, 'lento', labels=True,
+                                                save=state.path)
+            ch.visualizarCadenasSobreDiscoTodas([cad_2] , state.img, [], '2', labels=True,
+                                                save=state.path)
+            check_duplicate_dots(state.lista_puntos)
+            raise
+
+        iguales = control_lista_iguales(S_up_lento, S_up)
+        if not iguales:
+            ch.visualizarCadenasSobreDiscoTodas([chain] + S_up, state.img, state.lista_cadenas, 'rapido', labels=True, save=state.path)
+            ch.visualizarCadenasSobreDiscoTodas([chain] + S_up_lento, state.img, state.lista_cadenas, 'lento', labels=True,
+                                                save=state.path)
+            raise
+
     return cad_1
 
 def get_mode(A):
@@ -1736,10 +1466,10 @@ def calcular_matriz_intersecciones_old(listaCadenas, costo=False, debug=False):
     #M_int = np.zeros((len(listaCadenas), len(listaCadenas)))
     M_int = np.eye(len(listaCadenas))
     for i in range(M_int.shape[0]):
-        cad_i = [cad for cad in listaCadenas if cad.id == i][0]#ch.getChain(i, listaCadenas)
+        cad_i = [cad for cad in listaCadenas if cad.id == i][0]
 
         for j in range(M_int.shape[0]):
-            cad_j = [cad for cad in listaCadenas if cad.id == j][0]#ch.getChain(j, listaCadenas)
+            cad_j = [cad for cad in listaCadenas if cad.id == j][0]
             if cad_i.id != cad_j.id:
                 if cadenas_se_intersectan(cad_i, cad_j, costo=costo):
                     M_int[i, j] = 1

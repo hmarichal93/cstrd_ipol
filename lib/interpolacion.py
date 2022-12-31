@@ -155,12 +155,14 @@ def completar_cadena_via_anillo_soporte(cadena_anillo_soporte, cad1, listaPuntos
     assert len(dominio_angular_cad1) == cad1.size
 
     interpolar_en_domino(cadena_anillo_soporte, extremo_cad1, extremo_cad2, extremo, cad1, lista_puntos_generados)
-    cad1.add_lista_puntos(lista_puntos_generados)
+    assert len([dot for dot in cad1.lista if dot in lista_puntos_generados]) == 0
+    change_border = cad1.add_lista_puntos(lista_puntos_generados)
+
     #assert len(cad1.lista) == len([punto for punto in listaPuntos if punto.cadenaId == cad1.id])
     ###check part
     dominio_angular_cad1 = cad1._completar_dominio_angular(cad1)
     assert len(dominio_angular_cad1) == cad1.size
-    return
+    return change_border
 
 def pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_anillo_soporte, cad1, cad2,  listaPuntos, extremo,add=True, listaCadenas=None):
     label = 'pegar_dos_cadenas_interpolando_via_cadena_soporte'
@@ -175,6 +177,7 @@ def pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_anillo_soporte, cad
     lista_puntos_generados = []
     interpolar_en_domino(cadena_anillo_soporte, extremo_cad1, extremo_cad2, extremo, cad1, lista_puntos_generados)
     listaPuntos += lista_puntos_generados
+    assert len([dot for dot in cad1.lista if dot in lista_puntos_generados]) == 0
 
 
     #2.0 Pasar puntos de cadena 2 a 1.
@@ -183,7 +186,7 @@ def pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_anillo_soporte, cad
     for punto in puntos:
         punto.cadenaId = cad1.id
 
-    cad1.add_lista_puntos(puntos)
+    change_border = cad1.add_lista_puntos(puntos)
     if add:
         cad1.add_lista_puntos(lista_puntos_generados)
         ###########################check part###########################################################################
@@ -194,4 +197,4 @@ def pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_anillo_soporte, cad
 
     # ##########################################################
 
-    return lista_puntos_generados
+    return lista_puntos_generados, change_border
