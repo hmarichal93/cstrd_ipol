@@ -27,7 +27,7 @@ def main(datos):
         imageGray = resize_image(imageGray,( hnew, wnew) )
         img = resize_image(img, (hnew, wnew))
         centro = datos['centro']
-        datos['centro'] = (int(centro[0] * hscale), int(centro[1] * wscale))
+        datos['centro'] = (int(centro[0] * wscale), int(centro[1] * hscale))
     mask = np.where(imageGray==255,1,0)
 
     img_eq = imageGray.copy()
