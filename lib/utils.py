@@ -49,11 +49,9 @@ def chain_2_labelme_json(chain_list,image_path,image_height,image_width):
     """
     lista_cadenas: lista de cadenas completas
     """
-    cadenas_completas = [cadena for cadena in chain_list if cadena.esta_completa()]
+    cadenas_completas = [cadena for cadena in chain_list if cadena.esta_completa() and not cadena.is_center and not cadena.corteza]
 
-    angulo_inicial = 180
-    direccion = angulo_inicial
-    cadenas_completas_180 = get_chains_within_angle( direccion, cadenas_completas)
+
     #assert len(cadenas_completas) == len(cadenas_completas_180)
 
 
@@ -62,6 +60,7 @@ def chain_2_labelme_json(chain_list,image_path,image_height,image_width):
     # punto_cadenas = [ ch.get_closest_chain_dot_to_angle( cadena, direccion) for cadena in cadenas_completas]
     # punto_cadenas.sort(key = lambda x: x.radio)
     # cadenas_completas_ordenadas = [ ch.getChain( dot.cadenaId, cadenas_completas) for dot in punto_cadenas]
+
     cadenas_completas_ordenadas = cadenas_completas
     labelme_json = {"imagePath":image_path, "imageHeight":image_height,
                     "imageWidth":image_width, "version":"5.0.1",
@@ -74,7 +73,8 @@ def chain_2_labelme_json(chain_list,image_path,image_height,image_width):
         anillo["shape_type"]="polygon"
         anillo["flags"]={}
         labelme_json["shapes"].append(anillo)
-    return labelme_json
+
+    return labelme_json, cadenas_completas
 
 def save_results(datos,output_file):
     listaCadenas= datos['listaCadenas']
@@ -86,12 +86,13 @@ def save_results(datos,output_file):
     M = datos.get('M')
     N = datos.get('N')
     image_path = datos.get("image_path")
-    labelme_json = chain_2_labelme_json(listaCadenas, image_path, M, N)
+    labelme_json, cadenas_completas = chain_2_labelme_json(listaCadenas, image_path, M, N)
     write_json(labelme_json, filepath=f"{SAVE_PATH}/labelme.json")
 
     listaCadenas, img = datos['listaCadenas'], datos['img']
     ch.visualizarCadenasSobreDisco(
-        [cad for cad in listaCadenas if cad.esta_completa() and not cad.is_center], img, output_file, labels=False, gris=True
+        [cad for cad in cadenas_completas if not cad.is_center and not cad.corteza], img, output_file,
+        labels=False, gris=True
     )
     ch.visualizarCadenasSobreDisco(
         [], img, SAVE_PATH/ "input.png", labels=False)

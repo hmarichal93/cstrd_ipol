@@ -5,48 +5,47 @@ Created on Fri May 28 10:54:53 2021
 
 @author: henry
 @brief:
-    TODO:
-        - corrigue superposicion de cadenas azules con rojas.
+
 """
 import time
 from pathlib import Path
 
 import lib.devernayEdgeDetector as edge_detector
-from lib.io import load_image, get_path, load_json, write_json
-import lib.spyder_web_4 as muestreo
+from lib.io import load_image, load_json, write_json
+import lib.sampling as sampling
 import lib.unir_cadenas_prolijo_3 as union
 from lib.utils import save_results
-import lib.preprocesamiento as preprocesamiento
+import lib.preprocessing as preprocessing
 
 
 def main(img_name,root_dir,output_dir, cy, cx):
     t0 = time.time()
     ####################################################################################################################
     results = load_image(img_name, cy, cx, root_dir,output_dir)
-
+    print(f"{img_name}")
     ####################################################################################################################
     print("Step 1.0 Preprocessing")
-    preprocesamiento.main(results)
+    preprocessing.main(results)
 
     ####################################################################################################################
-    print("Step 2.0: Detectar bordes")
+    print("Step 2.0: Edge detector")
     edge_detector.main(results)
 
     ####################################################################################################################
-    print("Step 3.0: Muestreo de bordes")
-    muestreo.main(results)
+    print("Step 3.0: Sampling edges")
+    sampling.main(results)
 
     ####################################################################################################################
-    print("Step 4.0: Unir Cadenas")
+    print("Step 4.0: Chains grouping")
     union.unir_cadenas(results)
 
     ####################################################################################################################
-    print("Step 5.0: Post procesamiento")
+    print("Step 5.0: Post processing")
     union.postprocesamiento_etapa_2(results)
 
     ####################################################################################################################
     print("Step 6.0: Saving Results")
-    save_results(results, results['save_path']/"output.png")
+    save_results(results, results['save_path'] / "output.png")
 
     ####################################################################################################################
     tf = time.time()
@@ -78,6 +77,9 @@ def save_config(args, root_path):
     if args.th_low:
         config['th_low'] = args.th_low
 
+    if args.debug:
+        config['debug'] = True
+
     write_json(config, Path(root_path) / 'config/general.json')
 
 
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     parser.add_argument("--edge_th", type=int, required=False)
     parser.add_argument("--th_high", type=int, required=False)
     parser.add_argument("--th_low", type=int, required=False)
+    parser.add_argument("--debug", type=int, required=False)
 
     args = parser.parse_args()
     save_config(args, args.root)

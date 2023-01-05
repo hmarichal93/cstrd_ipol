@@ -53,52 +53,114 @@ def from_polar_to_cartesian(r,angulo,centro):
 def unir_cadenas(datos):
     listaCadenas, listaPuntos,  M,N = datos['listaCadenas'], datos['listaPuntos'],datos['M'], datos['N']
     img, SAVE_PATH,  centro =  datos['img'], datos['save_path'],  datos['centro']
-    debug_imgs = datos['debug']
-
+    debug_imgs = datos['config'].get('debug', False)
+    logs = SAVE_PATH
     to = time.time()
 
     Matriz_intersecciones = union.calcular_matriz_intersecciones(listaCadenas, listaPuntos, Nr = datos['config']['Nr'])
-
-    listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas,listaPuntos,Matriz_intersecciones,img,
+    corteza = [cad for cad in listaCadenas if cad.corteza][0]
+    listaCadenas = [cad for cad in listaCadenas if not cad.corteza]
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_1"
+        logs.mkdir(exist_ok=True)
+    listaPuntos,listaCadenas,Matriz_intersecciones = union.main( listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                              centro,  radial_tolerance = 0.1, debug_imgs=debug_imgs,ancho_std=2,
-                                                                distancia_angular_maxima=10,path=SAVE_PATH
+                                                                distancia_angular_maxima=10,path=logs, derivative_th=1.5
                                                                 )
-
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_1.png", labels=False, gris=True, color=True
+    # )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_2"
+        logs.mkdir(exist_ok=True)
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos,Matriz_intersecciones,img,
                                              centro, radial_tolerance = 0.2, debug_imgs=debug_imgs,ancho_std=2,
-                                                                distancia_angular_maxima=10
+                                                                distancia_angular_maxima=10, path=logs, derivative_th=1.5
                                                                 )
-
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_2.png", labels=False, gris=True, color=True
+    # )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_3"
+        logs.mkdir(exist_ok=True)
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
-                                            centro, radial_tolerance= 0.1,  distancia_angular_maxima=22,debug_imgs=debug_imgs,ancho_std=3)
-
+                                            centro, radial_tolerance= 0.1,  distancia_angular_maxima=22,
+                                                                debug_imgs=debug_imgs,ancho_std=3, path=logs, derivative_th=1.5
+                                                                )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_4"
+        logs.mkdir(exist_ok=True)
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_4.png", labels=False, gris=True, color=True
+    # )
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                                                    centro,
                                                                   radial_tolerance=0.2, distancia_angular_maxima=22,
-                                                                  debug_imgs=debug_imgs, ancho_std=3)
-
-
+                                                                  debug_imgs=debug_imgs, ancho_std=3,
+                                                                  path=logs, derivative_th=1.5
+                                                                )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_5"
+        logs.mkdir(exist_ok=True)
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_5.png", labels=False, gris=True, color=True
+    # )
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro, radial_tolerance = 0.1, distancia_angular_maxima = 45,
-                                                                debug_imgs=debug_imgs, todas_intersectantes=False, ancho_std=3)
-
+                                                                debug_imgs=debug_imgs, todas_intersectantes=False,
+                                                                ancho_std=3, path=logs, derivative_th=1.5
+                                                                )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_6"
+        logs.mkdir(exist_ok=True)
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_6.png", labels=False, gris=True, color=True
+    # )
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro, radial_tolerance= 0.2, distancia_angular_maxima=45,
-                                                                debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=3)
-
+                                                                debug_imgs=debug_imgs,todas_intersectantes=False,
+                                                                ancho_std=3, path=logs, derivative_th=1.5
+                                                                )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_7"
+        logs.mkdir(exist_ok=True)
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_7.png", labels=False, gris=True, color=True
+    # )
     listaPuntos,listaCadenas,Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                             centro,radial_tolerance= 0.1, distancia_angular_maxima=22,
-                                                                debug_imgs=debug_imgs,todas_intersectantes=False,ancho_std=2, der_desde_centro= True)
+                                                                debug_imgs=debug_imgs,todas_intersectantes=False,
+                                                                ancho_std=2, der_desde_centro = True, path=logs,
+                                                                derivative_th=2
+                                                                )
+    if debug_imgs:
+        logs = SAVE_PATH / "debug_8"
+        logs.mkdir(exist_ok=True)
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_8.png", labels=False, gris=True, color=True
+    # )
     listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas, listaPuntos, Matriz_intersecciones, img,
                                                                   centro, radial_tolerance=0.2,
                                                                   distancia_angular_maxima=45,
                                                                   debug_imgs=debug_imgs, todas_intersectantes=False,
-                                                                  ancho_std=3, der_desde_centro=True)
+                                                                  ancho_std=3, der_desde_centro=True, path=logs,
+                                                                  derivative_th=2
+                                                                )
 
+
+    listaPuntos, listaCadenas, Matriz_intersecciones = union.main(listaCadenas + [corteza], listaPuntos, Matriz_intersecciones, img,
+                                                                  centro, radial_tolerance=0.2,
+                                                                  distancia_angular_maxima=45,
+                                                                  debug_imgs=debug_imgs, todas_intersectantes=False,
+                                                                  ancho_std=3, der_desde_centro=True, path=logs,
+                                                                  derivative_th=2
+                                                                )
     ch.visualizarCadenasSobreDisco(
         listaCadenas, img, f"{datos['save_path']}/grouping_chains.png", labels=False, gris=True, color=True
     )
-
+    # ch.visualizarCadenasSobreDisco(
+    #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_color.png", labels=True
+    # )
     tf = time.time()
     datos['union_tiempo'] = tf-to
     print(f"Union: {datos['union_tiempo']:.1f}")
@@ -110,24 +172,6 @@ def unir_cadenas(datos):
 
 
 
-
-
-
-def generate_pdf(path):
-    pdf = FPDF()
-    pdf.set_font('Arial', 'B', 16)
-
-    figures = glob.glob(f"{path}/**/*.png", recursive=True)
-    print(figures)
-    for fig in tqdm(natsorted(figures)):
-        x, y = 0, 50
-        height = 150
-        width = 180
-
-        pdf.add_page()
-        pdf.image(fig, x, y, h=height, w=width)
-
-    pdf.output(f"{path}/debuggin_pdf.pdf", "F")
 
 
 def construir_poligono_limite(anillo_externo, anillo_interno):

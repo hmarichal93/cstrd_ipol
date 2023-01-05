@@ -150,7 +150,10 @@ class Cadena:
         self.Nr = Nr
         self.extA = None
         self.extB = None
+        self.corteza = False
 
+    def set_corteza(self):
+        self.corteza = True
     def get_borders_chain(self, extremo):
         if extremo in 'A':
             up_chain = self.A_up

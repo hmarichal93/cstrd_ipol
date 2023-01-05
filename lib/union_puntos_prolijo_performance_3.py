@@ -34,7 +34,7 @@ NOT_REPETING_CHAIN = -1
 
 class SystemStatus:
     def __init__(self,lista_puntos,lista_cadenas,matriz_intersecciones,centro_img,img,distancia_angular,
-                path=None,radio_limit=0.1,debug=False, ancho_std=2, derivada_desde_centro = False):
+                path=None,radio_limit=0.1,debug=False, ancho_std=2, derivada_desde_centro = False, derivative_th=1.5):
         self.desde_el_centro = derivada_desde_centro
         self.path = path
         self.ancho_std = ancho_std
@@ -58,6 +58,7 @@ class SystemStatus:
         self.iteracion = 0
         self.dict_buscar_cadena_candidata_a_pegar = {}
         self.dict_control_de_verificacion = {}
+        self.derivative_th = derivative_th
 
 
 
@@ -416,9 +417,11 @@ def criterio_kmeans(cadena_candidata, cadena_origen, extremo, cadena_soporte, ve
                                             histograma_test=False), distancia_entre_bordes
 
 def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=None, radial_tolerance=2,
-         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2, der_desde_centro=False, fast=True):
+         todas_intersectantes = False, distancia_angular_maxima=22,debug_imgs=False,ancho_std=2, der_desde_centro=False,
+         fast=True, derivative_th=1.5):
     state = SystemStatus(dot_list, chain_list, intersections_matrix, img_center, img_orig, distancia_angular_maxima,
-                         radio_limit=radial_tolerance,path=path,debug=debug_imgs, ancho_std = ancho_std, derivada_desde_centro= der_desde_centro)
+                         radio_limit=radial_tolerance,path=path,debug=debug_imgs, ancho_std = ancho_std,
+                         derivada_desde_centro= der_desde_centro, derivative_th=derivative_th)
     #check_duplicate_dots(state.lista_puntos)
     del dot_list
     del chain_list
@@ -427,22 +430,18 @@ def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=
               f"\n\n\n\n\n\nradial_tolerance={radial_tolerance}\n\n\n\n\n\n\n\n")
     while state.continue_in_loop():
         chain = state.get_current_chain()
-        #control_puntos_cadenas(state.lista_cadenas)
         recorrer_s_up = True; recorrer_s_down = True
         while True:
             S_up, S_down = armar_listas_up_and_down(state, chain, recorrer_s_up, recorrer_s_down,fast=fast)
-            #control_puntos_cadenas(S_up)
-            #control_puntos_cadenas(S_down)
 
             if recorrer_s_up:
-                #S_up = buscar_cadenas_faltantes_si_amerita( state, 'up', S_up, chain, debug=debug_imgs, img=state.img)
                 if debug_imgs:
                     ch.visualizarCadenasSobreDiscoTodas([chain] + S_up, state.img, state.lista_cadenas,
                                                         f'{state.iteracion}_soporte_{chain.label_id}_S_up_inicio_iter', save=state.path, labels=True)
                     state.iteracion += 1
+                    write_log(MODULE_NAME, label,
+                              f"cad.id {chain.label_id} S_up {[cad.label_id for cad in S_up]}")
 
-                write_log(MODULE_NAME, label,
-                          f"cad.id {chain.label_id} S_up {[cad.label_id for cad in S_up]}")
                 se_modifica_s_up = recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state, S_up, chain,sentido='up',check=todas_intersectantes)
 
                 if debug_imgs:
@@ -453,15 +452,14 @@ def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=
                 se_modifica_s_up = False
 
             if recorrer_s_down:
-                #S_down = buscar_cadenas_faltantes_si_amerita(state, 'down', S_down, chain, debug=False, img=False)
                 if debug_imgs:
                     ch.visualizarCadenasSobreDiscoTodas([chain] + S_down, state.img, state.lista_cadenas,
                                                         f'{state.iteracion}_{chain.label_id}_S_down_inicio_iter', save=state.path, labels=True)
                     state.iteracion += 1
 
-                write_log(MODULE_NAME, label,
-                          f"cad.id {chain.label_id} S_down {[cad.label_id for cad in S_down]}")
-                control_puntos_cadenas(S_down)
+                    write_log(MODULE_NAME, label,
+                              f"cad.id {chain.label_id} S_down {[cad.label_id for cad in S_down]}")
+
                 se_modifica_s_down = recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state, S_down, chain,sentido='down',check=todas_intersectantes)
 
                 if debug_imgs:
@@ -486,9 +484,6 @@ def main(chain_list, dot_list, intersections_matrix, img_orig, img_center, path=
         if chain.esta_completa(regiones=8) and chain.size < chain.Nr:
                 state.completar_cadena_si_no_hay_interseccion_con_otras(chain)
 
-    #if debug_imgs:
-    #    state.generate_pdf()
-    control_puntos_cadenas(state.lista_cadenas)
     return state.lista_puntos, state.lista_cadenas, state.matriz_intersecciones
 
 def ordenar_cadenas(S_up,chain):
@@ -605,13 +600,16 @@ def select_closest_chain(chain, a_neighbour_chain, b_neighbour_chain):
 
 def buscar_cadena_candidata_a_pegar_con_simetria(state, chain, S_up, S_up_no_inter, ch_up, border, sentido, check):
     label = 'buscar_cadena_candidata_a_pegar_con_simetria'
-    write_log(MODULE_NAME, label,
-              f"cad.id {ch_up.label_id} border {border} conjunto_cadenas {[cad.label_id for cad in S_up_no_inter]}")
+    if state.debug:
+        write_log(MODULE_NAME, label,
+                  f"cad.id {ch_up.label_id} border {border} conjunto_cadenas {[cad.label_id for cad in S_up_no_inter]}")
 
     candidata_a = buscar_cadena_candidata_a_pegar(state, chain, S_up, S_up_no_inter, ch_up, border, sentido=sentido,
-                                                  check_angle=check)
-    write_log(MODULE_NAME, label,
-              f"iter: {state.iteracion} cad.id {ch_up.label_id} border {border} candidata {candidata_a.label_id if candidata_a is not None else None}")
+                                                      check_angle=check)
+    if state.debug:
+        write_log(MODULE_NAME, label,
+                  f"iter: {state.iteracion} cad.id {ch_up.label_id} border {border} candidata {candidata_a.label_id if candidata_a is not None else None}")
+
     # control de validacion simetrico
     if candidata_a is None:
         return candidata_a
@@ -624,10 +622,10 @@ def buscar_cadena_candidata_a_pegar_con_simetria(state, chain, S_up, S_up_no_int
                                                           sentido=sentido,
                                                           check_angle=check)
     candidata_a = None if candidata_simetrica != ch_up else candidata_a
-    write_log(MODULE_NAME, label,
-              f"iter: {state.iteracion} cad.id {ch_up.label_id} border {border} candidata {candidata_a.label_id if candidata_a is not None else None}")
-    # if candidata_a is not None:
-    #     state.buscar_cadena_candidata_a_pegar_add_data_to_hash_dict(chain, ch_up, candidata_a, border)
+    if state.debug:
+        write_log(MODULE_NAME, label,
+                  f"iter: {state.iteracion} cad.id {ch_up.label_id} border {border} candidata {candidata_a.label_id if candidata_a is not None else None}")
+
     if candidata_a is not None and (candidata_a.size + ch_up.size) > candidata_a.Nr:
         candidata_a = None
 
@@ -647,28 +645,30 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
     lenght_s_up_init = len(S_up)
     if lenght_s_up_init == 0:
         return False
-    #control_puntos_cadenas(S_up)
     curr_index = 0
     while True:
         ch_up = S_up[curr_index]
-        assert len([punto for punto in ch_up.lista if punto.cadenaId != ch_up.id]) == 0
-
-
         # busco la proxima que no intersecta
         id_inter = np.where(state.matriz_intersecciones[ch_up.id] == 1)[0]
-        write_log(MODULE_NAME, label,
-                  f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} curr_index "
-                  f"{curr_index} S_up_inter {[cad.label_id for cad in S_up if cad.id in id_inter]}",debug=debug)
+        if state.debug:
+            write_log(MODULE_NAME, label,
+                      f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} curr_index "
+                      f"{curr_index} S_up_inter {[cad.label_id for cad in S_up if cad.id in id_inter]}",debug=debug)
+
         S_up_no_inter = [cad for cad in S_up if cad.id not in id_inter]
-        write_log(MODULE_NAME, label,
-                  f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} curr_index "
-                  f"{curr_index} S_up_no_inter {[cad.label_id for cad in S_up_no_inter]}",debug=debug)
+
+        if state.debug:
+            write_log(MODULE_NAME, label,
+                      f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} curr_index "
+                      f"{curr_index} S_up_no_inter {[cad.label_id for cad in S_up_no_inter]}",debug=debug)
 
         if len(S_up_no_inter)>0:
             # hay cadenas candidatas para unir
             border = 'B'
-            write_log(MODULE_NAME, label,
+            if state.debug:
+                write_log(MODULE_NAME, label,
                       f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} ext {border}",debug=debug)
+
             candidata_b = buscar_cadena_candidata_a_pegar_con_simetria(state, chain, S_up, S_up_no_inter, ch_up, border,
                                                           sentido, check)
 
@@ -678,11 +678,15 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
                                                     save=state.path, labels=True)
                 write_log(MODULE_NAME, label, f'{state.iteracion}_cadena_origen_{ch_up.label_id}_cand_{border}_{candidata_b.label_id}',debug=debug)
                 state.iteracion += 1
+
             border = 'A'
-            write_log(MODULE_NAME, label,
-                      f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} ext {border}",debug=debug)
+            if state.debug:
+                write_log(MODULE_NAME, label,
+                          f"iter: {state.iteracion} cad.id {ch_up.label_id} cad.size {ch_up.size} ext {border}",debug=debug)
+
             candidata_a = buscar_cadena_candidata_a_pegar_con_simetria(state, chain, S_up, S_up_no_inter, ch_up, border,
                                                           sentido, check)
+
             if state.debug and candidata_a is not None:
                 ch.visualizarCadenasSobreDiscoTodas([chain, ch_up], state.img.copy(), [],
                                                     f'{state.iteracion}_cadena_origen_{ch_up.label_id}_cand_{border}_{candidata_a.label_id}',
@@ -692,11 +696,6 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
                 state.iteracion += 1
 
             closest_chain = select_closest_chain(ch_up, candidata_a, candidata_b)
-            control = True
-            if control and closest_chain is not None:
-                puntos = [punto for punto in closest_chain.lista if punto.cadenaId != closest_chain.id]
-                if len(puntos) > 0:
-                    raise
 
             border = 'A' if closest_chain == candidata_a else 'B'
             se_pego_cadena = union_2_chains(state, ch_up, closest_chain, border, S_up)
@@ -715,9 +714,8 @@ def recorrer_subconjunto_de_cadenas_y_pegar_si_amerita(state,S_up, chain,sentido
         curr_index = S_up.index(ch_up)
         curr_index = curr_index + 1 if not se_pego_cadena else curr_index
         if curr_index >= len(S_up):
-
             break
-    #control_puntos_cadenas(S_up)
+
     lenght_s_up_final = len(S_up)
     return lenght_s_up_final < lenght_s_up_init
 
@@ -770,57 +768,29 @@ def ordenar_cadenas_en_vecindad(state, S_up_no_inter, ch_up, border):
 def buscar_cadena_candidata_a_pegar(state, chain, S_up, S_up_no_inter, ch_up,
                                                              border, sentido='up',check_angle=True):
     label = 'buscar_cadena_candidata_a_pegar'
-
     # Quedarme unicamente con las cadenas cercanas segun cierta distancia maxima
-    control = True
-    if control:
-        for cadena in S_up_no_inter+S_up:
-            puntos = [punto for punto in cadena.lista if punto.cadenaId != cadena.id]
-            if len(puntos) > 0 :
-                raise
     conjunto_de_cadenas_candidatas_cercanas = ordenar_cadenas_en_vecindad(state, S_up_no_inter, ch_up, border)
     largo_conjunto = len(conjunto_de_cadenas_candidatas_cercanas)
     if largo_conjunto == 0:
         return None
-    write_log(MODULE_NAME, label,
-              f"cad.id {ch_up.label_id} border {border} conjunto_cadenas {[cad[1].label_id for cad in conjunto_de_cadenas_candidatas_cercanas]}")
+    if state.debug:
+        write_log(MODULE_NAME, label,
+                  f"cad.id {ch_up.label_id} border {border} conjunto_cadenas {[cad[1].label_id for cad in conjunto_de_cadenas_candidatas_cercanas]}")
     cadena_para_pegar = None
     next_id = 0
     while next_id < largo_conjunto:
         next_chain = conjunto_de_cadenas_candidatas_cercanas[next_id][1]
-        control = True
-        if control:
-            puntos = [punto for punto in next_chain.lista if punto.cadenaId != next_chain.id]
-            if len(puntos) > 0:
-                raise
         valida, distancia = controles_de_verificacion(state, ch_up, next_chain, chain, border, S_up, sentido=sentido,
                                                       check_angle=check_angle)
-        control = True
-        if control:
-            puntos = [punto for punto in next_chain.lista if punto.cadenaId != next_chain.id]
-            if len(puntos) > 0:
-                raise
         if valida:
             #busco todas las que intersectan a next_chain
             inter_next_chain = np.where(state.matriz_intersecciones[ch_up.id] == 1)[0]
             cadenas_intersectantes_next_chain = [cad[1] for cad in conjunto_de_cadenas_candidatas_cercanas if
                                            cad[1].id in inter_next_chain and next_chain.id != cad[1].id]
 
-            control = True
-            if control:
-                for cadena in cadenas_intersectantes_next_chain:
-                    puntos = [punto for punto in cadena.lista if punto.cadenaId != cadena.id]
-                    if len(puntos) > 0:
-                        raise
             #selecciono la que esta a menor distancia radial
             lista_cadenas_distancia_radial = [( next_chain, distancia)]
             for cad_inter in cadenas_intersectantes_next_chain:
-                control = True
-                if control:
-                    puntos = [punto for punto in cad_inter.lista if punto.cadenaId != cad_inter.id]
-                    if len(puntos) > 0:
-                        raise
-
                 valida, distancia = controles_de_verificacion(state, ch_up, cad_inter, chain, border, S_up,
                                                               sentido=sentido, check_angle=check_angle)
                 if valida:
@@ -828,20 +798,10 @@ def buscar_cadena_candidata_a_pegar(state, chain, S_up, S_up_no_inter, ch_up,
 
             lista_cadenas_distancia_radial.sort(key= lambda x: x[1])
             cadena_para_pegar = lista_cadenas_distancia_radial[0][0]
-            control = True
-            if control and cadena_para_pegar is not None:
-                puntos = [punto for punto in cadena_para_pegar.lista if punto.cadenaId != cadena_para_pegar.id]
-                if len(puntos) > 0:
-                    raise
 
             break
 
         next_id += 1
-    control = True
-    if control and cadena_para_pegar is not None:
-        puntos = [punto for punto in cadena_para_pegar.lista if punto.cadenaId != cadena_para_pegar.id]
-        if len(puntos) > 0:
-            raise
 
     return cadena_para_pegar
 
@@ -864,11 +824,12 @@ def verificar_extremos(chain,ch_up,next_chain,border,sentido,state):
 def controles_de_verificacion( state, ch_up, next_chain, chain, border,  S_up, sentido='up', check_angle=True):
 
     label = "controles_de_verificacion"
-    write_log(MODULE_NAME, label,
+    if state.debug:
+        write_log(MODULE_NAME, label,
               f"cad.id {ch_up.label_id} border {border} cad.id {next_chain.label_id} cad_limite.id {chain.label_id} sentido {sentido}")
-    res = state.controles_de_verificacion_if_exist_get_results(chain, ch_up, next_chain, border)
-    if res is not None:
-        return res
+    # res = state.controles_de_verificacion_if_exist_get_results(chain, ch_up, next_chain, border)
+    # if res is not None:
+    #     return res
 
     #0. Criterio de size
     if ch_up.size + next_chain.size > ch_up.Nr:
@@ -877,37 +838,25 @@ def controles_de_verificacion( state, ch_up, next_chain, chain, border,  S_up, s
     #1. Extremo valido de interseccion
     distancia = -1
     valida = verificar_extremos(chain,ch_up,next_chain,border,sentido,state)
-    control = True
-    if control:
-        puntos = [punto for punto in next_chain.lista if punto.cadenaId != next_chain.id]
-        if len(puntos) > 0:
-            raise
 
     if valida:
-        write_log(MODULE_NAME, label,
-                  f"check_extremos_validos PASS")
+        if state.debug:
+            write_log(MODULE_NAME, label,
+                      f"check_extremos_validos PASS")
         valida_radial , distancia, inf_banda = criterio_distancia_radial(state, chain, ch_up, next_chain, border)
         valida_dist , distancia, inf_banda = criterio_distribucion_radial(state, chain, ch_up, next_chain, border)
         valida =  valida_radial or valida_dist
 
-        control = True
-        if control:
-            puntos = [punto for punto in next_chain.lista if punto.cadenaId != next_chain.id]
-            if len(puntos) > 0:
-                raise
 
         if valida and inf_banda is not None:
-            write_log(MODULE_NAME, label,
-                      f"check_cummulative_radio PASS")
-            from lib.devernayEdgeDetector import devernayEdgeDetector
-            valida = criterio_derivada_maxima(state, ch_up, next_chain, border, inf_banda.ptos_vituales,umbral=2)
-            #valida = True #criterio_diferencia_radial_maxima(state, ch_up, next_chain, border, umbral=3)
-            #angle_between = angulo_entre_extremos_cadenas(ch_up, next_chain, border)
-            #angulo  = 30
-            #valida = not (angle_between <= angulo or angle_between >= 180-angulo)
-            if valida:
+            if state.debug:
                 write_log(MODULE_NAME, label,
-                          f"check_angle_between_borders PASS")
+                          f"check_cummulative_radio PASS")
+            valida = criterio_derivada_maxima(state, ch_up, next_chain, border, inf_banda.ptos_vituales,umbral=state.derivative_th)
+            if valida:
+                if state.debug:
+                    write_log(MODULE_NAME, label,
+                              f"check_angle_between_borders PASS")
 
                 #validar que no se tengan cadenas entre ambas.
                 hay_cadena = hay_cadenas_superpuestas(state,inf_banda)
@@ -1113,28 +1062,10 @@ def union_2_chains(s, cad_1, cad_2,border,S_up):
     se_pego = False
     if cad_2 is not None:
         if cad_1.id != cad_2.id:
-            # if cad_1.label_id == 79320:
-            #     lista = [cad_1.A_up,cad_1.B_down,cad_1.A_down,cad_1.B_up]
-            #     lista = [cad for cad in lista if cad is not None]
-            #     ch.visualizarCadenasSobreDiscoTodas( [cad_1] + lista, s.img, s.lista_cadenas, f'{s.iteracion}_antes_{border}', labels=True,
-            #                                         save=s.path)
-            #check_duplicate_dots(s.lista_puntos)
             pegar_2_cadenas(s, cad_1, cad_2,border,S_up)
-            #check_duplicate_dots(s.lista_puntos)
-
-            # if cad_1.label_id == 79320:
-            #     lista = [cad_1.A_up,cad_1.B_down,cad_1.A_down,cad_1.B_up]
-            #     lista = [cad for cad in lista if cad is not None]
-            #     ch.visualizarCadenasSobreDiscoTodas( [cad_1] + lista, s.img, s.lista_cadenas, f'{s.iteracion}_despues_{border}', labels=True,
-            #                                         save=s.path)
-            #     s.iteracion += 1
             se_pego = True
             s.remove_key_from_hash_dictionaries(s.chain,cad_1, cad_2)
 
-    for cadena in s.lista_cadenas:
-        puntos_otro_id = [punto.cadenaId for punto in cadena.lista if punto.cadenaId != cadena.id]
-        if len(puntos_otro_id) > 0:
-            raise
     return se_pego
 
 
@@ -1344,7 +1275,6 @@ def pegar_2_cadenas(state,cad_1,cad_2,extremo,S_up,intersecciones=True,debug=Fal
               f"cad.id {cad_1.label_id} con cad.id {cad_2.label_id} largoListaCadenas {len(state.lista_cadenas)}"
               f" largoListaPunto {len(state.lista_puntos)} cadenas "f"{ch.contarPuntosListaCadenas(state.lista_cadenas)}",debug=debug)
 
-    #state.buscar_cadena_candidata_a_pegar_rm_data_from_hash_dict(state.chain, cad_1, extremo)
     # 1.0 identificar puntos
     lista_nuevos_puntos = []
     _, change_border = pegar_dos_cadenas_interpolando_via_cadena_soporte(state.chain, cad_1, cad_2, lista_nuevos_puntos, extremo,add=False)
@@ -1352,7 +1282,6 @@ def pegar_2_cadenas(state,cad_1,cad_2,extremo,S_up,intersecciones=True,debug=Fal
         state.actualizar_vecindad_cadenas_si_amerita([cad_1])
         #raise
     state.add_list_to_system(cad_1, lista_nuevos_puntos)
-    assert len(cad_1.lista) == len([punto for punto in state.lista_puntos if punto.cadenaId == cad_1.id])
 
     #apuntar cadenas bordes del extremo
     actualizar_vecindad_cadenas_existentes_luego_de_pegado(state, extremo, cad_1, cad_2,not change_border )
@@ -1380,17 +1309,13 @@ def pegar_2_cadenas(state,cad_1,cad_2,extremo,S_up,intersecciones=True,debug=Fal
             new_id = cad_old.id-1
             cad_old.changeId(new_id)
 
-    assert len(cad_1.lista) == len([punto for punto in state.lista_puntos if punto.cadenaId == cad_1.id])
 
-    ###check part###########################################################
-    dominio_angular_cad1 = cad_1._completar_dominio_angular(cad_1)
-    assert len(dominio_angular_cad1) == cad_1.size
 
     #################################################################
-    write_log(MODULE_NAME, label,f"cad.id_l {cad_1.label_id} cad.id {cad_1.id} largoListaCadenas {len(state.lista_cadenas)} "
-        f"largoListaPunto {len(state.lista_puntos)} cadenas {ch.contarPuntosListaCadenas(state.lista_cadenas)}", debug=debug)
+    if state.debug:
+        write_log(MODULE_NAME, label,f"cad.id_l {cad_1.label_id} cad.id {cad_1.id} largoListaCadenas {len(state.lista_cadenas)} "
+            f"largoListaPunto {len(state.lista_puntos)} cadenas {ch.contarPuntosListaCadenas(state.lista_cadenas)}", debug=debug)
 
-    assert len(cad_1.lista) == len([punto for punto in state.lista_puntos if punto.cadenaId == cad_1.id])
 
     if DEBUG:
         chain = cad_1

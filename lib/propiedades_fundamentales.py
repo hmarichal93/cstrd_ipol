@@ -126,7 +126,7 @@ class InfoBandaVirtual:
         return res
 
     def crear_cadena_desde_lista_puntos(self, lista_puntos):
-        cadena = ch.Cadena(lista_puntos[0].cadenaId, self.cadena_origen.centro, self.cadena_origen.M, self.cadena_origen.N)
+        cadena = ch.Cadena(lista_puntos[0].cadenaId, self.cadena_origen.centro, self.cadena_origen.M, self.cadena_origen.N, Nr=lista_puntos[0].Nr)
         cadena.add_lista_puntos(lista_puntos)
 
         return cadena
@@ -152,16 +152,6 @@ def derivada( fxi_menos_1, fxi_mas_1, Nr,paso=2):
 
 def derivada_vector(f , Nr,paso=2):
     return np.gradient(f)
-    der = np.zeros(len(f))
-    for idx in range(len(f)):
-        if idx == 0 and len(f) > 1:
-            der[idx] = derivada( f[idx], f[idx+1],Nr, paso=1)
-        elif 0 < idx < len(f)-1:
-            der[idx] = derivada( f[idx - 1], f[idx + 1],Nr)
-        else:
-            der[idx] = derivada( f[idx - 1], f[idx], Nr,paso=1)
-
-    return der
 
 def diferencia_radial(f1,f2):
     return np.abs(f1-f2)
@@ -201,12 +191,12 @@ def derivada_maxima( cad_1, cad_2,extremo,puntos_virtuales, umbral=1,N=20,paso=2
     derivada_maxima_var = np.maximum(abs_der_1.max(), abs_der_2.max())
     # umbral = 15
     # derivada_maxima = np.maximum(abs_der_2.mean() + abs_der_2.std()*umbral,abs_der_1.mean() + abs_der_1.std()*umbral)
-    ext1 = cad_1.extA if extremo in 'A' else cad_1.extB
-    ext2 = cad_2.extA if extremo in 'B' else cad_2.extB
+    # ext1 = cad_1.extA if extremo in 'A' else cad_1.extB
+    # ext2 = cad_2.extA if extremo in 'B' else cad_2.extB
     # salto = np.abs(ext1.radio - ext2.radio)
-    derivada_ext1 = derivada(cad_1.sort_dots(sentido=sentido_1)[1].radio, ext2.radio, paso)
-    derivada_ext2 = derivada(cad_2.sort_dots(sentido=sentido_2)[1].radio, ext1.radio, paso)
-    salto = np.maximum(derivada_ext1, derivada_ext2)
+    # derivada_ext1 = derivada(cad_1.sort_dots(sentido=sentido_1)[1].radio, ext2.radio, paso)
+    # derivada_ext2 = derivada(cad_2.sort_dots(sentido=sentido_2)[1].radio, ext1.radio, paso)
+    # salto = np.maximum(derivada_ext1, derivada_ext2)
     salto = np.max(abs_der_3)
     coeficiente = umbral
     res = salto <= coeficiente * derivada_maxima_var
@@ -248,6 +238,12 @@ def generar_puntos_virtuales_sin_cadena_soporte(cad_1, cad_2,extremo):
     cadena_anillo_soporte = None
     interpolar_en_domino(cadena_anillo_soporte, extremo_cad1, extremo_cad2, extremo, cad_1, puntos_virtuales)
     return puntos_virtuales
+
+def criterio_derivada_maxima_no_debbugging(cad_1, cad_2,extremo,puntos_virtuales, umbral=None,N=20,paso=2):
+    puntos_virtuales = generar_puntos_virtuales_sin_cadena_soporte(cad_1, cad_2,extremo)
+
+    res, abs_der_1, abs_der_2,abs_der_3, salto, radios_1, radios_2,radios_virtuales, coeficiente, derivada_maxima_var =\
+        derivada_maxima( cad_1, cad_2, extremo, puntos_virtuales,umbral, N, paso)
 def criterio_derivada_maxima(state, cad_1, cad_2,extremo,puntos_virtuales, umbral=None,N=20,paso=2):
     label = 'criterio_derivada_maxima'
 
@@ -432,7 +428,7 @@ def criterios_radiales(state, chain, cadena_origen, cadena_cand, extremo, N=20):
 
     if criterio_distribucion or criterio_umbral:
         #valida_derivada = criterio_derivada_maxima(state, cadena_origen, cadena_cand, extremo, puntos_virtuales, umbral=2)
-        return True,np.abs(media_origen-media_estadistico_cand), InfoBandaVirtual(ptos_extremos_radios, cadena_origen,
+        return True, np.abs(media_origen-media_estadistico_cand), InfoBandaVirtual(ptos_extremos_radios, cadena_origen,
                                         cadena_cand, extremo, chain,inf_orig=radios_origen[0]-ancho_std*std_origen,
                                     sup_orig=radios_origen[0]+ancho_std*std_origen, inf_cand=radios_cand[0] - ancho_std*np.std(radios_cand),
                                     sup_cand=radios_cand[0]+ancho_std*np.std(radios_cand),ancho_banda=0.05 if chain.is_center else 0.1)
@@ -465,7 +461,7 @@ def criterio_distancia_radial(state,chain, cadena_origen, cadena_cand, extremo):
 
     if state.debug:
         ch.visualizarCadenasSobreDiscoTodas([chain, cadena_origen, cadena_cand], img_radios,[],
-                        f'{state.iteracion}_orig_{cadena_origen.label_id}_cand_{cadena_cand.label_id}',  labels=False, save=str(state.path))
+                        f'{state.iteracion}_orig_{cadena_origen.label_id}_cand_{cadena_cand.label_id}_distancia_radial',  labels=False, save=str(state.path))
         write_log(MODULE_NAME, label, f'{state.iteracion}_orig_{cadena_origen.label_id}_cand_{cadena_cand.label_id}')
         state.iteracion += 1
 
@@ -497,12 +493,13 @@ def criterio_distancia_radial(state,chain, cadena_origen, cadena_cand, extremo):
                      inf_cand=radios_cand[0] - ancho_std * np.std(radios_cand),
                      sup_cand=radios_cand[0] + ancho_std * np.std(radios_cand),ancho_banda=0.05 if chain.is_center else 0.1)
     ####################################################################################################################
-    write_log(MODULE_NAME, label,
-              f"iter:{state.iteracion} params: chain: {chain.label_id} cadena_origen {cadena_origen.label_id} cadena_cand {cadena_cand.label_id} ext {extremo}")
+    if state.debug:
+        write_log(MODULE_NAME, label,
+                  f"iter:{state.iteracion} params: chain: {chain.label_id} cadena_origen {cadena_origen.label_id} cadena_cand {cadena_cand.label_id} ext {extremo}")
 
-    write_log(MODULE_NAME, label ,
-                  f"iter: {state.iteracion} inf_limit {inf_limit:0.3f}  estadistico media  {media_estadistico_cand:0.3f}  sup_limit {sup_limit:0.3f}, "
-                  f"inf_cand {inf_cand:0.3f} sup_cand {sup_cand:.3f}  criterio {criterio}")
+        write_log(MODULE_NAME, label ,
+                      f"iter: {state.iteracion} inf_limit {inf_limit:0.3f}  estadistico media  {media_estadistico_cand:0.3f}  sup_limit {sup_limit:0.3f}, "
+                      f"inf_cand {inf_cand:0.3f} sup_cand {sup_cand:.3f}  criterio {criterio}")
 
     if state.debug:
         plt.figure()
@@ -513,11 +510,9 @@ def criterio_distancia_radial(state,chain, cadena_origen, cadena_cand, extremo):
         plt.axvline(x=radio_origen_supremo, color='b', label=f'sup_origen:{radio_origen_supremo:.1f}')
         plt.hist(radios_cand, bins=10, alpha=0.3, color='k', label='cand')
         plt.axvline(x=radio_fin, color='k', label=f'media_cand:{radio_fin:.1f}')
-        # plt.axvline(x=radio_fin_infimo, color='k', label=f'inf_cand:{radio_fin_infimo:.1f}')
-        # plt.axvline(x=radio_fin_supremo, color='k', label=f'sup_cand:{radio_fin_supremo:.1f}')
         plt.legend()
         plt.title(f"{criterio}: Umbral {state.radio_limit}.")
-        plt.savefig(f'{str(state.path)}/{state.iteracion}_histogramas_.png')
+        plt.savefig(f'{str(state.path)}/{state.iteracion}_histogramas_distancia_radial.png')
         plt.close()
         state.iteracion += 1
 
@@ -677,7 +672,7 @@ def criterio_distribucion_radial(state,chain, cadena_origen, cadena_cand, extrem
         plt.legend()
         plt.title(f"{criterio}: largo_virtuales: {len(radios_virtuales)}. largo_origen: {len(radios_origen)}.\n"
                   f" largo_cand: {len(radios_cand)}.")
-        plt.savefig(f'{str(state.path)}/{state.iteracion}_histogramas_.png')
+        plt.savefig(f'{str(state.path)}/{state.iteracion}_histogramas_distribucion_radial.png')
         plt.close()
         state.iteracion += 1
 

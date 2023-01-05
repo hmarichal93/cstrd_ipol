@@ -100,6 +100,7 @@ class devernayEdgeDetector:
         sqrt = np.sqrt((matrix**2).sum(axis=1))
         normalized_array = matrix / sqrt[:, np.newaxis]
         return normalized_array
+
     def __load_curve_points_to_image(self):
         M, N = self.img.shape[0], self.img.shape[1] 
         self.img_bin = np.zeros((M,N),dtype=np.int32)+BACKGROUND_VALUE
@@ -108,6 +109,7 @@ class devernayEdgeDetector:
         self.nonMaxImg = np.zeros_like(self.img_bin)
 
         curve_bin = pd.read_csv(self.outputtxt,delimiter=" ",header=None).values
+
         counter_curves = 0
         curve_border_index = np.where(curve_bin == np.array([-1, -1]))[0]
         X = curve_bin.copy()
@@ -144,8 +146,40 @@ class devernayEdgeDetector:
             curve.add_pixel(i,j)
 
         self.curves_list = [curve for curve in self.curves_list if curve.size>0]
+        self.curves_list.append(self.get_disk_border(counter_curves))
+
 
         return 0
+
+    def get_disk_border(self, counter_curves):
+        background_color = self.img[0, 0]
+        img_seg = np.where(self.img == background_color, 0, 255)
+        # cv2.imwrite('./debug.png', img_seg)
+
+        contours, hierarchy = cv2.findContours(img_seg.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        img_c = np.copy(self.img)
+        cv2.drawContours(img_c, contours, -1, (0, 0, 255), 3)
+        # cv2.imwrite('./debug2.png', img_c)
+
+        # find the biggest contour
+        max_cont = None
+        length_contour_max = 0
+        for c in contours:
+            if c.shape[0] > length_contour_max:
+                max_cont = c.reshape((-1, 2))
+                length_contour_max = c.shape[0]
+
+        counter_curves += 1
+        curve = Curve(counter_curves)
+        # self.curves_list.append(curve)
+        for j, i in max_cont:
+            i_img = int(i)  # np.round(i).astype(int)
+            j_img = int(j)  # np.round(j).astype(int)
+            self.img_bin[i_img, j_img] = counter_curves
+            curve.add_pixel(i, j)
+
+        return curve
 
     def _execute_command(self):
         command = f"{str(self.root_path)}/devernay  {self.image_path} -s {self.s} -l {self.l} -h {self.h} -t {self.outputtxt} -p {str(self.root_path)}/output.pdf -g {str(self.root_path)}/output.svg -n {self.nombre}"
@@ -173,17 +207,16 @@ def main(datos):
     M, N, img, centro, SAVE_PATH= datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path']
     image = datos['img_prep']
     to = time.time()
-    detector = devernayEdgeDetector(image, centro=centro, save_path=SAVE_PATH, config= datos['config'])
-    Gx, Gy, img_labels, lista_curvas = detector.detect()
-    #cv2.imwrite(f"{SAVE_PATH}/edge_detector.png", np.where(img_labels > 0, 255, 0).astype(np.uint8))
+    detector = devernayEdgeDetector(image, centro = centro, save_path = SAVE_PATH, config = datos['config'])
+    Gx, Gy, img_labels, curve_list = detector.detect()
     ch.visualizarCadenasSobreDisco(
         [], np.where(img_labels > 0, 255, 0).astype(np.uint8),f"{SAVE_PATH}/edge_detector.png", labels=False, gris=True, color=True
     )
     tf = time.time()
 
-    datos['tiempo_bordes'] = tf - to
+    datos['edges_time'] = tf - to
     print(f'Edge Detector: {tf - to:.1f} seconds')
     datos['Gy'] = Gy
     datos['Gx'] = Gx
-    datos['lista_curvas'] = lista_curvas
+    datos['curve_list'] = curve_list
     return 0

@@ -8,7 +8,8 @@ import cv2
 import lib.chain_v4 as ch
 import lib.union_puntos_prolijo_performance_3 as union
 from lib.interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino, pegar_dos_cadenas_interpolando_via_cadena_soporte
-from lib.propiedades_fundamentales import InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging
+from lib.propiedades_fundamentales import InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging,\
+    derivada_maxima, generar_puntos_virtuales_sin_cadena_soporte
 from lib.dibujar import Dibujar
 
 def put_text(text, image, org, color=(0, 0, 0), fontScale=1 / 4):
@@ -839,9 +840,18 @@ def picar_y_unir_cadenas_region_extremo_cadena(puntos_interiores, conjunto_caden
                             img_debug)
 
                 iteracion[0] += 1
-            conjunto_de_cadenas_candidatas.append(cadena_candidata)
-            distancia_radial_cadenas_candidatas.append(diferencia_radial)
-            distancia_euclidea_cadenas_candidatas.append(distancia_entre_bordes)
+
+            puntos_virtuales = generar_puntos_virtuales_sin_cadena_soporte(cadena_origen, cadena_candidata, extremo)
+            umbral = 1.5
+            N = 20
+            paso = 2
+            res, abs_der_1, abs_der_2, abs_der_3, salto, radios_1, radios_2, radios_virtuales, coeficiente, derivada_maxima_var = \
+                derivada_maxima(cadena_origen, cadena_candidata, extremo, puntos_virtuales, umbral, N, paso)
+
+            if res:
+                conjunto_de_cadenas_candidatas.append(cadena_candidata)
+                distancia_radial_cadenas_candidatas.append(diferencia_radial)
+                distancia_euclidea_cadenas_candidatas.append(distancia_entre_bordes)
 
     # 2.6.2 Pegar cadenas si amerita
     cadena_candidata = None
