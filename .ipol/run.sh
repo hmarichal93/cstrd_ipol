@@ -18,10 +18,9 @@ if [ ! -f input_1.png ]; then
   cp mask_0_black.png input_1.png
   stdout=$(python $BIN/.ipol/process_mask.py --input input_1.png)
   echo $stdout
+  Cy=$(echo $stdout | awk '{print $1}')
+  Cx=$(echo $stdout | awk '{print $2}')
 fi
-
-Cx=1264
-Cy=1204
 
 # Execute algorithm
 python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./ --nr $nr --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma
