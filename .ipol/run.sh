@@ -18,8 +18,8 @@ if [ ! -f input_1.png ]; then
   cp mask_0_black.png input_1.png
 fi
 
-Cx=1240
-Cy=1260
+Cx=1264
+Cy=1204
 
 # Execute algorithm
 python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./ --nr $nr --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma
