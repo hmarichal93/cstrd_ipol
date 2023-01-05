@@ -16,7 +16,7 @@ HOME=$9
 if [ ! -f input_1.png ]; then
   convert mask_0.png -white-threshold 000001 -alpha off mask_0_black.png
   cp mask_0_black.png input_1.png
-  stdout=$(python $BIN/.ipol/process_mask.py)
+  stdout=$(python $BIN/.ipol/process_mask.py --input input_1.png)
   echo $stdout
 fi
 
