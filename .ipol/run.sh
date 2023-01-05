@@ -22,5 +22,5 @@ Cx=1240
 Cy=1260
 
 # Execute algorithm
-python $BIN/main.py --input $input --cx $Cx --cy $Cy --output $HOME --nr $nr --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma
+python $BIN/main.py --input $input --cx $Cx --cy $Cy --output_dir $HOME --nr $nr --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma
 
