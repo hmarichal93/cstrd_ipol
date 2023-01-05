@@ -3,15 +3,14 @@ set -e
 
 # Read input parameters
 input=$1
-mask=$2
-sigma=$3
-nr=$4
-th_low=$5
-th_high=$6
-hsize=$7
-wsize=$8
-BIN=${9}
-HOME=${10}
+sigma=$2
+nr=$3
+th_low=$4
+th_high=$5
+hsize=$6
+wsize=$7
+BIN=$8
+HOME=$9
 
 # Extract center from mask
 if [ ! -f input_1.png ]; then
