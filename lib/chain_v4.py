@@ -329,8 +329,37 @@ class Cadena:
         for dot in self.lista:
             dot.cadenaId = index
         self.id = index
-    
 
+def get_closest_chain_border_to_angle(chain, angle):
+    B = chain.extB.angulo
+    A = chain.extA.angulo
+    if B < A:
+        dist_to_b = 360 - angle + B if angle > B else B - angle
+        dist_to_a = angle - A if angle > B else 360 - A + angle
+
+    else:
+        dist_to_a = A - angle
+        dist_to_b = angle - B
+    #assert dist_to_a > 0 and dist_to_b > 0
+    dot = chain.extB if dist_to_b < dist_to_a else chain.extA
+    return dot
+def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_list,angle):
+    label = 'get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center'
+    lista_puntos_perfil = []
+    for chain in chains_list:
+        #dot = get_closest_chain_dot_to_angle(chain, angle)
+        try:
+            dot =  [dot for dot in chain.lista if dot.angulo == angle][0]
+        except Exception:
+            dot = get_closest_chain_border_to_angle(chain, angle)
+            pass
+
+        if dot not in lista_puntos_perfil:
+            lista_puntos_perfil.append(dot)
+    #write_log(MODULE_NAME,label,f"{lista_puntos_perfil}")
+    if len(lista_puntos_perfil)>0:
+        lista_puntos_perfil= sorted(lista_puntos_perfil, key=lambda x: x.radio, reverse=False)
+    return lista_puntos_perfil
 
 def buildMatrizEtiquetas(M, N, listaPuntos):
     MatrizEtiquetas = -1 * np.ones((M, N))
@@ -482,7 +511,7 @@ def visualizarCadenasSobreDisco(listaCadenas,img,titulo,labels = False,flechas=F
 
     plt.tight_layout()
     plt.axis('off')
-    plt.savefig(f"{titulo}")
+    plt.savefig(f"{save}/{titulo}")
     if display: 
         plt.show()
     else:

@@ -1128,18 +1128,7 @@ def get_closest_chain_dot_to_angle(chain,angle):
     #write_log(MODULE_NAME, label, f"cad.id {chain.id} angle {angle} A {A} B {B} closest {closest_dot}")
     return closest_dot
         
-def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_list,angle):
-    label = 'get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center'
-    lista_puntos_perfil = []
-    for chain in chains_list:
-        #dot = get_closest_chain_dot_to_angle(chain, angle)
-        dot =  [dot for dot in chain.lista if dot.angulo == angle][0]
-        if dot not in lista_puntos_perfil:
-            lista_puntos_perfil.append(dot)
-    #write_log(MODULE_NAME,label,f"{lista_puntos_perfil}")
-    if len(lista_puntos_perfil)>0:
-        lista_puntos_perfil= sorted(lista_puntos_perfil, key=lambda x: x.radio, reverse=False)
-    return lista_puntos_perfil                
+
 
 def sort_chain_list_by_neighboorhood(chain,listaCadenas):
     listaCadenas.sort(key=lambda x: x.size, reverse=True)
@@ -1178,7 +1167,7 @@ def get_dots_in_radial_direction(dot_direccion,listaCadenas):
     #write_log(MODULE_NAME,label,f"dot_direccion {dot_direccion}")
     chains_in_radial_direction = get_chains_within_angle(dot_direccion.angulo, listaCadenas)
     #write_log(MODULE_NAME, label, f"chains_in_radial_direction {chains_in_radial_direction}")
-    lista_puntos_perfil = get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_in_radial_direction,dot_direccion.angulo)
+    lista_puntos_perfil = ch.get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_in_radial_direction,dot_direccion.angulo)
     # duplicate = check_duplicate_dots(lista_puntos_perfil)
     # if duplicate:
     #     print(duplicate)

@@ -7,7 +7,7 @@ import cv2
 
 import lib.chain_v4 as ch
 import lib.union_puntos_prolijo_performance_3 as union
-from lib.interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino, pegar_dos_cadenas_interpolando_via_cadena_soporte
+from lib.interpolacion import completar_cadena_via_anillo_soporte, interpolar_en_domino_via_dos_cadenas, pegar_dos_cadenas_interpolando_via_cadena_superior_e_inferior
 from lib.propiedades_fundamentales import InfoBandaVirtual, hay_cadenas_superpuestas_en_banda, criterio_distancia_radial_no_debugging,\
     derivada_maxima, generar_puntos_virtuales_sin_cadena_soporte
 from lib.dibujar import Dibujar
@@ -116,20 +116,14 @@ class ContextoDisco:
         #self.cadenas_incompletas = [cad for cad in listaCadenas if not cad.esta_completa(regiones=regions_cadena_completa)]
         self.cadenas_incompletas = [cad for cad in listaCadenas if  cad.size < cad.Nr]
         self.cadenas_incompletas_poligonos = self._convertir_cadenas_incompletas_a_poligonos(self.cadenas_incompletas)
-        self.idx = 0 if idx_start is None else idx_start
+        self.idx = 1 if idx_start is None else idx_start
 
     def obtener_anillo_interior_y_exterior(self,idx):
         self.vecindario_amplitud = 45
-        if idx == 0:
-            anillo_interior = None
-            anillo_exterior = self.cadenas_completas_poligonos[0]
-        elif len(self.cadenas_completas_poligonos) > idx > 0:
+        if len(self.cadenas_completas_poligonos) > idx > 0:
             anillo_interior = self.cadenas_completas_poligonos[idx - 1]
             anillo_exterior = self.cadenas_completas_poligonos[idx]
-        else:
-            anillo_interior = self.cadenas_completas_poligonos[-1]
-            anillo_exterior = None
-            self.vecindario_amplitud = 45
+
         if self.idx>10:
             self.vecindario_amplitud = self.vecindario_amplitud // 2
         #TODO: agregar decremento de amplitud vecindario segun distancia al centro y al borde.
@@ -151,7 +145,7 @@ class ContextoDisco:
 
     def exit(self):
         self.idx += 1
-        if self.idx > len(self.cadenas_completas):
+        if self.idx >= len(self.cadenas_completas):
             return True
 
         return False
@@ -210,11 +204,11 @@ class ContextoDisco:
 def postprocesamiento_cuando_hay_una_unica_cadena_grande(cadena_interior, cadena_anillo_interior, cadena_anillo_exterior,
                                                         listaPuntos, UMBRAL_INFORMACION=180):
     if cadena_interior.size > UMBRAL_INFORMACION:
-        punto_extremo = cadena_interior.extA
-        cadena_soporte = seleccionar_cadena_soporte(cadena_anillo_exterior, cadena_anillo_interior,
-                                                    punto_extremo)
+        #punto_extremo = cadena_interior.extA
+        # cadena_soporte = seleccionar_cadena_soporte(cadena_anillo_exterior, cadena_anillo_interior,
+        #                                             punto_extremo)
 
-        completar_cadena_via_anillo_soporte(cadena_soporte, cadena_interior,
+        completar_cadena_via_anillo_soporte(cadena_anillo_interior, cadena_anillo_exterior, cadena_interior,
                                             listaPuntos)
 
     return
@@ -228,8 +222,9 @@ def main_postprocesamiento(results, debug=False):
 
     save_path = Path(results['save_path']) / "post_debug_1"
     #save_path.mkdir(exist_ok=True)
-    save_path = str(save_path)
     if debug:
+        save_path.mkdir(exist_ok=True)
+        save_path = str(save_path)
         ch.visualizarCadenasSobreDisco(listaCadenas, image, f'picar_cadenas_inicio', labels=True, save=f"{save_path}")
 
     se_completo_cadena = False
@@ -340,14 +335,14 @@ def postprocesamiento_cuando_hay_mas_de_1_cadena_sin_interseccion(ctx,subconjunt
         cadenas_superpuestas_cruzadas = hay_cadenas_superpuestas_en_banda(subconjunto_clase_cadenas, inf_banda)
         hay_cadena = len(cadenas_superpuestas_cruzadas) > 0
         if not hay_cadena:
-            pegar_2_cadenas_via_cadena_soporte(cadena_soporte, cadena_origen, cadena_siguiente, listaPuntos, extremo,
+            pegar_2_cadenas_via_cadena_soporte(cadena_anillo_exterior,cadena_anillo_interior, cadena_origen, cadena_siguiente, listaPuntos, extremo,
                                                listaCadenas, subconjunto_cadenas_no_intersectantes)
         else:
             subconjunto_cadenas_no_intersectantes.remove(cadena_siguiente)
 
     # completar_cadena_via_anillo_soporte(cadena_soporte, cadena_origen,
     #                                     listaPuntos)
-    completar_cadena_si_no_hay_interseccion_con_otras(cadena_origen, cadena_soporte, listaCadenas, listaPuntos)
+    completar_cadena_si_no_hay_interseccion_con_otras(cadena_origen, cadena_anillo_interior, cadena_anillo_exterior, listaCadenas, listaPuntos)
 
     return 0
 
@@ -359,23 +354,11 @@ def lista_puntos(conjunto_cadenas_interiores):
         puntos_interiores += cadena.lista
     return puntos_interiores
 
-def completar_cadena_si_no_hay_interseccion_con_otras(chain, chain_border, lista_cadenas, lista_puntos):
+def completar_cadena_si_no_hay_interseccion_con_otras(chain, cadena_inferior, cadena_superior, lista_cadenas, lista_puntos):
     #construir bandas de busqueda
-    extremo_cad1 = chain.extB
-    extremo_cad2 = chain.extA
-    extremo = 'B'
-    puntos_virtuales = []
-    chain_copy = ch.copiar_cadena(chain)
-    interpolar_en_domino(chain_border, extremo_cad1, extremo_cad2, extremo, chain_copy, puntos_virtuales)
-    ptos_virtuales_con_borde = [extremo_cad1] + puntos_virtuales + [extremo_cad2]
+    completar_cadena_via_anillo_soporte(cadena_inferior, cadena_superior, chain, lista_puntos)
 
-    info_band = InfoBandaVirtual( ptos_virtuales_con_borde,  chain, chain, extremo, chain_border, ancho_banda=0.05)
-    hay_cadena = len(hay_cadenas_superpuestas_en_banda(lista_cadenas, info_band)) > 0
-    hay_cadena = False
-    if not hay_cadena:
-        completar_cadena_via_anillo_soporte(chain_border,chain, lista_puntos)
-
-    return not hay_cadena
+    return True
 def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,cadena_anillo_interior,
                             cadena_anillo_exterior, listaCadenas, debug, save_path,  listaPuntos,idx, vecindario = 90):
     label = 'picar_y_unir_cadenas_region'
@@ -398,7 +381,7 @@ def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,caden
         if not se_pego:
             if cadena_origen is not None and cadena_origen.esta_completa(regiones=4):
                 se_completo_cadena = completar_cadena_si_no_hay_interseccion_con_otras( cadena_origen,
-                                                                            cadena_soporte, listaCadenas,listaPuntos)
+                                cadena_anillo_interior, cadena_anillo_exterior, listaCadenas, listaPuntos)
                 if not se_completo_cadena :
                     se_completo_cadena = False
 
@@ -407,7 +390,7 @@ def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,caden
                         ch.visualizarCadenasSobreDisco(
                             [cadena_soporte, cadena_origen],
                             img,
-                            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.2', labels=True,
+                            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-2.png', labels=True,
                             save=f"{save_path}")
                         iteracion[0] += 1
 
@@ -427,7 +410,7 @@ def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,caden
                 ch.visualizarCadenasSobreDisco(
                     [cadena_origen],
                     img,
-                    f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}', labels=True,
+                    f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}.png', labels=True,
                     save=f"{save_path}")
                 iteracion[0] += 1
         #2.0 por extremo
@@ -447,14 +430,14 @@ def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,caden
 
 
         se_pego, cadena_soporte, extremo = pegar_cadena_mas_cercana_si_amerita(cadena_origen,  cadena_candidata_a, diff_a,
-                                cadena_soporte_a,cadena_candidata_b, diff_b, cadena_soporte_b, listaCadenas,
-                                                                    conjunto_cadenas_interiores,listaPuntos )
+            cadena_soporte_a, cadena_candidata_b, diff_b, cadena_soporte_b, listaCadenas, conjunto_cadenas_interiores,
+            listaPuntos, cadena_anillo_interior, cadena_anillo_exterior )
 
         if se_pego and debug:
             ch.visualizarCadenasSobreDisco(
                 [cadena_soporte, cadena_origen],
                 img,
-                f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.2', labels=True,
+                f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-2.png', labels=True,
                 save=f"{save_path}")
             iteracion[0] += 1
 
@@ -466,7 +449,7 @@ def picar_y_unir_cadenas_region(iteracion,img, conjunto_cadenas_interiores,caden
 
 
 def pegar_cadena_mas_cercana_si_amerita(cadena_origen, cadena_candidata_a, diff_a, cadena_soporte_a,cadena_candidata_b,
-                                                      diff_b, cadena_soporte_b, listaCadenas, conjunto_cadenas_interiores,listaPuntos ):
+    diff_b, cadena_soporte_b, listaCadenas, conjunto_cadenas_interiores, listaPuntos, cadena_interior, cadena_exterior ):
 
     if (0 <= diff_a <= diff_b) or (diff_b < 0 and diff_a>=0):
         cadena_candidata = cadena_candidata_a
@@ -481,16 +464,15 @@ def pegar_cadena_mas_cercana_si_amerita(cadena_origen, cadena_candidata_a, diff_
     else:
         return False, cadena_soporte_a,''
 
-    if cadena_candidata.size + cadena_origen.size > 360:
+    if cadena_candidata.size + cadena_origen.size > cadena_candidata.Nr:
         return False, cadena_soporte_a,''
-    pegar_2_cadenas_via_cadena_soporte(cadena_soporte, cadena_origen, cadena_candidata, listaPuntos, extremo,
+    pegar_2_cadenas_via_cadena_soporte(cadena_exterior, cadena_interior, cadena_origen, cadena_candidata, listaPuntos, extremo,
                                        listaCadenas, conjunto_cadenas_interiores)
 
     return True, cadena_soporte, extremo
 
-def pegar_2_cadenas_via_cadena_soporte(cadena_soporte, cadena_origen, cadena_candidata, listaPuntos, extremo,listaCadenas, subconjunto_cadenas_interiores):
-    pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_soporte, cadena_origen, cadena_candidata,  listaPuntos, extremo)
-
+def pegar_2_cadenas_via_cadena_soporte(cadena_superior, cadena_inferior, cadena_origen, cadena_candidata, listaPuntos, extremo,listaCadenas, subconjunto_cadenas_interiores):
+    pegar_dos_cadenas_interpolando_via_cadena_superior_e_inferior(cadena_superior,cadena_inferior, cadena_origen, cadena_candidata,  listaPuntos, extremo)
     # eliminar cadena candidata
     cadena_candidata_original = [cadena for cadena in subconjunto_cadenas_interiores if
                                  cadena.id == cadena_candidata.id]
@@ -630,41 +612,6 @@ def from_polar_to_cartesian(r,angulo,centro):
     x = centro[1] + r * np.sin(angulo * np.pi / 180)
     return (y,x)
 
-def calcular_dominio_de_interpolacion(extremo, extremo_cad1, extremo_cad2):
-    dominio_de_interpolacion = []
-
-    step = 360 / Nr if extremo in 'B' else -360 / Nr
-    angulo_actual = extremo_cad1.angulo
-    while angulo_actual%360 != extremo_cad2.angulo:
-        angulo_actual += step
-        angulo_actual = angulo_actual
-        dominio_de_interpolacion.append(angulo_actual)
-
-    return dominio_de_interpolacion[:-1]
-#
-# def pegar_dos_cadenas_interpolando_via_cadena_soporte(cadena_anillo_soporte, cad1, cad2,  listaPuntos, extremo):
-#     extremo_cad1 = cad1.extA if extremo in 'A' else cad1.extB
-#     extremo_cad2 = cad2.extB if extremo in 'A' else cad2.extA
-#
-#     dominio_interior = []
-#     subconjunto_clase_cadenas = [cad1, cad2]
-#     for cadena_interior in subconjunto_clase_cadenas:
-#         dominio_interior += cadena_interior._completar_dominio_angular(cadena_interior)
-#
-#
-#     #ordenar puntos dominio de interpolacion de soporte_pto1 a soporte_pto2
-#     interpolar_en_domino(cadena_anillo_soporte, extremo_cad1, extremo_cad2, extremo, cad1, listaPuntos)
-#
-#     puntos = []
-#     puntos += cad2.lista
-#     for punto in puntos:
-#         punto.cadenaId = cad1.id
-#
-#     cad1.add_lista_puntos(puntos)
-#
-#     return
-
-
 def seleccionar_cadena_que_no_intersecta_en_extremo(sub_cad1, sub_cad2, cadena_origen, direccion,vecindad=10):
     if sub_cad1 is None and sub_cad2 is None:
         return None
@@ -779,7 +726,7 @@ def picar_y_unir_cadenas_region_extremo_cadena(puntos_interiores, conjunto_caden
     if debug:
         ch.visualizarCadenasSobreDisco(
             [cadena_soporte, cadena_origen] + cadenas_intersectantes_filtradas +  debug_lista_anillos_limites, img,
-            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.2', labels=True, save=f"{save_path}")
+            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-2', labels=True, save=f"{save_path}")
         iteracion[0] += 1
 
     # 2.3 Corto cadenas intersectantes en un extremo
@@ -788,7 +735,7 @@ def picar_y_unir_cadenas_region_extremo_cadena(puntos_interiores, conjunto_caden
     if debug:
         ch.visualizarCadenasSobreDisco(
             [cadena_soporte, cadena_origen] + conjunto_cadenas_busqueda + debug_lista_anillos_limites, img,
-            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.3', labels=True, save=f"{save_path}")
+            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-3', labels=True, save=f"{save_path}")
         iteracion[0] += 1
 
     # 2.4 Corto cadenas intersectantes en el otro extremo
@@ -797,7 +744,7 @@ def picar_y_unir_cadenas_region_extremo_cadena(puntos_interiores, conjunto_caden
     if debug:
         ch.visualizarCadenasSobreDisco(
             [cadena_soporte, cadena_origen] + conjunto_cadenas_busqueda + debug_lista_anillos_limites, img,
-            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.4', labels=True,
+            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-4', labels=True,
             save=f"{save_path}")
         iteracion[0] += 1
 
@@ -806,7 +753,7 @@ def picar_y_unir_cadenas_region_extremo_cadena(puntos_interiores, conjunto_caden
     if debug:
         ch.visualizarCadenasSobreDisco(
             [cadena_soporte, cadena_origen] + conjunto_cadenas_busqueda + debug_lista_anillos_limites , img,
-            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2.5', labels=True,
+            f'{iteracion[0]}_picar_cadenas_{cadena_origen.label_id}_ext_{extremo}_2-5', labels=True,
             save=f"{save_path}")
         iteracion[0] += 1
 
@@ -899,7 +846,7 @@ def calcular_distancia_acumulada_vecindad(cadena_larga, cadena_candidata, extrem
     distancias = []
     cadena_ids = []
     for dot in vecindad:
-        dot_list_in_radial_direction = union.get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
+        dot_list_in_radial_direction = ch.get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
             [cadena_soporte], dot.angulo)
         distancias.append(np.abs(dot_list_in_radial_direction[0].radio - dot.radio))
         cadena_ids.append(dot.cadenaId)
@@ -981,7 +928,7 @@ def seleccionar_cadena_soporte(cadena_anillo_exterior, cadena_anillo_interior, p
     if cadena_anillo_interior is not None:
         chains_in_radial_direction.append(cadena_anillo_interior)
 
-    dot_list_in_radial_direction = union.get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
+    dot_list_in_radial_direction = ch.get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(
         chains_in_radial_direction, punto_extremo.angulo)
 
     distancia = [ch.distancia_entre_puntos(punto_extremo, punto_cadena_completa) for punto_cadena_completa in

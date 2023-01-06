@@ -210,7 +210,8 @@ def main(datos):
     detector = devernayEdgeDetector(image, centro = centro, save_path = SAVE_PATH, config = datos['config'])
     Gx, Gy, img_labels, curve_list = detector.detect()
     ch.visualizarCadenasSobreDisco(
-        [], np.where(img_labels > 0, 255, 0).astype(np.uint8),f"{SAVE_PATH}/edge_detector.png", labels=False, gris=True, color=True
+        [], np.where(img_labels > 0, 255, 0).astype(np.uint8),f"edge_detector.png", labels=False,
+        gris=True, color=True, save=f"{SAVE_PATH}/"
     )
     tf = time.time()
 

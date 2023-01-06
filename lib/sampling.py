@@ -146,7 +146,7 @@ def main(datos):
 
     listaCadenas, img = datos['listaCadenas'], datos['img']
     ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, f"{datos['save_path']}/chains.png", labels=False, gris=True, color=True
+        listaCadenas, img, f"chains.png", labels=False, gris=True, color=True, save=f"{datos['save_path']}/"
     )
 
     tf = time.time()

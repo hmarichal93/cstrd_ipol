@@ -45,7 +45,7 @@ def main(img_name,root_dir,output_dir, cy, cx):
 
     ####################################################################################################################
     print("Step 6.0: Saving Results")
-    save_results(results, results['save_path'] / "output.png")
+    save_results(results,  "output.png")
 
     ####################################################################################################################
     tf = time.time()

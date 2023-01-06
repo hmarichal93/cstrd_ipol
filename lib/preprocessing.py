@@ -38,7 +38,7 @@ def main(datos):
     img_blur[mask>0] = 255
 
     ch.visualizarCadenasSobreDisco(
-        [], img_blur,f"{SAVE_PATH}/preprocessing_output.png", labels=False, gris=True, color=True
+        [], img_blur,f"preprocessing_output.png", labels=False, gris=True, color=True, save=f"{SAVE_PATH}/"
     )
 
     tf = time.time()

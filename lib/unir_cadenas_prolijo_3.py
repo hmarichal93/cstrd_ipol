@@ -156,7 +156,7 @@ def unir_cadenas(datos):
                                                                   derivative_th=2
                                                                 )
     ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, f"{datos['save_path']}/grouping_chains.png", labels=False, gris=True, color=True
+        listaCadenas, img, f"grouping_chains.png", labels=False, gris=True, color=True, save=f"{datos['save_path']}/"
     )
     # ch.visualizarCadenasSobreDisco(
     #     listaCadenas, img, f"{datos['save_path']}/grouping_chains_color.png", labels=True
@@ -225,7 +225,7 @@ def postprocesamiento_etapa_2(datos):
 
     listaCadenas, img = datos['listaCadenas'], datos['img']
     ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, f"{datos['save_path']}/postprocessing.png", labels=False, gris=True
+        listaCadenas, img, "postprocessing.png", labels=False, gris=True, save=f"{datos['save_path']}/"
     )
     tf = time.time()
     datos['time_post'] = tf-t0
