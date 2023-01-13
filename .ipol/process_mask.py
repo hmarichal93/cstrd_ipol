@@ -11,6 +11,7 @@ def main(filename):
     y, x = string.replace("[", "").replace("]", "").split(",")
     print(f"{y}")
     print(f"{x}")
+    f.close()
     return 0
 
 if __name__=="__main__":
