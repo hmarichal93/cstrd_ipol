@@ -1,12 +1,13 @@
 {
     "general": {
         "demo_title": "Tree Ring Detection Over Wood Slices",
-        "requirements": "docker"
+        "requirements": "docker",
+        "drawmask": true
     },
     "build": {
-        "url": "git@github.com:hmarichal93/ipol-template",
-        "rev": "origin/main",
-        "dockerfile": ".ipol/Dockerfile"
+            "url": "git@github.com:hmarichal93/ipol-template",
+            "rev": "origin/main",
+            "dockerfile": ".ipol/Dockerfile"
     },
     "inputs": [
         {
@@ -14,34 +15,25 @@
             "max_pixels": "3000*3000",
             "dtype": "x8i",
             "ext": ".png",
-            "type": "image"
+            "type": "image",
+            "control": "dots",
+            "max_dots": 1
         }
     ],
     "params": [
-        {
-            "id": "cy",
-            "label": "Cy",
-            "comments": "center y coordinate",
+         {
+            "id": "sigma",
+            "label": "sigma",
+            "comments": "Noise standard deviation",
             "type": "range",
             "values": {
-                "default": "1204",
-                "max": 2000,
-                "min": 0,
-                "step": 1
+                "default":2,
+                "max": 10,
+                "min": 1,
+                "step": 0.5
             }
         },
         {
-            "id": "cx",
-            "label": "Cx",
-            "comments": "center x coordinate",
-            "type": "range",
-            "values": {
-                "default": "1264",
-                "max": 2000,
-                "min": 0,
-                "step": 1
-            }
-        },{
             "label" : "<b>Advanced parameters</b>",
             "type" : "label",
             "visible": "params.options=='1'"
@@ -62,18 +54,6 @@
                 "max":720,
                 "min":2,
                 "step":10
-            },
-            "visible": "params.options=='1'"
-        },        {
-            "id": "sigma",
-            "label": "sigma",
-            "comments": "Noise standard deviation",
-            "type": "range",
-            "values": {
-                "default":1.5,
-                "max": 10,
-                "min": 1,
-                "step": 0.5
             },
             "visible": "params.options=='1'"
         },
@@ -118,7 +98,7 @@
             "label": "heigh size",
             "type": "range",
             "values": {
-                "default": 640,
+                "default": 1000,
                 "max": 3000,
                 "min": 0,
                 "step": 1
@@ -130,7 +110,7 @@
             "label": "width size",
             "type": "range",
             "values": {
-                "default": 640,
+                "default": 1000,
                 "max": 3000,
                 "min": 0,
                 "step": 1
@@ -140,18 +120,10 @@
     ],
     "results": [
         {
-            "type": "gallery",
             "contents": {
-                "Input": {
-                    "img": "input.png"
-                },
                 "Output": {
                     "img": "output.png"
-                }
-            }
-        },
-        {
-            "contents": {
+                },
                 "preprocessing": {
                     "img": "preprocessing_output.png"
                 },
@@ -187,7 +159,7 @@
     "archive": {
         "enable_reconstruct": true,
         "files": {
-            "input.png": "Input",
+            "input_0.png": "Input",
             "output.png": "Output",
             "preprocessing_output.png": "preprocessing",
             "edge_detector.png": "edges",
@@ -200,5 +172,4 @@
             "run_time": "run time"
         }
     },
-    "run": "python $bin/main.py --input $input_0 --sigma $sigma --cy $cy --cx $cx --root /workdir/bin --output_dir ./ --nr $nr --th_low $th_low --th_high $th_high --hsize $hsize --wsize $wsize "
-}
+    "run": "$bin/.ipol/run.sh $input_0 $sigma $nr $th_low $th_high $hsize $wsize $bin $home",
