@@ -28,4 +28,3 @@ if __name__=="__main__":
 
     print(f"{int(y)}")
     print(f"{int(x)}")
-    return 0
