@@ -22,8 +22,8 @@ def main(datos):
     #resize.
     if len(datos['config']['resize'])>0:
         hnew, wnew = datos['config']['resize']
-        hscale = hnew / M
-        wscale = wnew / N
+        hscale = hnew / N
+        wscale = wnew / M
         imageGray = resize_image(imageGray,( hnew, wnew) )
         img = resize_image(img, (hnew, wnew))
         centro = datos['centro']
