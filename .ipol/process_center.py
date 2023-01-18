@@ -6,8 +6,8 @@ def mannually(filename):
     f = open(filename, "r")
     string = f.readlines()[0]
     y, x = string.replace("[", "").replace("]", "").split(",")
-    print(f"{y}")
-    print(f"{x}")
+    print(f"{int(y)}")
+    print(f"{int(x)}")
     f.close()
     return 0
 
@@ -16,8 +16,8 @@ def automatic(filename):
     arr = np.loadtxt(f"{image_name}.csv",delimiter=",", dtype=str)
     y = arr[1][0]
     x = arr[1][1]
-    print(f"{y}")
-    print(f"{x}")
+    print(f"{int(y)}")
+    print(f"{int(x)}")
     return 0
 
 if __name__=="__main__":
