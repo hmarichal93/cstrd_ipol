@@ -13,7 +13,7 @@ BIN=$8
 HOME=$9
 
 # Extract center from mask
-if [ ! -f inpainting_data_0.txt ]; then
+if [ -f inpainting_data_0.txt ]; then
   stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt)
   rm inpainting_data_0.txt
 else
