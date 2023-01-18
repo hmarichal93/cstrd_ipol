@@ -16,10 +16,11 @@ HOME=$9
 if [ -f inpainting_data_0.txt ]; then
   stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt)
   rm inpainting_data_0.txt
+  echo 'manual'
 else
   $ANT_CENTER_DETECTOR/build/AntColonyPith --animated=false --input $input
   stdout=$(python $BIN/.ipol/process_center.py --input $input --type 1)
-  echo 'success'
+  echo 'automatico'
 fi
 Cy=$(echo $stdout | awk '{print $1}')
 Cx=$(echo $stdout | awk '{print $2}')
