@@ -7,14 +7,14 @@ def mannually(filename):
     string = f.readlines()[0]
     y, x = string.replace("[", "").replace("]", "").split(",")
     f.close()
-    return y,x
+    return float(y),float(x)
 
 def automatic(filename):
     image_name, _ = filename.split(".")
     arr = np.loadtxt(f"{image_name}.csv",delimiter=",", dtype=str)
     y = arr[1][0]
     x = arr[1][1]
-    return y,x
+    return float(y), float(x)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
