@@ -24,7 +24,7 @@ def main(datos):
         hnew, wnew = datos['config']['resize']
         hscale = hnew / M
         wscale = wnew / N
-        imageGray = resize_image(imageGray,( hnew, wnew) )
+        imageGray = resize_image(imageGray,( wnew, hnew) )
         img = resize_image(img, (hnew, wnew))
         centro = datos['centro']
         datos['centro'] = (int(centro[0] * hscale), int(centro[1] * wscale))
