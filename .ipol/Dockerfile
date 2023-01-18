@@ -24,10 +24,6 @@ RUN mkdir -p $bin/output && chmod -R 777 $bin
 RUN cd $bin/externas/devernay_1.0 && make
 
 #Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends
-#Dependences
-
-
-
 #Download code and Instalation
 ENV ANT_CENTER_DETECTOR $bin/externas/Ant_colony_for_pith_estimation/
 RUN cd $bin/externas && \
