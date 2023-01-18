@@ -16,7 +16,7 @@ HOME=$9
 cat inpainting_data_0.txt
 if [ -f inpainting_data_0.txt ]; then
   echo 'manual'
-  stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt --type 0)
+  #stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt --type 0)
   rm inpainting_data_0.txt
 
 else
