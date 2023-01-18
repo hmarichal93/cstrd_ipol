@@ -18,8 +18,25 @@ WORKDIR $bin
 COPY . .
 RUN mkdir -p $bin/output && chmod -R 777 $bin
 
+
+
 # compile libraries
 RUN cd $bin/externas/devernay_1.0 && make
+
+#Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends
+#Dependences
+
+
+
+#Download code and Instalation
+ENV ANT_CENTER_DETECTOR $bin/externas/Ant_colony_for_pith_estimation/
+RUN cd $bin/externas && \
+    wget https://www.ipol.im/pub/art/2022/338/Ant_colony_for_pith_estimation.zip &&  \
+    unzip Ant_colony_for_pith_estimation.zip && \
+    mkdir -p $ANT_CENTER_DETECTOR/build && \
+    cd $ANT_CENTER_DETECTOR/build && cmake .. && make && \
+    chmod -R 777 $ANT_CENTER_DETECTOR
+
 # the execution will happen in the folder /workdir/exec
 # it will be created by IPOL
 
@@ -27,7 +44,7 @@ RUN cd $bin/externas/devernay_1.0 && make
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION python
 ENV PATH $bin:$PATH
-ENV PATH $outputdir:$PATH
+ENV PATH $ANT_CENTER_DETECTOR:$PATH
 
 # $HOME is writable by the user `ipol`, but
 ENV HOME /home/ipol

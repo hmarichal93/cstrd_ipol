@@ -1,2 +1,4 @@
 glibc-source
 libgeos-dev
+cmake
+libopencv-dev
