@@ -17,13 +17,13 @@ cat inpainting_data_0.txt
 if [ -f inpainting_data_0.txt ]; then
   echo 'manual'
   stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt --type 0)
-  #rm $HOME/inpainting_data_0.txt
+  rm inpainting_data_0.txt
 
-#else
-#  echo 'automatico'
-#  $ANT_CENTER_DETECTOR/build/AntColonyPith --animated=false --input $input
-#  stdout=$(python $BIN/.ipol/process_center.py --input $input --type 1)
-#
+else
+  echo 'automatico'
+  $ANT_CENTER_DETECTOR/build/AntColonyPith --animated=false --input $input
+  stdout=$(python $BIN/.ipol/process_center.py --input $input --type 1)
+
 fi
 Cy=$(echo $stdout | awk '{print $1}')
 Cx=$(echo $stdout | awk '{print $2}')
