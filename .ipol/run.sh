@@ -14,11 +14,11 @@ HOME=$9
 
 # Extract center from mask
 if [ ! -f inpainting_data_0.txt ]; then
-  stdout=$(python $BIN/.ipol/process_mask.py --input inpainting_data_0.txt)
+  stdout=$(python $BIN/.ipol/process_center.py --input inpainting_data_0.txt)
   rm inpainting_data_0.txt
 else
   $ANT_CENTER_DETECTOR/build/AntColonyPith --animated=false --input $input
-  stdout=$(python $BIN/.ipol/process_mask.py --input $input --type 1)
+  stdout=$(python $BIN/.ipol/process_center.py --input $input --type 1)
   echo 'success'
 fi
 Cy=$(echo $stdout | awk '{print $1}')
