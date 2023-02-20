@@ -1,11 +1,10 @@
 # use one of the images from this repository: https://github.com/centreborelli/ipol-docker-images/
-FROM registry.ipol.im/ipol:v1-py3.9
-#FROM python:3.11
+#FROM registry.ipol.im/ipol:v1-py3.9
+FROM python:3.11
 
 # install additional debian packages
 COPY .ipol/packages.txt packages.txt
 RUN apt-get update && apt-get install -y $(cat packages.txt) && rm -rf /var/lib/apt/lists/* && rm packages.txt
-RUN apt install glibc-source
 # copy the requirements.txt and install python packages
 COPY requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
@@ -21,7 +20,7 @@ RUN mkdir -p $bin/output && chmod -R 777 $bin
 
 
 # compile libraries
-RUN cd $bin/externas/devernay_1.0 && make
+RUN cd $bin/externas/devernay_1.0 && make clean && make
 
 #Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends
 #Download code and Instalation
