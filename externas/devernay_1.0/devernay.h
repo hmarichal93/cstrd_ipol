@@ -72,7 +72,7 @@
  */
 void devernay( double ** x, double ** y, int * N, int ** curve_limits, int * M,
                double * image, int X, int Y,
-               double sigma, double th_h, double th_l ,int n);
+               double sigma, double th_h, double th_l , char * gx_filename, char * gy_filename);
 
 #endif /* !DEVERNAY_HEADER */
 /*----------------------------------------------------------------------------*/

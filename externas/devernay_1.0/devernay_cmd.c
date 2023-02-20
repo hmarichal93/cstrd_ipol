@@ -96,14 +96,16 @@ int main(int argc, char ** argv)
   double H = atof(get_option(&argc,&argv,"-h","0.0")); /* default th_h=0  */
   double L = atof(get_option(&argc,&argv,"-l","0.0")); /* default th_l=0  */
   double W = atof(get_option(&argc,&argv,"-w","1.3")); /* default W=1.3   */
-  int n =atoi(get_option(&argc,&argv,"-n","0"));
+  char * gx_out = get_option(&argc,&argv,"-x",NULL);  /* txt filename    */
+  char * gy_out = get_option(&argc,&argv,"-y",NULL);  /* txt filename    */
 
+  
   /* read input */
   if( argc != 2 ) usage();
   image = read_image(argv[1],&X,&Y);
 
   /* call Canny/Devernay algorithm */
-  devernay(&x, &y, &N, &curve_limits, &M, image, X, Y, S, H, L,n);
+  devernay(&x, &y, &N, &curve_limits, &M, image, X, Y, S, H, L, gx_out, gy_out);
 
   /* write required outputs, TXT and/or PDF */
   if( txt_out != NULL ) write_curves_txt(x,y,curve_limits,M,txt_out);

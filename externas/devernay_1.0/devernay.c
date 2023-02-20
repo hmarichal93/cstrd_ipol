@@ -278,14 +278,13 @@ void save_matrix_to_file(char* file_name,double * M,int X,int Y){
   file = fopen(file_name,"wb");
   save_to_file(X,Y,M,file);
   fclose(file);
-
 }
 /*----------------------------------------------------------------------------*/
 /* compute the image gradient, giving its x and y components as well as the
    modulus. Gx, Gy, and modG must be already allocated.
  */
 static void compute_gradient( double * Gx, double * Gy, double * modG,
-                              double * image, int X, int Y,int n )
+                              double * image, int X, int Y )
 {
   int x,y;
 
@@ -304,14 +303,14 @@ static void compute_gradient( double * Gx, double * Gy, double * modG,
 
     /* saving matrix */
     // Allocates storage
-    char *string = (char*)malloc(255 * sizeof(char));
-    sprintf(string, "/home/ipol/gx_%d.txt", n);
+    /*char *string = (char*)malloc(255 * sizeof(char));
+    sprintf(string, "/home/henry/Documents/repo/fing/devernay/devernay_1.0/gx_%d.txt", n);
     save_matrix_to_file(string,Gx,X,Y);
-    sprintf(string, "/home/ipol/gy_%d.txt", n);
+    sprintf(string, "/home/henry/Documents/repo/fing/devernay/devernay_1.0/gy_%d.txt", n);
     save_matrix_to_file(string,Gy,X,Y);
-    sprintf(string, "/home/ipol/mod_%d.txt", n);
+    sprintf(string, "/home/henry/Documents/repo/fing/devernay/devernay_1.0/mod_%d.txt", n);
     save_matrix_to_file(string,modG,X,Y);
-    free(string);
+    free(string);*/
 }
 
 
@@ -791,7 +790,7 @@ static void list_chained_edge_points( double ** x, double ** y, int * N,
  */
 void devernay( double ** x, double ** y, int * N, int ** curve_limits, int * M,
                double * image, int X, int Y,
-               double sigma, double th_h, double th_l,int n )
+               double sigma, double th_h, double th_l, char * gx_filename, char * gy_filename)
 {
   double * Gx   = (double *) xmalloc( X * Y * sizeof(double) );     /* grad_x */
   double * Gy   = (double *) xmalloc( X * Y * sizeof(double) );     /* grad_y */
@@ -802,25 +801,21 @@ void devernay( double ** x, double ** y, int * N, int ** curve_limits, int * M,
   int * next = (int *) xmalloc( X * Y * sizeof(int) ); /* next point in chain */
   int * prev = (int *) xmalloc( X * Y * sizeof(int) ); /* prev point in chain */
   double * gauss = NULL;
-
-  if( sigma == 0.0 ) compute_gradient(Gx, Gy, modG, image, X, Y,n);
+  if( sigma == 0.0 ) compute_gradient(Gx, Gy, modG, image, X, Y);
   else
     {
       gauss = gaussian_filter(image, X, Y, sigma);
-      compute_gradient(Gx, Gy, modG, gauss, X, Y,n);
+      compute_gradient(Gx, Gy, modG, gauss, X, Y);
     }
 
   compute_edge_points(Ex, Ey, modG, Gx, Gy, nonMax, X, Y);
-  char *string = (char*)malloc(255 * sizeof(char));
-  sprintf(string, "/home/ipol/gx_%d.txt", n);
-  save_matrix_to_file(string,Gx,X,Y);
-  sprintf(string, "/home/ipol/gy_%d.txt", n);
-  save_matrix_to_file(string,Gy,X,Y);
-  sprintf(string, "/home/ipol/mod_%d.txt", n);
+  save_matrix_to_file(gx_filename, Gx,X,Y);
+  save_matrix_to_file(gy_filename, Gy,X,Y);
+
+  /*sprintf(string, "/home/henry/Documents/repo/fing/devernay/devernay_1.0/mod_%d.txt", n);
   save_matrix_to_file(string,modG,X,Y);
-  sprintf(string, "/home/ipol/nonMax_%d.txt", n);
-  save_matrix_to_file(string,nonMax,X,Y);
-  free(string);
+  sprintf(string, "/home/henry/Documents/repo/fing/devernay/devernay_1.0/nonMax_%d.txt", n);
+  save_matrix_to_file(string,nonMax,X,Y);*/
 
   chain_edge_points(next, prev, Ex, Ey, Gx, Gy, X, Y);
 
