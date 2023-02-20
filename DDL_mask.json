@@ -1,0 +1,199 @@
+{
+    "general": {
+        "demo_title": "Tree Ring Detection Over Wood Slices",
+        "description" : "Brief description",
+        "drawmask": true,
+        "requirements": "docker"
+    },
+    "archive": {
+        "enable_reconstruct": true,
+        "files": {
+            "input_0.png": "Input",
+            "input_1.png": "mask image",
+            "output.png": "Output",
+            "preprocessing_output.png": "preprocessing",
+            "edge_detector.png": "edges",
+            "chains.png": "chains",
+            "grouping_chains.png": "grouping_chains",
+            "postprocessing.png": "post processing"
+
+        },
+        "info": {
+            "run_time": "run time"
+        }
+    },
+    "build": {
+        "build1" : {
+            "url": "git@github.com:hmarichal93/ipol-template",
+            "rev": "origin/main",
+            "dockerfile": ".ipol/Dockerfile"
+        }
+    },
+    "inputs": [
+        {
+            "description": "Input",
+            "dtype": "3x8i",
+            "ext": ".png",
+            "max_pixels": "2048*2048",
+            "max_weight": "10*1024*1024",
+            "type": "image",
+            "control": "mask"
+        },
+        {
+            "description": "Mask",
+            "dtype": "3x8i",
+            "ext": ".png",
+            "max_pixels": "3000*3000",
+            "max_weight": "10*1024*1024",
+            "required": false,
+            "type": "image"
+        }
+    ],
+    "params": [
+        {
+            "id": "sigma",
+            "label": "sigma",
+            "comments": "Noise standard deviation",
+            "type": "range",
+            "values": {
+                "default":3.5,
+                "max": 10,
+                "min": 1,
+                "step": 0.5
+            }
+        },
+        {
+            "label" : "<b>Advanced parameters</b>",
+            "type" : "label",
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "options",
+            "label": "Show advanced parameters",
+            "type": "checkbox",
+            "default_value": false
+        },
+        {
+            "id":"nr",
+            "label":"Nr",
+            "comments": "Define the radial sampling frecuency",
+            "type":"range",
+            "values":{
+                "default":360,
+                "max":720,
+                "min":2,
+                "step":10
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "th_low",
+            "label": "Gradient threshold low",
+            "type": "range",
+            "values": {
+                "default": 5.0,
+                "max": 50,
+                "min": 0.0,
+                "step": 0.1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "th_high",
+            "label": "Gradient threshold high",
+            "type": "range",
+            "values": {
+                "default": 20.0,
+                "max": 50,
+                "min": 0.0,
+                "step": 0.1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "output_zoom_factor",
+            "label": "ZOOM factor to render sub-pixel output",
+            "type": "range",
+            "values": {
+                "default": 2,
+                "max": 10,
+                "min": 1,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "hsize",
+            "label": "heigh size",
+            "comments" : "Heigh resize. 0 means no resize",
+            "type": "range",
+            "values": {
+                "default": 0,
+                "max": 3000,
+                "min": 0,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
+        },
+        {
+            "id": "wsize",
+            "label": "width size",
+            "comments" : "Width resize. 0 means no resize",
+            "type": "range",
+            "values": {
+                "default": 0,
+                "max": 3000,
+                "min": 0,
+                "step": 1
+            },
+            "visible": "params.options=='1'"
+        }
+    ],
+    "results": [
+        {
+            "contents": {
+                "Output":{
+                   "img": "output.png"
+                },
+                "Input":{
+                    "img": "input_0.png"
+                },
+                "Mask": {
+                    "img": "input_1.png"
+
+                },
+                "preprocessing": {
+                    "img": "preprocessing_output.png"
+                },
+                "edges": {
+                    "img": "edge_detector.png"
+                },
+                "chains": {
+                    "img": "chains.png"
+                },
+                "grouping chains": {
+                    "img": "grouping_chains.png"
+                },
+                "post processing": {
+                    "img": "postprocessing.png"
+                }
+            },
+            "type": "gallery",
+            "label": "<b>Intermediary results</b>"
+        },
+        {
+            "contents": {
+                "json file": "labelme.json"
+            },
+            "label": "You can download the Json file containing rings positions (labelme format)",
+            "type": "file_download"
+        },
+        {
+            "contents": "stdout.txt",
+            "label": "<p>Output</p>",
+            "type": "text_file"
+        }
+    ],
+
+    "run": ".ipol/run.sh $input_0 $input_1 $sigma $nr $th_low $th_high $hsize $wsize $bin $home"
+}
