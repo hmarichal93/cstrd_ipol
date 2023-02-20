@@ -14,6 +14,8 @@ class Color:
     purple = (255, 0, 255)
     maroon = (34, 34, 178)
     green = (0, 255, 0)
+    white = (255,255,255)
+    black = (0,0,0)
 
     def __init__(self):
         self.list = [Color.yellow, Color.red,Color.blue, Color.dark_yellow, Color.cyan,Color.orange,Color.purple,Color.maroon]
@@ -25,7 +27,7 @@ class Color:
 
 
 
-class Dibujar:
+class Drawing:
     @staticmethod
     def put_text(text, image, org, color = (0, 0, 0), fontScale = 1 / 4):
         # font
@@ -46,41 +48,21 @@ class Dibujar:
         return image
 
     @staticmethod
-    def intersecciones(lista_intersecciones,img,color=(0,0,255)):
-        lista_ptos = [(int(inter.y),int(inter.x)) for inter in lista_intersecciones]
-        pts = np.array(lista_ptos)
-        img[pts[:,0],pts[:,1],:] = color
+    def intersection(dot, img, color=Color.red):
+        img[int(dot.y),int(dot.x),:] = color
 
         return img
 
-    @staticmethod
-    def intersecciones_size(lista_intersecciones,img,color=(0,0,255),size=2):
-        lista_ptos = [(int(inter.y),int(inter.x)) for inter in lista_intersecciones]
 
-        for y,x in lista_ptos:
-             cv2.circle(img=img, center=(x,y), radius=int(size), color=color, thickness=-1)
 
-        return img
-    @staticmethod
-    def intersecciones_con_tamaño(lista_intersecciones,img,color=(0,0,255),thickness=1):
-        lista_ptos = [(int(inter.y),int(inter.x),size) for inter,size in lista_intersecciones]
-        for y,x,size in lista_ptos:
-             cv2.circle(img=img, center=(x,y), radius=int(size), color=color, thickness=thickness)
-        return img
+
 
     @staticmethod
-    def distribuciones(lista_distribuciones,img,color=(0,0,255),thickness=1):
-        lista_ptos = [(int(inter.y),int(inter.x),inter.std,inter.rayo_id) for inter in lista_distribuciones]
-        for y,x,size,rayo_id in lista_ptos:
-             cv2.circle(img=img, center=(x,y), radius=thickness, color=color, thickness=-1)
-        return img
-
-    @staticmethod
-    def curva(curva,img,color=(0,255,0),thickness = 2):
+    def curve(curva, img, color=(0, 255, 0), thickness = 1):
         y, x = curva.xy
         y = np.array(y).astype(int)
         x = np.array(x).astype(int)
-        pts = np.vstack((y,x)).T
+        pts = np.vstack((x,y)).T
         isClosed=False
         img = cv2.polylines(img, [pts],
                               isClosed, color, thickness)
@@ -88,8 +70,8 @@ class Dibujar:
         return img
 
     @staticmethod
-    def cadena( cadena, img, color = (0,255,0),thickness = 5):
-        y, x = cadena.getDotsCoordinates()
+    def chain(chain, img, color=(0, 255, 0), thickness=5):
+        y, x = chain.get_nodes_coordinates()
         pts = np.vstack((x, y)).T.astype(int)
         isClosed = False
         img = cv2.polylines(img, [pts],
@@ -111,28 +93,27 @@ class Dibujar:
             else:
                 color_tuple = colors.get_next_color()
 
-            img = Dibujar.cadena(cadena,img,color_tuple,thickness)
+            img = Drawing.chain(cadena, img, color_tuple, thickness)
 
             color_idx = (color_idx + 1) % colors_length
 
         if labels:
             for cadena in listaCadenas:
                 org = cadena.extA
-                img = Dibujar.put_text(str(cadena.label_id), img, (int(org.y), int(org.x)), fontScale=1.5)
+                img = Drawing.put_text(str(cadena.label_id), img, (int(org.y), int(org.x)), fontScale=1.5)
 
         return img
 
 
     @staticmethod
-    def rayo(rayo,img, color=(255, 0, 0),debug=False,thickness=2):
+    def radii(rayo, img, color=(255, 0, 0), debug=False, thickness=1):
         y, x = rayo.xy
         y = np.array(y).astype(int)
         x = np.array(x).astype(int)
-        start_point = (y[0], x[0])
-        end_point = (y[1], x[1])
+        start_point = (x[0], y[0])
+        end_point = (x[1], y[1])
         image = cv2.line(img, start_point, end_point, color, thickness)
-        if debug:
-            image = self.put_text(str(int(rayo.direccion)),image,((y[1]+y[0])//2,(x[1]+x[0])//2))
+
         return image
     @staticmethod
     def contorno(celda,img, color=(255, 0, 0)):

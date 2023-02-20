@@ -1,156 +1,180 @@
 import numpy as np
-import cv2
-from pathlib import Path
-import os
 import time
 from shapely.geometry import Point
+from shapely.geometry.linestring import LineString
+from lib.drawing import Drawing
+import cv2
 
-from lib.celdas import distancia_entre_pixeles
-from lib.dibujar import Dibujar
-from lib.objetos import Interseccion,Rayo,Curva
-import lib.chain_v4 as ch
-
-MODULE = "spyder"
-def from_polar_to_cartesian(r,angulo,centro):
-    y = centro[0] + r * np.cos(angulo * np.pi / 180)
-    x = centro[1] + r * np.sin(angulo * np.pi / 180)
-    return (y,x)
+from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains, visualize_chains_over_image
 
 
-
-class SpyderWeb:
-    #TODO: pensar los objetos abstrayendome de la representacion.
-    #Los objetos (pixeles) tienen que ser flotantes. Definir de una biblioteca que se encarga de dibujar la representacion
-    #Rayos: tienen que ser objetos independientementes de la representacion. El radio tiene que tener como objeto unicamente
-    # las coordenadas del centro y un angulo
-    #Curva: sucesion de puntos
-    #Anillo: curva cerrada, los puntos pertenecen a radios distintos.
-    #Interseccion: interseccion entre rayo y curva
-    #Celda: espacio entre dos curvas consecutivas (en direccion radial) y rayos consecutivos. Los rayos dependiendo de la distancia
-    # al centro podran ser consecutivos o no. Una celda esta formada por 4 objetos Interseccion.
-    def __init__(self,Nr,img,lista_curvas,centro,save_path,debug=False):
-        self.Nr = Nr
-        self.contador = 0
-        self.path = save_path
-        if debug:
-            self.debug_path = Path(save_path) / "debug"
-            os.system(f"rm -rf {str(self.debug_path)}")
-            self.debug_path.mkdir(parents=True, exist_ok=True)
-        self.debug = debug
-        self.centro = centro
-        self.img = img
-        M,N,_ = img.shape
-        self.lista_curvas = self.convertir_formate_lista_curvas(lista_curvas)
-        self.lista_rayos = self.construir_rayos(Nr,M,N,centro)
-        self.lista_intersecciones = self.construir_intersecciones(self.lista_rayos,self.lista_curvas)
-        #self.dibujar_curvas_rayos_e_intersecciones(img)
+class Ray(LineString):
+    def __init__(self, direction, center, M, N):
+        self.direction = direction
+        self.border = self._image_border_radii_intersection(direction, center, M, N)
+        super().__init__([center,self.border])
 
 
-    def dibujar_curvas_rayos_e_intersecciones(self,img):
-        img_dibujo = img.copy()
-        for rayo in self.lista_rayos:
-            img_dibujo = Dibujar.rayo(rayo,img_dibujo)
+    @staticmethod
+    def _image_border_radii_intersection(theta, origin, M, N):
+        degree_to_radians = np.pi/180
+        theta = theta % 360
+        yc,xc = origin
+        if 0 <= theta < 45:
+            ye = M-1
+            xe = np.tan(theta*degree_to_radians) * (M-1-yc) + xc
 
-        for curva in self.lista_curvas:
-            img_dibujo = Dibujar.curva(curva,img_dibujo)
+        elif 45<= theta < 90:
+            xe = N-1
+            ye = np.tan((90-theta)*degree_to_radians)*(N-1-xc) + yc
 
-        img_dibujo = Dibujar.intersecciones(self.lista_intersecciones,img_dibujo)
+        elif 90<= theta < 135:
+            xe = N-1
+            ye = yc - np.tan((theta-90)*degree_to_radians)*(xe-xc)
 
-        cv2.imwrite(f'{self.path}/curvas_rayos_e_intersecciones.png',img_dibujo)
+        elif 135 <= theta < 180:
+            ye = 0
+            xe = np.tan((180-theta)*degree_to_radians)*(yc) + xc
 
-    def convertir_formate_lista_curvas(self,lista_curvas):
-        lista_nuevo_formate_curvas = []
-        for curve in lista_curvas:
-            if curve.get_size()<2:
-                continue
-            lista_pixeles = [(pix.x,pix.y) for pix in curve.pixels_list]
-            lista_nuevo_formate_curvas.append(Curva(lista_pixeles, curve.id))
-        return lista_nuevo_formate_curvas
+        elif 180 <= theta < 225:
+            ye =0
+            xe = xc- np.tan((theta-180)*degree_to_radians)*(yc)
 
-    def obtener_interseccion_por_direccion(self,lista_intersecciones,rayo_id):
-        inters = [inter for inter in lista_intersecciones if inter.rayo_id == rayo_id]
-        inters.sort(key=lambda x: distancia_entre_pixeles(self.centro[0], self.centro[1],x.y,x.x))
-        return inters
+        elif 225 <= theta < 270:
+            xe = 0
+            ye = yc - np.tan((270-theta)*degree_to_radians)*(xc)
 
-    def construir_rayos(self,Nr,M,N,centro):
-        """
+        elif 270 <= theta < 315:
+            xe = 0
+            ye = np.tan((theta-270) * degree_to_radians) * (xc) + yc
 
-        @param Nr: cantidad radios
-        @param M: altura imagen
-        @param N: ancho imagen
-        @param centro: (y,x)
-        @return: lista rayos
-        """
-        rango_angulos = np.arange(0, 360, 360 / Nr)
-        lista_rayos = [Rayo(direccion,centro,M,N) for direccion in rango_angulos]
-        return lista_rayos
+        elif 315 <= theta < 360:
+            ye = M-1
+            xe = xc - np.tan((360-theta) * degree_to_radians) * (ye - yc)
 
+        else:
+            raise 'Error'
 
+        return (ye,xe)
+def build_rays(Nr, M, N, center):
+    """
 
-    def construir_intersecciones(self,lista_rayos,lista_curvas):
-        bolsa_intersecciones = []
-        for  rayo in lista_rayos:
-            for curva in lista_curvas:
-                inter = rayo.intersection(curva)
-                if not inter.is_empty:
-                    if 'MULTIPOINT' in inter.wkt:
-                        inter = inter[0]
-                    if type(inter) == Point:
-                        x,y = inter.xy
-                    else:
-                        continue
-                    bolsa_intersecciones.append(Interseccion(x=np.array(x)[0],y=np.array(y)[0],curva_id=int(curva.id),rayo_id=int(rayo.direccion)))
+    @param Nr: total rays
+    @param N: widht image
+    @param M: height image
+    @param center: (y,x)
+    @return: list_position rays
+    """
+    angles_range = np.arange(0, 360, 360 / Nr)
+    radii_list = [Ray(direction, center, M, N) for direction in angles_range]
+    return radii_list
 
-        return bolsa_intersecciones
+def get_coordinates_from_intersection(inter):
+    if 'MULTI' in inter.wkt:
+        inter = inter[0]
 
+    if type(inter) == Point:
+        y, x = inter.xy
 
+    elif 'LINESTRING' in inter.wkt:
+        y, x = inter.xy
 
-def main(datos):
-    M,N,img,centro,SAVE_PATH = datos['M'], datos['N'], datos['img'], datos['centro'], datos['save_path']
-    curve_list = datos['curve_list']
-    save_path = datos['save_path']
-    Nr = datos['config']['Nr']
-    t0 = time.time()
-    spyder = SpyderWeb(Nr=Nr, img=img, lista_curvas=curve_list, centro=centro[::-1], save_path=save_path)
-    listaPuntos = []
-    centro_id = np.max(np.unique([inter.curva_id for inter in spyder.lista_intersecciones])) + 1
+    elif 'STRING' in inter.wkt:
+        y, x = inter.coords.xy
 
-    for inter in spyder.lista_intersecciones:
-        i, j, angulo, radio = inter.y , inter.x, inter.rayo_id, inter.radio(centro[::-1])
-        params = {'x': i, 'y': j, 'angulo': angulo, 'radio': radio, 'gradFase': -1,
-                  'cadenaId': inter.curva_id,'Nr': Nr}
-        punto = ch.Punto(**params)
-        if punto not in listaPuntos:
-            if len( [dot for dot in listaPuntos if dot.cadenaId == punto.cadenaId and dot.angulo == punto.angulo ]) == 0:
-                listaPuntos.append(punto)
+    else:
+        raise
 
-    #agregar puntos artificiales pertenecientes al centro
-    for angulo in np.arange(0,360,360/Nr):
-        params = {'x': centro[1], 'y': centro[0], 'angulo': angulo, 'radio': 0, 'gradFase': -1,
-                  'cadenaId': centro_id ,'Nr': Nr}
-        punto = ch.Punto(**params)
-        listaPuntos.append(punto)
+    return y,x
+def intersections_between_rays_and_devernay_curves(center, radii_list, curve_list, min_chain_lenght, nr, height, witdh):
+    chain_list, dot_list = [], []
+    for idx,curve in enumerate(curve_list):
+        curve_dots = []
+        chain_id = len(chain_list)
+        for radii in radii_list:
+            inter = radii.intersection(curve)
+            if not inter.is_empty:
+                try:
+                    y,x = get_coordinates_from_intersection(inter)
+                except NotImplementedError:
+                    continue
+                i, j = np.array(y)[0],np.array(x)[0]
+                params = {'y': i, 'x': j, 'angle': int(radii.direction), 'radial_distance':
+                    euclidean_distance([ i, j], center),'chain_id': chain_id}
 
+                dot = Node(**params)
+                if dot not in curve_dots and get_node_from_list_by_angle(curve_dots, radii.direction) is None:
+                    curve_dots.append(dot)
 
+            # elif idx == len(curve_list) -1:
+            #     print(radii.direction)
 
+        if len(curve_dots) < min_chain_lenght:
+            continue
 
-    listaCadenas = ch.asignarCadenas(listaPuntos, centro[::-1], M, N,centro_id=centro_id, min_chain_lenght=datos['config']['min_chain_lenght'])
+        dot_list += curve_dots
+        chain = Chain(chain_id, nr, center=center, M=height, N=witdh)
+        chain.add_nodes_list(curve_dots)
+        chain_list.append(chain)
 
-    cadena_corteza = [cad for cad in listaCadenas if (cad.id == curve_list[-1].id)][0]
-    cadena_corteza.set_corteza()
+    chain_list[-1].type = TypeChains.border
 
-    listaCadenas, listaPuntos, MatrizEtiquetas = ch.renombrarCadenas(listaCadenas, listaPuntos, M, N)
+    return dot_list, chain_list
 
-    datos['listaCadenas'] = listaCadenas
-    datos['listaPuntos'] = listaPuntos
+def generate_virtual_center_chain(cy, cx, nr , chains_list, dots_list,  height, witdh):
+    chain_id = len(chains_list)-1
+    center_list = [Node(**{'x': cx, 'y': cy, 'angle': angle, 'radial_distance': 0,
+                  'chain_id': chain_id}) for angle in np.arange(0,360, 360/nr)]
+    dots_list += center_list
 
-    listaCadenas, img = datos['listaCadenas'], datos['img']
-    ch.visualizarCadenasSobreDisco(
-        listaCadenas, img, f"chains.png", labels=False, gris=True, color=True, save=f"{datos['save_path']}/"
-    )
+    chain = Chain(chain_id, nr,center=chains_list[0].center, M=height, N=witdh, type=TypeChains.center)
+    chain.add_nodes_list(center_list)
 
-    tf = time.time()
-    datos['sampling_time'] = tf - t0
-    print(f'Sampling: {tf-t0:.1f} seconds')
+    chains_list.append(chain)
+
+    #set border chain as the last element of the list
+    chains_list[-2].change_id(len(chains_list) - 1)
+
 
     return 0
+
+
+def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img, filename):
+    img_draw = img.copy()
+    for ray in rays_list:
+        img_draw = Drawing.radii(ray, img_draw)
+
+    for curve in curves_list:
+        img_draw = Drawing.curve(curve, img_draw)
+
+    for dot in dots_lists:
+        img_draw = Drawing.intersection(dot, img_draw)
+
+    cv2.imwrite(filename, img_draw)
+def sampling_edges(ch_f, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
+    height, witdh = im_pre.shape
+    rays_list = build_rays(nr, height, witdh,   [cy, cx])
+    nodes_s, ch_s = intersections_between_rays_and_devernay_curves([cy, cx], rays_list, ch_f, min_chain_lenght, nr, height, witdh)
+    generate_virtual_center_chain(cy, cx, nr, ch_s, nodes_s, height, witdh)
+    if debug:
+        draw_ray_curve_and_intersections(nodes_s, rays_list, ch_f, im_pre, './dots_curve_and_rays.png')
+
+    return ch_s, nodes_s
+def main(disk):
+    to = time.time()
+    curve_list = disk.data_dic['edges']['curve_list']
+    radii_list = build_rays(disk.nr, disk.height, disk.width, [disk.center_y, disk.center_x])
+    dots_list, chains_list = intersections_between_rays_and_devernay_curves(disk, radii_list, curve_list)
+    if disk.debug:
+        draw_ray_curve_and_intersections(dots_list, [ray for ray in radii_list if ray.direction == 0], curve_list, disk.img,
+                                           f'./dots_curve_and_radiis.png')
+
+    generate_virtual_center_chain(disk, chains_list, dots_list)
+
+    visualize_chains_over_image(chains_list, disk.data_dic['preprocessing']['im_eq'], f"{disk.save_dir}/chains.png")
+
+    tf = time.time()
+    disk.data_dic['sampling'] = {'time':tf-to,'chains_list':chains_list, 'dots_list': dots_list}
+
+    return 0
+

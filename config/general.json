@@ -1,1 +1,1 @@
-{"Nr": 360, "resize": [640, 640], "min_chain_lenght": 1, "edge_th": 60, "sigma": 1.5, "th_high": 40, "th_low": 5}
+{"Nr": 360, "resize": [1000, 1000], "min_chain_lenght": 2, "edge_th": 30, "sigma": 1.5, "th_high": 20, "th_low": 5, "devernay_path": "/home/henry/Documents/repo/fing/dendrometria/externas/devernay_1.0", "result_path": "/data/maestria/resultados/ipol_refactoring_resize_experiment/L07e"}

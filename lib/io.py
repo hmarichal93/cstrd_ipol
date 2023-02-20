@@ -1,130 +1,58 @@
 import os
 import json
-import socket
 from pathlib import Path
-import glob
-import numpy as np
-import pandas as pd
-import imageio
-import matplotlib.pyplot as plt
 import cv2
+import time
 
-import lib.chain_v4 as ch
+class Disk:
+    def __init__(self, cy, cx, output_dir, image, config, start_time):
+        self.center_y = cy
+        self.center_x = cx
+        self.save_dir = output_dir
+        self.img = image
+        self.height = image.shape[0]
+        self.width = image.shape[1]
+        self.debug = config.get('debug', False)
+        self.data_dic = {}
+        self.nr = config['Nr']
+        self.resize = config['resize']
+        self.th_low = config['th_low']
+        self.th_high = config['th_high']
+        self.min_chain_lenght = config['min_chain_lenght']
+        self.edge_th = config['edge_th']
+        self.sigma = config['sigma']
+        self.devernay_path = config.get('devernay_path')
+        self.start_time = start_time
 
+    def print_time(self):
+        for key in self.data_dic:
+            print(f"{key} {self.data_dic[key]['time']}")
+        print(f"total time {time.time()-self.start_time}")
 
-
-
-def img_show(img, centro, save=None, titulo=None, color="gray", debug=False):
-    fig = plt.figure(figsize=(10, 10))
-    if color == "gray":
-        plt.imshow(img, cmap=color)
-    else:
-        plt.imshow(img)
-    plt.title(titulo)
-    plt.scatter(centro[0], centro[1])
-    plt.axis("off")
-    if save:
-        plt.savefig(f"{save}/original.png")
-    if debug:
-        plt.show()
-    plt.close()
-    return fig
-
-def load_image(image_name, cy, cx, working_dir,output_dir):
-    centro = ( cy, cx)
-    config = load_json(f"{working_dir}/config/general.json")
-    results = {}
-
+def load_image(image_name):
     img = cv2.imread(image_name)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
 
-    M, N, _ = img.shape
+def load_config(default=True):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return load_json(f"{dir_path}/../config/default.json") if default else load_json(f"{dir_path}/../config/general.json")
+def BuildingContext(image_name, cy, cx, working_dir, output_dir):
+    """
+    Load image
+    :param image_name: paht where image is
+    :param cy: pith'y coodinate
+    :param cx: pith'x coodinate
+    :param working_dir: working directory
+    :param output_dir: directory where save results
+    :return: void
+    """
 
-    results['config'] = config
-    results['img'] = img
-    results['centro'] = centro
-    results['save_path'] = Path(output_dir)
-    results['M'] = M
-    results['debug'] = False
+    config = load_json(f"{working_dir}/config/general.json")
+    img = load_image(image_name)
+    disk = Disk(cy, cx, output_dir, img, config, time.time())
 
-    results['N'] = N
-
-    return results
-
-
-def get_files(path, ext):
-    return glob.glob(f"{path}/**/*.{ext}", recursive=True)
-
-
-def save_dots(listaPuntos, centro, M, N, nonMaxSup, gradFase, filename):
-    isExist = os.path.exists(filename)
-    if not isExist:
-        os.makedirs(filename)
-    result = {}
-    lista = []
-    for dot in listaPuntos:
-        fila = [int(dot.x), int(dot.y), float(dot.angulo), float(dot.radio), float(dot.gradFase), int(dot.cadenaId)]
-        lista.append(fila)
-
-    # print(non_max_sup)
-    result['puntos'] = lista
-    result['centro'] = centro
-    result['M'] = M
-    result['N'] = N
-    print(filename)
-    write_json(result, f"{filename}/res.json")
-    np.savetxt(f"{filename}/gradFase.csv", gradFase)
-    np.savetxt(f"{filename}/nonMaxSup.csv", nonMaxSup)
-
-
-def load_data(filename):
-    result_load = load_json(f"{filename}/res.json")
-
-    lista_puntos = []
-
-    for fila in result_load['puntos']:
-        params = {
-            "x": fila[0],
-            "y": fila[1],
-            "angulo": fila[2],
-            "radio": fila[3],
-            "gradFase": fila[4],
-            "cadenaId": fila[5],
-        }
-
-        punto = ch.Punto(**params)
-
-        lista_puntos.append(punto)
-
-    centro = result_load['centro']
-    M = result_load['M']
-    N = result_load['N']
-
-    lista_cadenas = ch.asignarCadenas(lista_puntos, centro[::-1], M, N)
-
-    nonMaxSup = np.genfromtxt(f"{filename}/nonMaxSup.csv")
-    gradFase = np.genfromtxt(f"{filename}/gradFase.csv")
-    return lista_cadenas, lista_puntos, nonMaxSup, gradFase, M, N
-
-
-def load_txt(pred_file):
-    width = 1920
-    height = 1080
-    file = open(pred_file, 'r')
-    pred_lines = file.readlines()
-    # print(pred_lines)
-    file.close()
-    content = []
-
-    for line in pred_lines:
-        line.replace('\n', '')
-        # print(line)
-        obj, xc, yc, w, h, conf = line.split(' ')
-        content.append(
-            [int(obj), float(xc) / width, float(yc) / height, float(w) / width, float(h) / height, float(conf)])
-    content = np.array(content)
-    return content
-
+    return disk
 
 def load_json(filepath: str) -> dict:
     """
@@ -161,73 +89,5 @@ def get_path(*args):
     assert all([arg in paths[hostname].keys() for arg in args]), "Args must be in {}".format(paths[hostname].keys())
     paths = tuple([Path(paths[hostname][arg]) for arg in args])
     return paths[0] if len(paths) == 1 else paths
-
-
-def list_to_matrix(lista_puntos):
-    lista = []
-    for dot in lista_puntos:
-        fila = [dot.x, dot.y, float(dot.angulo), float(dot.radio), float(dot.gradFase), int(dot.cadenaId)]
-        lista.append(fila)
-
-    return np.array(lista)
-
-
-def from_matrix_to_list_dots(matrix):
-    listaPuntos = []
-    lenght_dots = matrix.shape[0]
-    for idx in range(lenght_dots):
-        j, i, angulo, radio, fase, cad_id = matrix[idx, 0], matrix[idx, 1], matrix[idx, 2], matrix[idx, 3], matrix[
-            idx, 4], matrix[idx, 5]
-        params = {'x': j, 'y': i, 'angulo': angulo, 'radio': radio, 'gradFase': fase, 'cadenaId': int(cad_id)}
-        punto = ch.Punto(**params)
-        # if punto not in listaPuntos:
-        listaPuntos.append(punto)
-    return listaPuntos
-
-
-def load_system_status(nroImagen, display, version_salvar, version_cargar):
-    results = load_image(nroImagen, display, version_cargar, version_salvar, debug=True)
-    save_path = results['save_path']
-    load_path = results['load_path']
-    gradFase = np.genfromtxt(f"{load_path}/gradFase.csv")
-    matrix = np.genfromtxt(f"{load_path}/matrix.csv")
-    modulo = np.genfromtxt(f"{load_path}/modulo.csv")
-    nonMaxSup = np.genfromtxt(f"{load_path}/nonMaxSup.csv")
-    # perfils_matrix = np.genfromtxt(f"{load_path}/perfils.csv")
-    MatrizIntersecciones = np.genfromtxt(f"{load_path}/intersecciones.csv")
-    results['gradFase'] = gradFase
-    results['modulo'] = modulo
-    results['nonMaxSup'] = nonMaxSup
-    # results['perfils_matrix'] = perfils_matrix
-    # generar lista_puntos
-    results['listaPuntos'] = from_matrix_to_list_dots(matrix)
-    # generar lista_cadenas
-    listaPuntos, centro, M, N = results['listaPuntos'], results['centro'], results['M'], results['N']
-    results['listaCadenas'] = ch.asignarCadenas(listaPuntos, centro[::-1], M, N)
-    ch.verificacion_complitud(results['listaCadenas'])
-    results['MatrizEtiquetas'] = ch.buildMatrizEtiquetas(M, N, listaPuntos)
-    results['matrizIntersecciones'] = MatrizIntersecciones
-
-    return results
-
-
-def save_system_status(results):
-    save_path, lista_puntos, gradFase, nonMaxSup, modulo = results['save_path'], results['listaPuntos'], results[
-        'gradFase'], \
-                                                           results['nonMaxSup'], results['modulo']
-    listaCadenas = results['listaCadenas']
-    ch.verificacion_complitud(listaCadenas)
-    print(
-        f"listaPuntos {len(lista_puntos)} cadenas {ch.contarPuntosListaCadenas(listaCadenas)}"
-    )
-    intersecciones = results['matrizIntersecciones']
-    # perfils_matrix = results['perfils_matrix']
-    matrix = list_to_matrix(lista_puntos)
-    np.savetxt(f"{save_path}/gradFase.csv", gradFase)
-    np.savetxt(f"{save_path}/nonMaxSup.csv", nonMaxSup)
-    np.savetxt(f"{save_path}/modulo.csv", modulo)
-    np.savetxt(f"{save_path}/matrix.csv", matrix)
-    # np.savetxt(f"{save_path}/perfils.csv",perfils_matrix)
-    np.savetxt(f"{save_path}/intersecciones.csv", intersecciones)
 
 
