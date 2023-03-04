@@ -1,6 +1,8 @@
 {
     "general": {
         "demo_title": "Tree Ring Detection Over Wood Slices",
+        "description": "This work describes a Tree Ring Detection method for pine Cross Section. The method needs the pith location as input. It can be marked manually over the input image. In case it is not marked manually, automatic pith detection method proposed in https://doi.org/10.5201/ipol.2022.338",
+        "input_description": "",
         "requirements": "docker"
     },
     "build": {
@@ -26,7 +28,7 @@
             "comments": "Noise standard deviation",
             "type": "range",
             "values": {
-                "default":2,
+                "default":3,
                 "max": 10,
                 "min": 1,
                 "step": 0.5
@@ -59,6 +61,7 @@
         {
             "id": "th_low",
             "label": "Gradient threshold low",
+            "comments": "Edge detector parameter",
             "type": "range",
             "values": {
                 "default": 5.0,
@@ -71,6 +74,7 @@
         {
             "id": "th_high",
             "label": "Gradient threshold high",
+            "comments": "Edge detector parameter",
             "type": "range",
             "values": {
                 "default": 20.0,
@@ -83,6 +87,7 @@
         {
             "id": "output_zoom_factor",
             "label": "ZOOM factor to render sub-pixel output",
+            "comments": "Edge detector parameter",
             "type": "range",
             "values": {
                 "default": 2,
@@ -95,9 +100,10 @@
         {
             "id": "hsize",
             "label": "heigh size",
+            "comments": "image height size",
             "type": "range",
             "values": {
-                "default": 1000,
+                "default": 1500,
                 "max": 3000,
                 "min": 0,
                 "step": 1
@@ -107,9 +113,10 @@
         {
             "id": "wsize",
             "label": "width size",
+            "comments": "image width size",
             "type": "range",
             "values": {
-                "default": 1000,
+                "default": 1500,
                 "max": 3000,
                 "min": 0,
                 "step": 1
