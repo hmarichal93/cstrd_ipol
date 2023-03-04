@@ -1,15 +1,9 @@
-
-import os
-import pandas as pd
 import numpy as np
 import cv2
-import time
-from shapely.geometry.linestring import LineString
 import warnings
-
 warnings.filterwarnings("ignore")
+from shapely.geometry.linestring import LineString
 
-from lib.io import get_path
 from lib.drawing import Color
 
 class Curve(LineString):
@@ -27,7 +21,7 @@ class Curve(LineString):
         pts = np.vstack((x,y)).T
         isClosed = False
         img = cv2.polylines(img, [pts],
-                              isClosed, Color.white, thickness)
+                              isClosed, Color.black, thickness)
         return img
 
 def normalized_row_matrix(matrix):
@@ -52,6 +46,7 @@ def dilatation(dilatation_size, src):
                                        (dilatation_size, dilatation_size))
     dilatation_dst = cv2.dilate(src, element)
     return dilatation_dst
+
 def get_disk_border(img, curves_list):
     """
     @param img: segmented gray image
@@ -70,15 +65,13 @@ def get_disk_border(img, curves_list):
     mask = np.where(mask>0,255,0).astype(np.uint8)
     pad = 3
     mask = np.pad(mask,((pad,pad),(pad,pad)), mode='constant', constant_values=255).astype(np.uint8)
-    # disk_area = np.where(mask>0)[0].shape[0]
-    # cv2.imwrite('./output/mask.png', mask)
+
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     perimeter_image = 2*img.shape[0]+2*img.shape[1]
     # find the biggest contour
     max_cont = None
     area_difference_min = np.inf
-    approximate_disk_area = np.pi * (img.shape[0] / 2) ** 2
     area_image = img.shape[0] * img.shape[1]
     approximate_disk_area = area_image / 2
     for idx,c in enumerate(contours):
@@ -88,27 +81,29 @@ def get_disk_border(img, curves_list):
             continue
 
         area_difference = np.abs(contour_area-approximate_disk_area)
-        # print(f"{idx} Area {area_difference} {contour_area}")
-        # image = img.copy()
-        # cv2.drawContours(image, c, -1, (0, 255, 0), 1)
-        # cv2.imwrite(f'./output/mask_{idx}.png', image)
+
         if area_difference < area_difference_min:
             max_cont = c.reshape((-1, 2))
-            max_contour_draw = c
             area_difference_min = area_difference
 
-
-    #image = img.copy()
-    #cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
-    #cv2.imwrite('./output/mask2.png', image)
-    #cv2.imwrite('./output/mask3.png', diff)
-    # max_cont[:, 0] *= int((image.shape[1] / (image.shape[1] + 2 * pad)))
-    # max_cont[:, 1] *= int((image.shape[0] / (image.shape[0] + 2 * pad)))
-    #raise
     curve = Curve(max_cont, len(curves_list))
     return curve
 
 def filter_edges(ch_e, cy, cx, Gx, Gy, edges_th, img):
+    """
+    Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
+    cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
+    collineary with the ray direction is computed and filter depending on threshold (edges_th)
+    @param ch_e: devernay curves
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @param Gx: Gradient over x direction
+    @param Gy: Gradient over y direction
+    @param edges_th: threshold filter
+    @param img: input image
+    @return:
+    - ch_f: filtered devernay curves
+    """
     #1.0 normalize ray vector at each edge
     delimiter_curve_row = np.array([-1, -1])
     center = [cx, cy]
@@ -147,7 +142,7 @@ def filter_edges(ch_e, cy, cx, Gx, Gy, edges_th, img):
     return ch_f
 
 def write_filter_curves_to_image(curves, img):
-    img = np.zeros_like(img)
+    img = np.zeros_like(img) +255
     for c in curves:
-        img = c.draw(img)
+        img = c.draw(img,thickness=3)
     return img

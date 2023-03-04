@@ -152,6 +152,19 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img, fi
 
     cv2.imwrite(filename, img_draw)
 def sampling_edges(ch_f, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
+    """
+    Devernay curves are sampled using the rays directions.
+    @param ch_f:  edges devernay curves
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @param nr: total ray number
+    @param min_chain_lenght:  minumin chain lenght
+    @param im_pre: input image
+    @param debug: debugging flag
+    @return:
+    - ch_s: sampled edges curves. List of chain object
+    - nodes_s: nodes list.
+    """
     height, witdh = im_pre.shape
     rays_list = build_rays(nr, height, witdh,   [cy, cx])
     nodes_s, ch_s = intersections_between_rays_and_devernay_curves([cy, cx], rays_list, ch_f, min_chain_lenght, nr, height, witdh)
@@ -160,21 +173,3 @@ def sampling_edges(ch_f, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
         draw_ray_curve_and_intersections(nodes_s, rays_list, ch_f, im_pre, './dots_curve_and_rays.png')
 
     return ch_s, nodes_s
-def main(disk):
-    to = time.time()
-    curve_list = disk.data_dic['edges']['curve_list']
-    radii_list = build_rays(disk.nr, disk.height, disk.width, [disk.center_y, disk.center_x])
-    dots_list, chains_list = intersections_between_rays_and_devernay_curves(disk, radii_list, curve_list)
-    if disk.debug:
-        draw_ray_curve_and_intersections(dots_list, [ray for ray in radii_list if ray.direction == 0], curve_list, disk.img,
-                                           f'./dots_curve_and_radiis.png')
-
-    generate_virtual_center_chain(disk, chains_list, dots_list)
-
-    visualize_chains_over_image(chains_list, disk.data_dic['preprocessing']['im_eq'], f"{disk.save_dir}/chains.png")
-
-    tf = time.time()
-    disk.data_dic['sampling'] = {'time':tf-to,'chains_list':chains_list, 'dots_list': dots_list}
-
-    return 0
-

@@ -42,11 +42,16 @@ class DiskNameConvertion:
 
         return letter
 
+import argparse
 if __name__=='__main__':
-    images_path = Path('/data/maestria/resultados/ipol_refactoring')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", type=str, required=True)
+    args = parser.parse_args()
+    #images_path = Path('/data/maestria/resultados/ipol_refactoring_resize_experiment_1500')
+    images_path = Path(args.path)
     dst_images_path = Path('/data/maestria/database_new_nomenclature/ground_truth_processed/annotations')
     for disk_path in images_path.rglob('labelme.json'):
-        if 'fx' in disk_path.parent.name:
+        if 'fx' not  in disk_path.parent.name:
             continue
         name = disk_path.parent.name
         # fileds = name.split('_')
@@ -57,7 +62,7 @@ if __name__=='__main__':
         new_name = name#DiskNameConvertion(name)
         #new_name = f"{new_name.letter}{int(new_name.tree_number):02d}{new_name.correlative_letter}"
         print(f"{name}-->{new_name}")
-        os.system(f'cp {disk_path} {str(dst_images_path)}/{new_name}_ipol_refactoring.json')
+        os.system(f'cp {disk_path} {str(dst_images_path)}/{new_name}_{images_path.name}.json')
 
         # #
         # for gt_path in Path('./ground_truth').rglob(f'{name}*'):

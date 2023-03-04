@@ -12,6 +12,7 @@ import pandas as pd
 from pathlib import Path
 
 from lib.io import load_config
+from lib.drawing import Drawing
 
 def load_curves(output_txt):
     curves_list = pd.read_csv(output_txt, delimiter=" ", header=None).values
@@ -22,11 +23,11 @@ def convert_image_to_pgm(img):
     cv2.imwrite(str(image_path), img)
     return config, image_path
 def write_curves_to_image(curves_list, img):
-    img_aux = np.zeros(( img.shape[0], img.shape[1]))
+    img_aux = np.zeros(( img.shape[0], img.shape[1])) + 255
     for pix in curves_list:
         if pix[0]<0 and pix[1]<0:
             continue
-        img_aux[int(pix[1]),int(pix[0])] = 255
+        img_aux = Drawing.circle(img_aux, (int(pix[0]),int(pix[1])))
     return img_aux
 def delete_files(files):
     for file in files:
@@ -50,9 +51,21 @@ def execute_command(config,image_path , sigma, low, high):
 
     return gx_path, gy_path, output_txt
 def canny_deverney_edge_detector(im_pre, sigma, low, high):
-    config,im_path = convert_image_to_pgm(im_pre)
-    gx_path, gy_path, output_txt = execute_command(config,im_path, sigma, low, high)
-    Gx, Gy = gradient_load(im_pre,gx_path, gy_path)
+    """
+    Canny edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
+    source code downloaded from https://doi.org/10.5201/ipol.2017.216
+    @param im_pre: preprocessed image.
+    @param sigma: edge detection gaussian filtering
+    @param low: gradient threshold low
+    @param high: gradient threshold high
+    @return:
+    - curves_list: devernay curves
+    - Gx: gradient image over x direction
+    - Gy: gradient image over y direction
+    """
+    config, im_path = convert_image_to_pgm(im_pre)
+    gx_path, gy_path, output_txt = execute_command(config, im_path, sigma, low, high)
+    Gx, Gy = gradient_load(im_pre, gx_path, gy_path)
     curves_list = load_curves(output_txt)
     delete_files([output_txt, im_path, gx_path, gy_path])
     return curves_list, Gx, Gy

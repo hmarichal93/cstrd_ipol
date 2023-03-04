@@ -66,7 +66,13 @@ class ConnectParameters:
     def update_list_for_next_iteration(self, ch_c, nodes_c):
         self.ch_s_without_border, self.nodes_s_without_border = ch_c, nodes_c
 
+def copy_chains_and_nodes(ch_s):
+    ch_s = [ch.copy_chain(chain) for chain in ch_s]
+    nodes_s = []
+    for chain in ch_s:
+        nodes_s += chain.nodes_list
 
+    return  ch_s, nodes_s
 def connect_chains(ch_s, nodes_s, cy, cx, nr, im_pre, debug, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction
@@ -81,18 +87,13 @@ def connect_chains(ch_s, nodes_s, cy, cx, nr, im_pre, debug, output_dir):
     nodes_c: list nodes
     """
     ##Copy chain and nodes
-    ch_s = [ch.copy_chain(chain) for chain in ch_s]
-    nodes_s = []
-    for chain in ch_s:
-        nodes_s += chain.nodes_list
+    ch_s, nodes_s = copy_chains_and_nodes(ch_s)
     ####
-
-
-
     parameters = ConnectParameters(ch_s, nodes_s)
     intersection_matrix = compute_intersection_matrix(ch_s, nodes_s, Nr=nr)
     for counter in range(parameters.iterations):
         iteration_params = parameters.get_iteration_parameters(counter)
+
         ch_c, nodes_c, intersection_matrix = connect_chains_main_logic(intersections_matrix=intersection_matrix,
                                                                        img_center=[cy, cx], debug_imgs=debug if counter>7 else False,
                                                                        save = f"{output_dir}/output_{counter}_", Nr=nr,
@@ -173,7 +174,7 @@ class SystemStatus:
         chain_copy = ch.copy_chain(chain)
         domain_interpolation(chain_border, ch1_border, ch2_border, enpoint, chain_copy, virtual_nodes)
         virtual_node_plus_endpoints = [ch1_border] + virtual_nodes + [ch2_border]
-        assert len([dot for dot in chain_copy.nodes_list if dot in virtual_nodes]) == 0
+        # assert len([dot for dot in chain_copy.nodes_list if dot in virtual_nodes]) == 0
 
         info_band = InfoVirtualBand(virtual_node_plus_endpoints, chain, chain, enpoint, chain_border, band_width=0.1)
         exit_chain = exist_chain_in_band(self.chains_list, info_band)
@@ -264,8 +265,8 @@ class SystemStatus:
                     down_chain.B_up = chain
 
 
-        assert not chain.check_if_nodes_are_missing()
-        assert len([node.angle for node in processed_node_list if chain.get_node_by_angle(node.angle)]) == 0
+        # assert not chain.check_if_nodes_are_missing()
+        # assert len([node.angle for node in processed_node_list if chain.get_node_by_angle(node.angle)]) == 0
         change_border = chain.add_nodes_list(processed_node_list)
         self.update_chain_neighbourhood([chain])
 

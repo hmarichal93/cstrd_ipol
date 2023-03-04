@@ -41,6 +41,21 @@ def equalize(imageGray):
 def rgb2gray(img_r):
     return cv2.cvtColor(img_r, cv2.COLOR_BGR2GRAY)
 def preprocessing(im_in, height = None, width = None, cy = None, cx = None):
+    """
+    Image preprocessing steps. Following actions are realized
+    - image resize
+    - image is converted to gray scale
+    - gray scale image is equalized
+    @param im_in: segmented image
+    @param height: new image height
+    @param width: new image widht
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @return:
+    - im_eq: equalized image
+    - cy: pith y's coordinate after resize
+    - cx: pith x's coordinate after resize
+    """
     im_r, cy, cx = resize(im_in, (height, width), cy, cx)
     im_g = rgb2gray(im_r)
     im_eq = equalize(im_g)

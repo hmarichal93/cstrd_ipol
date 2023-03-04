@@ -111,7 +111,7 @@ class Ring(Polygon):
 
 class DiskContext:
     def __init__(self, chain_list, save_path=None, img=None, debug=True, idx_start=None):
-        self.inward_chains_subset = []
+        self.within_chains_subset = []
         self.neighbourhood_size = None
         self.debug = debug
         self.save_path = save_path
@@ -141,7 +141,7 @@ class DiskContext:
         inward_poly_ring, outward_poly_ring = self.get_inward_outward_ring(self.idx)
         shapely_inward_chain_subset = search_shapely_inward_chain(self.uncompleted_chains_poly, outward_poly_ring,
                                                                   inward_poly_ring)
-        self.inward_chains_subset = from_shapely_to_chain(self.uncompleted_chains_poly,
+        self.within_chains_subset = from_shapely_to_chain(self.uncompleted_chains_poly,
                                                           self.uncompleted_chains,
                                                           shapely_inward_chain_subset)
 
@@ -157,7 +157,7 @@ class DiskContext:
 
     def drawing(self, iteration):
         ch.visualize_selected_ch_and_chains_over_image_(
-            self.inward_chains_subset + [chain for chain in [self.inward_ring, self.outward_ring] if chain is not None],
+            self.within_chains_subset + [chain for chain in [self.inward_ring, self.outward_ring] if chain is not None],
             [], img=self.img, filename=f'{self.save_path}/{iteration}_0.png')
 
     def _from_shapely_ring_to_chain(self, poly_ring_inward, poly_ring_outward):
@@ -412,7 +412,7 @@ def split_and_connect_chains_in_region(inward_node_list: List[ch.Node], inward_c
     src_chain_angle_domain = ch.get_nodes_angles_from_list_nodes(src_chain.nodes_list)
     endpoint_node = src_chain.extA if endpoint == ch.EndPoints.A else src_chain.extB
 
-    # 1.0 
+    # 2.0
     support_chain = select_support_chain(outward_chain_ring, inward_chain_ring, endpoint_node)
 
     # 2.1
@@ -669,6 +669,18 @@ def connect_closest_chain_if_conditions_are_met(src_chain, candidate_chain_a, di
 
 
 def postprocessing(ch_c, nodes_c, cy, cx, save_path, img, debug):
+    """
+    Posprocessing chain modules. Conditions are relaxed in order to re-fine chain connections
+    @param ch_c: chain list
+    @param nodes_c: node list
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @param save_path: debug locations
+    @param img: input image
+    @param debug: debug flag
+    @return:
+    - ch_p: chain list
+    """
     ch_p = [ch.copy_chain(chain) for chain in ch_c]
     chain_was_completed = False
     idx_start = None
@@ -683,7 +695,7 @@ def postprocessing(ch_c, nodes_c, cy, cx, save_path, img, debug):
 
             ############################################################################################################
             # First Postprocessing. Split all chains and connect them if it possible
-            chain_was_completed = split_and_connect_chains(iteracion, img, ctx.inward_chains_subset, ctx.inward_ring,
+            chain_was_completed = split_and_connect_chains(iteracion, img, ctx.within_chains_subset, ctx.inward_ring,
                                                            ctx.outward_ring, ch_p, debug, save_path, nodes_c, ctx.idx,
                                                            neighbourhood=ctx.neighbourhood_size)
             # If chain was completed, restart iteration
@@ -692,15 +704,8 @@ def postprocessing(ch_c, nodes_c, cy, cx, save_path, img, debug):
                 break
             ############################################################################################################
             # Second posproccessing
-            there_is_chain = len(ctx.inward_chains_subset) == 1
-            if there_is_chain:
-                inward_chain = ctx.inward_chains_subset[0]
-                posprocessing_unique_chain(inward_chain, ctx.inward_ring, ctx.outward_ring, nodes_c)
+            connect_chains_if_there_is_enough_data(ctx, nodes_c, ch_p)
 
-            more_than_1_chain = len(ctx.inward_chains_subset) > 1
-            if more_than_1_chain:
-                posprocessing_more_than_one_chain_without_intersection(ctx, ctx.inward_chains_subset, ctx.inward_ring,
-                                                                       ctx.outward_ring, nodes_c, ch_p)
 
             ############################################################################################################
 
@@ -711,6 +716,25 @@ def postprocessing(ch_c, nodes_c, cy, cx, save_path, img, debug):
             break
 
     # Finale Step, fill chain
+    complete_chains_if_required(ch_p)
+
+    return ch_p
+
+
+def connect_chains_if_there_is_enough_data(ctx, nodes_c, ch_p):
+    there_is_chain = len(ctx.within_chains_subset) == 1
+    if there_is_chain:
+        inward_chain = ctx.within_chains_subset[0]
+        posprocessing_unique_chain(inward_chain, ctx.inward_ring, ctx.outward_ring, nodes_c)
+
+    more_than_1_chain = len(ctx.within_chains_subset) > 1
+    if more_than_1_chain:
+        posprocessing_more_than_one_chain_without_intersection(ctx, ctx.within_chains_subset, ctx.inward_ring,
+                                                               ctx.outward_ring, nodes_c, ch_p)
+
+    return 0
+
+def complete_chains_if_required(ch_p):
     chain_list = [chain for chain in ch_p if chain.type not in [ch.TypeChains.border]]
     for chain in chain_list:
         if chain.is_full() and chain.size < chain.Nr:
@@ -724,8 +748,7 @@ def postprocessing(ch_c, nodes_c, cy, cx, save_path, img, debug):
                 support_chain = None
                 complete_chain_using_support_ring(support_chain, chain)
 
-    return ch_p
-
+    return 0
 
 def posprocessing_unique_chain(inward_chain, inward_ring_chain, outward_ring_chain, node_list,
                                information_threshold=180):

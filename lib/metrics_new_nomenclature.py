@@ -29,12 +29,12 @@ def load_image( image_name, disk_name=None):
     data_path = get_path("data")
     dataset = pd.read_csv(f"/data/maestria/database_new_nomenclature/dataset_ipol.csv")
     #nroImagen = [idx for idx,image_file in enumerate(dataset['Imagen'].values) if (image_file[:-4] in img_name) and (img_name in image_file[:-4])][0]
-    disco = dataset[dataset.Imagen == image_name]
+    disco = dataset[dataset.Imagen == img_name]
     #disco = dataset.iloc[int(nroImagen)]
     path = f"/data/maestria/database_new_nomenclature/images"
     imagenNombre = disco["Imagen"]
     centro = tuple([int(disco["cy"]), int(disco["cx"])])
-    return cv.imread(str(path + f"/{image_name}.png"),cv.COLOR_RGB2GRAY),centro
+    return cv.imread(str(path + f"/{img_name}.png"),cv.COLOR_RGB2GRAY),centro
 
 class Polygon_node(Polygon):
     def __init__(self, node_list):
@@ -43,30 +43,40 @@ class Polygon_node(Polygon):
         super().__init__([[node.y, node.x] for node in node_list])
 
 FP_ID = -1
-class AreaInfluencia:
-    def __init__(self, gt, dt,output_dir, Nr, disk_name=None):
+class InfluenceArea:
+    def __init__(self, gt, dt,output_dir, Nr, threshold=0.75,disk_name=None):
         self.gt_path = Path(gt)
+        self.threshold = threshold
         self.output_dir = output_dir
         self.dt_path = dt
-        image_name = self.gt_path.parts[-1][:-5]
-        image_name = self.gt_path.name.split('.')[0].split('_')[0]
-        self.image_name = image_name
-        self.img, self.centro = load_image(image_name, disk_name)
-        self.angulos_matrix = self._build_angle_matrix()
+        image_name = self.gt_path.parts[-1]
+        for prefix in [ 'mean', 'maria', 'veronica', 'christine', 'serrana']:
+            if prefix in image_name:
+                image_name = image_name.replace(f"_{prefix}","")
+        self.image_name = image_name[:-5]
+        self.img, self.center = load_image(self.image_name, disk_name)
         M,N,_ = self.img.shape
-        self.rayos_img = build_radial_directions_matrix(np.zeros((M,N)),self.centro, Nr).astype(int)
-        self.rays_list = build_rays(Nr, N, M, self.centro)
+        #self.rayos_img = build_radial_directions_matrix(np.zeros((M,N)),self.center, Nr).astype(int)
+        #nr, height, witdh, [cy, cx]
+        self.rays_list = build_rays(Nr, M, N, self.center[::-1])
+        #draw_ray_curve_and_intersections([],self.rays_list, [], self.img, "./debug_rays.png")
         self.gt_poly = self.load_ring_stimation(self.gt_path)
         gt_poly_samples = []
-        cy, cx = self.centro
+        cy, cx = self.center
         for poly in self.gt_poly:
-            gt_poly_samples.append(self._sampling_poly(poly, cy, cx, self.rays_list))
+            sampled_poly = self._sampling_poly(poly, cy, cx, self.rays_list, self.img)
+            if sampled_poly is None:
+                continue
+            gt_poly_samples.append(sampled_poly)
         self.gt_poly = gt_poly_samples
 
         self.dt_poly = self.load_ring_stimation(self.dt_path)
         dt_poly_samples = []
         for idx,poly in enumerate(self.dt_poly):
-            dt_poly_samples.append(self._sampling_poly(poly, cy, cx, self.rays_list) )
+            sampled_poly = self._sampling_poly(poly, cy, cx, self.rays_list, self.img)
+            if sampled_poly is None:
+                continue
+            dt_poly_samples.append(sampled_poly )
         self.dt_poly = dt_poly_samples
         self.Nr = Nr
 
@@ -76,23 +86,12 @@ class AreaInfluencia:
             json_content = load_json(path)
             anillos = []
             for ring in json_content['shapes']:
-                anillos.append( Polygon(ring['points']))
+                anillos.append( Polygon(np.array(ring['points'])[:,[1,0]].tolist()))
 
         except FileNotFoundError:
             anillos = []
 
         return anillos
-
-    def _build_angle_matrix(self):
-        M, N,_ = self.img.shape
-        xx, yy = np.meshgrid(np.arange(0, N), np.arange(0, M))
-        yy_c, xx_c = yy - self.centro[1], xx - self.centro[0]
-        cte_grados_a_radianes = np.pi / 180
-        angulos_matrix = np.arctan2(xx_c, yy_c) / cte_grados_a_radianes
-        angulos_matrix = np.where(angulos_matrix > 0, angulos_matrix,angulos_matrix + 360)
-        angulos_matrix %= 360
-
-        return angulos_matrix
 
     def _convert_poly_dict_to_poly_list(self,poly_d):
         poly_list = []
@@ -103,50 +102,24 @@ class AreaInfluencia:
 
     def _add_poly_to_img(self,img,poly,color,thickness=1):
         isClosed = True
-        x,y = poly.exterior.coords.xy
+        y,x = poly.exterior.coords.xy
         pts = np.vstack((x, y)).T.astype(np.int32)
         pts = pts.reshape((-1, 1, 2))
 
         return cv.polylines(img, [pts], isClosed, color, thickness)
 
-    # def _sampling_poly(self,poly,step):
-    #     aux_img = np.zeros_like(self.angulos_matrix)
-    #     aux_img = self._add_poly_to_img(aux_img,poly,color=[255],thickness=2).astype(int)
-    #     inter_img = np.logical_and(aux_img, self.rayos_img)
-    #     y,x = np.where(inter_img>0)
-    #
-    #     #Procesar puntos para que por rayo solo quede un unico punto.
-    #     id_rayo_list = list(self.rayos_img[y,x])
-    #     list_filtered = []
-    #     list_angulos = []
-    #     for idx,rayo_id in enumerate(id_rayo_list):
-    #         if rayo_id not in list_angulos:
-    #             list_filtered.append(idx)
-    #             list_angulos.append(rayo_id)
-    #
-    #     list_filtered.sort(key= lambda x: id_rayo_list[x])
-    #     y_s,x_s = y[list_filtered],x[list_filtered]
-    #
-    #     sampled_poly = Polygon(np.vstack((x_s, y_s)).T.astype(np.int32))
-    #     assert np.unique(id_rayo_list).shape[0] == len(y_s)
-    #     return sampled_poly
 
     @staticmethod
-    def _sampling_poly( poly, cy, cx, rays_list):
+    def _sampling_poly( poly, cy, cx, rays_list, img=None):
         #MeanDisk.draw_ray_curve_and_intersections( [radii for radii in self.rays_list if radii.direction ==93], [poly], [], [], self.img, './debug.png')
-        intersection_list = MeanDisk.compute_intersections( poly, rays_list, cy, cx)
+
+        intersection_list = MeanDisk.compute_intersections( poly, rays_list, cy, cx, img=img)
+        if intersection_list is None:
+            return None
         intersection_list.sort(key = lambda x: x.angle)
         return Polygon_node(intersection_list)
 
-    def get_radial_coordinates(self,alpha):
-        theta = alpha * np.pi / 180
-        ii, jj = np.where(np.ceil(self.angulos_matrix) == alpha)
-        unit_vect = np.array([np.cos(theta),np.sin(theta)])
-        modulo = np.sqrt((ii-self.centro[0])**2+(jj-self.centro[1])**2).reshape(-1,1)
-        radial_vectors = np.repeat(unit_vect.reshape(1,2),modulo.shape[0],axis=0) * modulo
-        #me quedo con elementos unicos
-        radial_coordinates = np.unique(radial_vectors.astype(int),axis=0) + self.centro
-        return radial_coordinates
+
 
 
     def _plot_gt_and_dt_polys(self,img,gt,dt,n=1,title=None):
@@ -171,20 +144,16 @@ class AreaInfluencia:
         pts = np.vstack((x, y)).T.astype(np.int32)
         return pts
 
-    def get_punto_con_angulo_alpha_img_binaria(self,img,alpha):
-        y,x = np.where(img>0)
-        mask = np.where(np.round(self.angulos_matrix[y,x])==alpha)[0]
-        pts = np.vstack((y[mask],x[mask])).T
-        return pts
 
-    def calcular_error_respecto_a_gt(self,infinito=INFINITO):
-        self.mapa_color = np.zeros_like(self.angulos_matrix)-infinito
+
+    def compute_error_with_gt(self, infinito=INFINITO):
+        self.mapa_color = np.zeros((len(self.gt_poly), 360))
         for idx,dt in enumerate(self.dt_poly):
             pts_dt = self.extraer_coordenadas_poligonos(dt)
-            if len(self.asignacion_entre_dt_y_gt)-1 < idx:
+            if len(self.dt_and_gt_assignation)-1 < idx:
                 continue
 
-            gt_idx = self.asignacion_entre_dt_y_gt[idx]
+            gt_idx = self.dt_and_gt_assignation[idx]
             if gt_idx == FP_ID:
                 continue
             gt = self.gt_poly[gt_idx]
@@ -203,11 +172,12 @@ class AreaInfluencia:
                 radio_dt = self.calcular_radio(pts1_media)
                 radio_gt = self.calcular_radio(pts2_media)
                 diferencia = radio_dt-radio_gt
-                self.mapa_color[pts2_media[1],pts2_media[0]] = diferencia
+                #self.mapa_color[pts2_media[1],pts2_media[0]] = diferencia
+                self.mapa_color[gt_idx, int(alpha)] = diferencia
         self.graficar_mapa_color()
         return 0
 
-    def calcular_rmse_entre_dt_y_gt(self,dt_poly,gt_poly):
+    def compute_rmse_between_dt_and_gt(self, dt_poly, gt_poly):
         error = []
         pts_dt = self.extraer_coordenadas_poligonos(dt_poly)
         pts_gt = self.extraer_coordenadas_poligonos(gt_poly)
@@ -229,12 +199,7 @@ class AreaInfluencia:
         return np.sqrt((np.array(error)**2).mean())
 
     def graficar_mapa_color(self):
-        polares_heat_map = np.zeros((len(self.gt_poly),self.Nr)) - INFINITO
-        for idx,gt in enumerate(self.gt_poly):
-            pts = self.extraer_coordenadas_poligonos(gt)
-            posiciones = self.rayos_img[pts[:,1],pts[:,0]]-1
-            polares_heat_map[idx,posiciones] = self.mapa_color[pts[:,1],pts[:,0]]
-
+        polares_heat_map = self.mapa_color.copy()
 
         #polares
         #https://stackoverflow.com/questions/36513312/polar-heatmaps-in-python
@@ -253,13 +218,15 @@ class AreaInfluencia:
         #cmaps = ['inferno','hot','plasma','magma','Blues']
         cmaps = ['Spectral','RdYlGn']
         for cmap_label in cmaps:
-            fig = plt.figure(1)
+            fig = plt.figure(figsize=(10,10))
             ax = fig.add_subplot(111, projection='polar')
             pcm = ax.pcolormesh(th,r,z,cmap=plt.get_cmap(cmap_label))
             #plt.grid()
             ax.set_yticklabels([])
             ax.set_xticklabels([])
-            ax.set_theta_zero_location('S')
+            ax.set_theta_direction(-1)
+            #ax.set_theta_zero_location('S')
+            ax.set_theta_offset(np.pi/2)
             fig.colorbar(pcm, ax=ax, orientation="vertical")
             fig.savefig(f"{self.output_dir}/mapa_color_{cmap_label}.png")
             #plt.show()
@@ -267,23 +234,24 @@ class AreaInfluencia:
             plt.close()
 
     def calcular_radio(self,pt):
-        radio = np.sqrt((self.centro[0] - pt[1]) ** 2 + (self.centro[1] - pt[0]) ** 2)
+        radio = np.sqrt((self.center[0] - pt[1]) ** 2 + (self.center[1] - pt[0]) ** 2)
         return radio
 
-    def calcular_rmse_global(self):
+    def compute_rmse_global(self):
         #x,y = np.where(self.mapa_color.isnan())
         mask = ~np.isnan(self.mapa_color)
         overall_rmse = np.sqrt((self.mapa_color[mask]**2).mean())
         return overall_rmse
 
-    def calcular_mse_por_gt(self):
+    def compute_mse_per_gt(self):
         self.list_mse = []
         for idx_gt,gt in enumerate(self.gt_poly):
-            if idx_gt not in self.asignacion_entre_dt_y_gt:
+            if idx_gt not in self.dt_and_gt_assignation:
                 self.list_mse.append(0)
                 continue
             x, y = gt.exterior.coords.xy
-            error = self.mapa_color[np.array(y).astype(int),np.array(x).astype(int)]
+            #error = self.mapa_color[np.array(y).astype(int),np.array(x).astype(int)]
+            error = self.mapa_color[idx_gt]
             mask = ~np.isnan(error)
             error = error[mask]
             mse = (error**2).mean()
@@ -292,7 +260,7 @@ class AreaInfluencia:
 
         plt.figure()
         plt.bar(np.arange(0,len(self.list_mse)),self.list_mse)
-        plt.title(f"RMSE global={self.calcular_rmse_global():.3f}")
+        plt.title(f"RMSE global={self.compute_rmse_global():.3f}")
         plt.xlabel('Numero Ring')
         plt.ylabel('RMSE (por gt)')
         plt.grid(True)
@@ -338,8 +306,8 @@ class AreaInfluencia:
         polygon = Polygon(puntos_nuevo_poligono)
         return polygon
 
-    def _asignar_areas_de_influencia(self,img,gt_poly):
-        matriz_influencia = np.zeros((img.shape[0],img.shape[1]))-1
+    def _build_influence_area(self, img, gt_poly):
+        matriz_influencia = np.zeros((img.shape[1],img.shape[0])) - 1
         gt_poly.sort(key=lambda x: x.area)
 
         #inicializacion para deliminar regiones
@@ -376,17 +344,17 @@ class AreaInfluencia:
 
             if Cm is None:
                 contours = self.extraer_coordenadas_poligonos(CM)
-                mask = np.zeros((M, N))
+                mask = np.zeros((N, M))
                 cv.fillPoly(mask, pts=[contours], color=(255))
 
 
             else:
                 contours = self.extraer_coordenadas_poligonos(CM)
-                mask_M = np.zeros((M,N))
+                mask_M = np.zeros((N,M))
                 cv.fillPoly(mask_M, pts=[contours], color=(255))
 
                 contours = self.extraer_coordenadas_poligonos(Cm)
-                mask_m = np.zeros((M, N))
+                mask_m = np.zeros((N, M))
                 cv.fillPoly(mask_m, pts=[contours], color=(255))
                 mask = mask_M - mask_m
 
@@ -394,7 +362,7 @@ class AreaInfluencia:
             #plt.figure();plt.imshow(mask);plt.show();plt.close();
             matriz_influencia[mask>0] = i
             i+=1
-
+        #cv.imwrite("./debug.png", matriz_influencia)
         return matriz_influencia
 
 
@@ -402,17 +370,18 @@ class AreaInfluencia:
 
 
     def true_positive(self):
-        return len(self.asignacion_entre_dt_y_gt)
+        return np.where(np.array(self.dt_and_gt_assignation) > -1)[0].shape[0]
 
 
     def false_negative(self):
         gt_ids = np.arange(0,len(self.gt_poly))
-        intersect = np.intersect1d(gt_ids,self.asignacion_entre_dt_y_gt)
-        return len(self.gt_poly) - len(intersect)
+        #intersect = np.intersect1d(gt_ids,self.dt_and_gt_assignation)
+        dt_asigned = self.true_positive()
+        return len(self.gt_poly) - dt_asigned
 
 
     def false_positive(self):
-        return np.where(np.array(self.asignacion_entre_dt_y_gt)==FP_ID)[0].shape[0]
+        return np.where(np.array(self.dt_and_gt_assignation) == FP_ID)[0].shape[0]
 
     def true_negative(self):
         return 0
@@ -422,19 +391,70 @@ class AreaInfluencia:
         return TP / (TP+FP) if TP+FP>0 else 0
 
     def recall(self, TP, FP, TN, FN):
-        return TP / (TP+FN) if TP+FN>0 else 0
+        return TP / (TP+FN) if TP+FN > 0 else 0
 
     def fscore(self,TP,FP,TN,FN):
         P = self.precision(TP,FP,TN,FN)
         R = self.recall(TP,FP,TN,FN)
         return 2*P*R / (P+R) if P+R>0 else 0
 
-
-    def _asignar_ground_truth_a_detecciones(self,matriz_influencias, dt_poly):
-        self.asignacion_entre_dt_y_gt = []
-        self.porcentaje_de_acierto = []
+    def _asign_gt_to_dt(self, influence_matrix, dt_poly):
+        threshold = self.threshold
+        self.dt_and_gt_assignation = []
+        self.accuracy_percentage = []
+        dt_poly.sort(key = lambda x: x.area)
         for poly in dt_poly:
-            x,y = poly.exterior.coords.xy
+            y,x = poly.exterior.coords.xy
+            x = np.array(x).astype(int)
+            y = np.array(y).astype(int)
+            error_between_dt_and_gt = []
+            for gt_poly in self.gt_poly:
+                rmse_current = self.compute_rmse_between_dt_and_gt(poly, gt_poly)
+                error_between_dt_and_gt.append(rmse_current)
+
+            gts = influence_matrix[x, y].astype(int)
+            mask_no_background = np.where(gts>=0)[0]
+            counts = np.bincount(gts[mask_no_background])
+
+            if len(counts)==0:
+                self.dt_and_gt_assignation.append(FP_ID)
+                continue
+
+            #gt_label = counts.argmax()
+            gt_label = np.argmin(error_between_dt_and_gt)
+            if gt_label in self.dt_and_gt_assignation:
+                rmse_current = self.compute_rmse_between_dt_and_gt(poly, self.gt_poly[gt_label])
+                id_dt_former = np.where(self.dt_and_gt_assignation == gt_label)[0][0]
+                rmse_former = self.compute_rmse_between_dt_and_gt(self.dt_poly[id_dt_former], self.gt_poly[gt_label])
+                if rmse_current < rmse_former:
+                    self.dt_and_gt_assignation[id_dt_former] = FP_ID
+                    try:
+                        self.accuracy_percentage[id_dt_former] = FP_ID
+                    except Exception as e:
+                        continue
+                else:
+                    self.dt_and_gt_assignation.append(FP_ID)
+                    self.accuracy_percentage.append(FP_ID)
+                    continue
+
+            self.dt_and_gt_assignation.append(gt_label)
+            self.accuracy_percentage.append(counts[gt_label] / counts.sum())
+
+        no_asigned_idx = np.where(np.array(self.accuracy_percentage) < threshold)[0].astype(int)
+        self.dt_and_gt_assignation = np.array(self.dt_and_gt_assignation)
+        self.dt_and_gt_assignation[no_asigned_idx] = FP_ID
+        self.accuracy_percentage = np.array(self.accuracy_percentage)
+        self.accuracy_percentage[no_asigned_idx] = FP_ID
+
+        self.dt_and_gt_assignation = self.dt_and_gt_assignation.tolist()
+        self.accuracy_percentage = self.accuracy_percentage.tolist()
+        return 0
+    def _asignar_ground_truth_a_detecciones_old(self,matriz_influencias, dt_poly):
+        self.dt_and_gt_assignation = []
+        self.accuracy_percentage = []
+        dt_poly.sort(key = lambda x: x.area)
+        for poly in dt_poly:
+            y,x = poly.exterior.coords.xy
             x = np.array(x).astype(int)
             y = np.array(y).astype(int)
             gts = matriz_influencias[y,x].astype(int)
@@ -442,34 +462,35 @@ class AreaInfluencia:
             counts = np.bincount(gts[mask_no_background])
 
             if len(counts)==0:
-                self.asignacion_entre_dt_y_gt.append(FP_ID)
+                self.dt_and_gt_assignation.append(FP_ID)
                 continue
 
             gt_label = counts.argmax()
-            if gt_label in self.asignacion_entre_dt_y_gt:
-                rmse_current = self.calcular_rmse_entre_dt_y_gt(poly,self.gt_poly[gt_label])
-                id_dt_former = np.where(self.asignacion_entre_dt_y_gt==gt_label)[0][0]
-                rmse_former = self.calcular_rmse_entre_dt_y_gt(self.dt_poly[id_dt_former], self.gt_poly[gt_label])
+            if gt_label in self.dt_and_gt_assignation:
+                rmse_current = self.compute_rmse_between_dt_and_gt(poly, self.gt_poly[gt_label])
+                id_dt_former = np.where(self.dt_and_gt_assignation == gt_label)[0][0]
+                rmse_former = self.compute_rmse_between_dt_and_gt(self.dt_poly[id_dt_former], self.gt_poly[gt_label])
                 if rmse_current < rmse_former:
-                    self.asignacion_entre_dt_y_gt[id_dt_former] = FP_ID
+                    self.dt_and_gt_assignation[id_dt_former] = FP_ID
                     try:
-                        self.porcentaje_de_acierto.pop(id_dt_former)
+                        self.accuracy_percentage.pop(id_dt_former)
                     except Exception as e:
                         continue
                 else:
-                    self.asignacion_entre_dt_y_gt.append(FP_ID)
+                    self.dt_and_gt_assignation.append(FP_ID)
                     continue
 
-            self.asignacion_entre_dt_y_gt.append(gt_label)
-            self.porcentaje_de_acierto.append(counts[gt_label] / counts.sum())
+            self.dt_and_gt_assignation.append(gt_label)
+            self.accuracy_percentage.append(counts[gt_label] / counts.sum())
             x_gt,y_gt = self.gt_poly[gt_label].exterior.coords.xy
             #print(f"dt_count = {len(y)}. gt_count={len(y_gt)}")
 
-    def _graficar_asignacion_detecciones_a_gt(self):
+
+    def _plot_assignation_between_gt_and_dt(self):
         import itertools
         import matplotlib.cm as cm
         M,N,_ = self.img.shape
-        plt.figure(figsize=(15,15))
+        plt.figure(figsize=(10,10))
         plt.imshow(np.zeros((M,N)), cmap='gray')
 
         espaciado_color = 10
@@ -481,16 +502,16 @@ class AreaInfluencia:
         colors = itertools.cycle(lista_colores)
         for idx,dt in enumerate(self.dt_poly):
             c = next(colors)
-            x,y = dt.exterior.coords.xy
+            y,x = dt.exterior.coords.xy
             plt.plot(x, y, color=c)
             #plt.scatter(x,y,s=1)
-            if len(self.asignacion_entre_dt_y_gt)-1 < idx:
+            if len(self.dt_and_gt_assignation)-1 < idx:
                 continue
-            gt_idx = self.asignacion_entre_dt_y_gt[idx]
+            gt_idx = self.dt_and_gt_assignation[idx]
             if gt_idx == FP_ID:
                 plt.plot(x, y, color='w')
                 continue
-            x,y = self.gt_poly[gt_idx].exterior.coords.xy
+            y,x = self.gt_poly[gt_idx].exterior.coords.xy
             plt.plot(x, y,  color=c)
             #plt.scatter( x,y, s=1)
 
@@ -498,16 +519,16 @@ class AreaInfluencia:
         plt.savefig(f'{self.output_dir}/asignacion_dt_gt.png')
         plt.close()
 
-    def computar_indicador_por_deteccion(self):
-        #print(f"Porcentaje de Acierto Por Deteccion: {self.porcentaje_de_acierto}")
+    def compute_detection_indicators(self):
+        #print(f"Porcentaje de Acierto Por Deteccion: {self.accuracy_percentage}")
         nothing = True
 
     def compute_indicators(self,debug=False):
-        matriz_influencias = self._asignar_areas_de_influencia(self.img,self.gt_poly)
-        self._graficar_matriz_influencias(matriz_influencias,self.gt_poly)
-        self._asignar_ground_truth_a_detecciones(matriz_influencias,self.dt_poly)
-        self._graficar_asignacion_detecciones_a_gt()
-        self.computar_indicador_por_deteccion()
+        influence_matrix = self._build_influence_area(self.img, self.gt_poly)
+        self._plot_influecen_area(influence_matrix, self.gt_poly)
+        self._asign_gt_to_dt(influence_matrix, self.dt_poly)
+        self._plot_assignation_between_gt_and_dt()
+        self.compute_detection_indicators()
         TP = self.true_positive()
         FP = self.false_positive()
         TN = self.true_negative()
@@ -515,12 +536,12 @@ class AreaInfluencia:
         self._plot_gt_and_dt_polys(self.img, self.gt_poly, self.dt_poly, n=3,title=f"TP={TP} FP={FP} TN={TN} FN={FN}")
         return TP, FP, TN, FN
 
-    def _graficar_matriz_influencias(self,matriz,list_gt_poly):
+    def _plot_influecen_area(self, matriz, list_gt_poly):
         import itertools
         import matplotlib.cm as cm
         M,N,_ = self.img.shape
         plt.figure(figsize=(15, 15))
-        plt.imshow(np.zeros((M,N)), cmap='gray')
+        plt.imshow(np.zeros((M,N)),cmap='gray')
         espaciado_color = 10
         index = np.linspace(0, 1, espaciado_color)
         lista_colores = cm.rainbow(index)
@@ -529,14 +550,18 @@ class AreaInfluencia:
         lista_colores = lista_colores[index_order]
         colors = itertools.cycle(lista_colores)
         regiones_id = list(np.unique(matriz).astype(int))
-        regiones_id.remove(-1)
+        #regiones_id.remove(-1)
 
         for region in regiones_id:
-            y, x = np.where(matriz == region)
-            plt.scatter(x, y, s=1, color=next(colors))
+
+            x,y = np.where(matriz == region)
+            if region == -1:
+                plt.scatter(x, y, s=1, c='w')
+            else:
+                plt.scatter(x, y, s=1, color=next(colors))
 
         for poly in list_gt_poly:
-            x,y = poly.exterior.coords.xy
+            y,x = poly.exterior.coords.xy
             plt.plot(x, y,'k')
 
 
@@ -581,267 +606,6 @@ def extraerPixelesPertenecientesAlPerfil(copia, angle, centro=None):
 
     return np.array(y_pix), np.array(x_pix)
 
-
-def build_radial_directions_matrix(img_seg, centro, Nr):
-    perfils_matrix = np.zeros_like(img_seg)
-    rango = np.arange(0, 360, 360 / Nr)
-    perfiles = {}
-    for angulo_perfil in rango:
-        y, x = extraerPixelesPertenecientesAlPerfil(
-            img_seg, angulo_perfil, [centro[1], centro[0]]
-        )
-
-        yy, xx = (
-            y.reshape(-1, 1),
-            x.reshape(-1, 1)
-        )
-        perfiles[angulo_perfil] = np.hstack((yy, xx))
-        perfils_matrix[yy, xx] = 1 + angulo_perfil
-
-    return perfils_matrix
-
-
-class ActiveCoutours:
-    def __init__(self, gt, dt):
-        self.gt_path = Path(gt)
-        image_name = self.gt_path.parts[-1][:-5]
-        results_dir = get_path('results')
-        self.detections_path = dt#results_dir / version / image_name / "labelme.json"
-        self.img,centro = load_image(image_name)
-        M,N,_ = self.img.shape
-        self.radial_matrix = build_radial_directions_matrix(np.zeros((M,N)).astype(np.uint8),centro)
-        #kernel = np.ones((3,3), 'uint8')
-        #self.radial_matrix = cv.dilate(self.radial_matrix, kernel, iterations=1)
-        self.gt_poly = self.load_ring_stimation(self.gt_path)
-        self.dt_poly = self.load_ring_stimation(self.detections_path)
-        self.gt = self.apply_math_operator_to_each_ring(1, self.gt_poly)
-        self.s = self.apply_math_operator_to_each_ring(1, self.dt_poly)
-
-
-
-    def load_ring_stimation(self,path):
-        json_content = load_json(path)
-        anillos = {}
-        for ring in json_content['shapes']:
-            x,y = Polygon(ring['points']).exterior.coords.xy
-            anillos[ring['label']] = np.vstack((x, y)).T.astype(np.int32)
-
-        return anillos
-
-    def dilatar_polinomio(self,poly,thickness,color = (255, 0, 0)):
-        isClosed = True
-        M,N,_ = self.img.shape
-        img = np.zeros((M,N))
-        pts = poly
-        pts = pts.reshape((-1, 1, 2))
-        img = cv.polylines(img, [pts], isClosed, color, thickness)
-        x, y = np.where(img > 0)
-        vector = np.vstack((x, y)).T.astype(np.int32)
-        return vector
-
-    def apply_math_operator_to_each_ring(self, n, dictionary):
-        dilated = {}
-        for key in dictionary.keys():
-            dilated[key] = self.dilatar_polinomio(dictionary[key], n)
-
-        return dilated
-    def draw_polys(self,dictionary,n,color,img):
-        isClosed = True
-        thickness = n
-        for key in dictionary.keys():
-            pts = dictionary[key].reshape((-1, 1, 2))
-            img|= cv.polylines(img, [pts],
-                                isClosed, color,
-                                thickness)
-        return img
-
-    def show_image(self,s,n_s,gt,n_gt,title):
-        img = cv.cvtColor(self.img, cv.COLOR_BGR2RGB)
-        img |= self.draw_polys(gt, n_gt, (0, 255, 0), img)
-        img |= self.draw_polys(s,n_s,(255,0,0),img)
-
-        plt.figure(figsize=(10,10));plt.title(title);plt.imshow(img);plt.axis('off');#plt.show()
-
-
-    def true_positive_and_false_negative(self,s,gt_d,dt_poly,gt_poly,threshold):
-        TP = 0
-        M,N,_ = self.img.shape
-        img_gt = np.zeros((M,N)).astype(np.uint8)
-        for key in gt_d.keys():
-            x,y = gt_d[key][:,0],gt_d[key][:,1]
-            img_gt[x,y] = int(key)
-
-
-        for key in s.keys():
-            img_s = np.zeros_like(img_gt)
-            x, y = s[key][:, 0], s[key][:, 1]
-            img_s[x, y] = 255
-            s_inter_gtd = img_gt & img_s & self.radial_matrix
-
-            total_puntos_anillo_dt = self.contar_intersecciones(img_s & self.radial_matrix)
-            total_intersecciones = self.contar_intersecciones(s_inter_gtd)
-            if total_intersecciones > threshold * total_puntos_anillo_dt:
-                TP+=1
-                num_labels, interseccion = cv.connectedComponents(img_gt & img_s, connectivity=8)
-                x,y = np.where(interseccion>0)
-                key_gt = str(np.unique(img_gt[x,y])[0])
-                x, y = gt_d[key_gt][:, 0], gt_d[key_gt][:, 1]
-                img_gt[x, y] = 0
-
-        num_labels, interseccion = cv.connectedComponents(img_gt, connectivity=8)
-        FN = num_labels-1
-        return TP,FN
-
-    def true_positive(self,s,gt_d,dt_poly,gt_poly,threshold):
-        TP = 0
-        M,N,_ = self.img.shape
-        img_gt = np.zeros((M,N)).astype(np.uint8)
-        for key in gt_d.keys():
-            x,y = gt_d[key][:,0],gt_d[key][:,1]
-            img_gt[x,y] = 255
-
-
-        for key in s.keys():
-            img_s = np.zeros_like(img_gt)
-            x, y = s[key][:, 0], s[key][:, 1]
-            img_s[x, y] = 255
-            s_inter_gtd = img_gt & img_s & self.radial_matrix
-
-            total_puntos_anillo_dt = self.contar_intersecciones(img_s & self.radial_matrix)
-            total_intersecciones = self.contar_intersecciones(s_inter_gtd)
-            if total_intersecciones > threshold * total_puntos_anillo_dt:
-                TP+=1
-
-
-        return TP
-
-    def contar_intersecciones(self,matriz):
-        num_labels, _ = cv.connectedComponents(matriz, connectivity=8)
-        return num_labels - 1
-
-    def false_negative(self,s_d,gt,dt_poly,gt_poly,threshold):
-        #TODO: no esta bien implementado. Mirar funcion true_positive_and_false_negative.
-        M, N, _ = self.img.shape
-        FN = 0
-        img_sd_c = np.ones((M,N)).astype(np.uint8)*255
-        for idx,key in enumerate(s_d.keys()):
-            x, y = s_d[key][:, 0], s_d[key][:, 1]
-            img_sd_c[x, y] = 0
-
-        for key in gt.keys():
-            img_gt = np.zeros((M,N)).astype(np.uint8)
-            x, y = gt[key][:, 0], gt[key][:, 1]
-            img_gt[x, y] = 255
-            s_inter_gt = img_gt & img_sd_c & self.radial_matrix
-            total_puntos_anillo_gt = self.contar_intersecciones( img_gt & self.radial_matrix)
-            total_intersecciones = self.contar_intersecciones(s_inter_gt)
-            if total_intersecciones > threshold * total_puntos_anillo_gt:
-                FN += 1
-        return FN
-
-
-    def false_positive(self,s,TP):
-        return len(s.keys()) - TP
-
-    def true_negative(self,s_d,gt_d,threshold):
-        #TODO: no esta bien implementado. Pero no se usa en fscore
-        TN = 0
-        M, N, _ = self.img.shape
-        img_gt = np.zeros((M,N)).astype(np.uint8)
-        for key in gt_d.keys():
-            x, y = gt_d[key][:, 0], gt_d[key][:, 1]
-            img_gt[x, y] = 255
-
-        for key in s_d.keys():
-            img_s = np.zeros((M,N)).astype(np.uint8)
-            x, y = s_d[key][:, 0], s_d[key][:, 1]
-            img_s[x, y] = 255
-            s_inter_gtd = img_gt & img_s & self.radial_matrix
-            total_intersecciones = self.contar_intersecciones(s_inter_gtd)
-            total_puntos = self.contar_intersecciones(img_s & self.radial_matrix)
-            if total_intersecciones > threshold * total_puntos:
-                TN+=1
-
-        return TN
-
-
-    def precision(self,TP,FP,TN,FN):
-        return TP / (TP+FP) if TP+FP>0 else 0
-
-    def recall(self, TP, FP, TN, FN):
-        return TP / (TP+FN) if TP+FN>0 else 0
-
-    def fscore(self,TP,FP,TN,FN):
-        P = self.precision(TP,FP,TN,FN)
-        R = self.recall(TP,FP,TN,FN)
-        return 2*P*R / (P+R) if P+R>0 else 0
-
-    def compute_threshold(self,n=5,threshold=0.75,debug=False,max_error=10):
-        fvalues = []
-        print(f"\tth \tTP \tFP \tTN \tFN \t\tP \t\tR \t\tF @n={n}")
-        for threshold in np.arange(0.1,1,1/max_error):
-            TP, FP, TN, FN = self.compute_indicators(n, threshold)
-            # 3.0 compute metrics
-            F = self.fscore(TP, FP, TN, FN)
-            P = self.precision(TP, FP, TN, FN)
-            R = self.recall(TP, FP, TN, FN)
-            print(f"\t{threshold:.2f}\t{TP}\t{FP}\t{TN}\t{FN}\t{P:.2f}\t{R:.2f}\t{F:.2f}")
-            fvalues.append(F)
-
-        self.graficar_fscore_threshold(fvalues, np.arange(0.1,1,1/max_error), n)
-        return TP, FN, TN, FP
-
-    def compute_indicators(self,n,threshold,debug=False):
-        gt_d = self.apply_math_operator_to_each_ring(n, self.gt_poly)
-        s_d = self.apply_math_operator_to_each_ring(n, self.dt_poly)
-
-        # 2.0 compute indicators
-        #TP = self.true_positive(self.s, gt_d,self.dt_poly,self.gt_poly, threshold)
-        TP,FN = self.true_positive_and_false_negative(self.s, gt_d,self.dt_poly,self.gt_poly, threshold)
-        FP = self.false_positive(self.s, TP)
-        TN = self.true_negative(s_d, gt_d, threshold)
-        #FN = self.false_negative(s_d, self.gt, self.dt_poly,self.gt_poly, threshold)
-
-        return TP,FP,TN,FN
-
-    def compute(self,threshold=0.75,debug=False,max_error=16):
-        fvalues = []
-        self.show_image(self.dt_poly, 1, self.gt_poly, 1, f"")
-        print(f"\tn \tTP \tFP \tTN \tFN \t\tP \t\tR \t\tF @threshold={threshold}")
-
-        self.show_image(self.dt_poly, 5, self.gt_poly, 5, f"")
-        for n in range(1,max_error):
-            TP,FP,TN,FN = self.compute_indicators(n,threshold)
-            # 3.0 compute metrics
-            F = self.fscore(TP,FP,TN,FN)
-            P = self.precision(TP,FP,TN,FN)
-            R = self.recall(TP,FP,TN,FN)
-            print(f"\t{n}\t{TP}\t{FP}\t{TN}\t{FN}\t{P:.2f}\t{R:.2f}\t{F:.2f}")
-            fvalues.append(F)
-
-        self.graficar_fscore(fvalues,max_error,threshold)
-
-        return TP, FN, TN, FP
-
-    def graficar_fscore_threshold(self,fvalues,x,n):
-        plt.figure()
-        plt.plot(x,fvalues)
-        plt.ylabel('fscore')
-        plt.xlabel('threshold)')
-        plt.title(f"n:{n}")
-        plt.grid(True)
-        plt.show()
-
-    def graficar_fscore(self,fvalues,max_error,threshold):
-        plt.figure()
-        plt.plot(np.arange(1,max_error),fvalues)
-        plt.ylabel('fscore')
-        plt.xlabel('margin-error (n)')
-        plt.title(f"umbral:{threshold}")
-        plt.grid(True)
-        plt.show()
-
-
 class MetricsDataset:
     def __init__(self,root_dir, creador, config_path, output_dir):
         data_path = get_path("data")
@@ -866,8 +630,7 @@ class MetricsDataset:
             if (not dt_file.exists()):
                 continue
             gt_file = self.gt_dir / f"{imagenNombre[:-4]}.json"
-            #(self.results_path / f"v{self.version}/{imagenNombre[:-4]}").mkdir(exist_ok=True)
-            #if (not dt_file.exists() or not gt_file.exists()):
+
             if (not gt_file.exists()):
                 row = {'imagen': imagenNombre[:-4],'TP': None,'FP': None,'TN': None,'FN': None,'P': None,'R': None,'F': None}
 
@@ -875,16 +638,16 @@ class MetricsDataset:
                 #metrics = ActiveCoutours(gt_file, dt_file)
                 img_dir = Path(self.output_dir) / f"{imagenNombre[:-4]}"
                 (img_dir).mkdir(exist_ok=True)
-                metrics = AreaInfluencia( gt_file, dt_file, str(img_dir), self.Nr)
+                metrics = InfluenceArea(gt_file, dt_file, str(img_dir), self.Nr)
                 TP, FP, TN, FN = metrics.compute_indicators()
 
                 # 3.0 compute metrics
                 F = metrics.fscore(TP, FP, TN, FN)
                 P = metrics.precision(TP, FP, TN, FN)
                 R = metrics.recall(TP, FP, TN, FN)
-                metrics.calcular_error_respecto_a_gt()
-                metrics.calcular_mse_por_gt()
-                RMSE = metrics.calcular_rmse_global()
+                metrics.compute_error_with_gt()
+                metrics.compute_mse_per_gt()
+                RMSE = metrics.compute_rmse_global()
                 row = {'imagen': imagenNombre[:-4],'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'P': P, 'R': R, 'F': F,'RMSE':RMSE}
 
                 self.table = self.table.append(row, ignore_index=True)
@@ -895,8 +658,8 @@ class MetricsDataset:
                'R': self.table.R.values.mean(), 'F': self.table.F.values.mean(),
                'RMSE': self.table.RMSE.values.mean()}
         self.table = self.table.append(row, ignore_index=True)
-
         self.table = self.table.set_index('imagen')
+
         return None
 
     def print_results(self):
@@ -905,47 +668,6 @@ class MetricsDataset:
 
     def save_results(self):
         self.table.to_csv(f"{self.output_dir}/results_{self.creator}.csv", sep=',', float_format='%.3f')
-
-
-class Metrics:
-    def __init__(self,versiones_list):
-        data_path = get_path("data")
-        dataset = pd.read_csv(f"{data_path}/dataset.csv")
-        self.results_path =  get_path('results')
-        self.data = dataset
-        self.versiones = versiones_list
-        columns = []
-        for ver in versiones_list:
-            columns.append(f"{ver}(num)")
-            columns.append(f"{ver}(%)")
-            
-        self.table = pd.DataFrame(columns=['imagen','gt'] + columns)
-    
-    def compute(self):
-        for index, disco in self.data.iterrows():
-            imagenNombre = disco["Imagen"]
-            row = {'imagen': imagenNombre[:-4], 'gt':disco.gt_cantidad_anillos}
-            for version in list(self.versiones):
-                result_dir = f"{self.results_path}/v{version}/{imagenNombre[:-4]}/results.json"
-                try:
-                    res = load_json(result_dir)
-                except:
-                    continue
-
-                row[f"{version}(num)"] = res['union_cadenas']['anillos']
-                row[f"{version}(%)"] = res['union_cadenas']['anillos'] / row['gt']
-            self.table = self.table.append(row,ignore_index=True)
-
-        self.table = self.table.set_index('imagen')
-
-        return None
-    
-    def print_results(self):
-        print(self.table)
-        return None        
-    
-    def save_results(self):
-        self.table.to_csv(f"{self.root_dir}/results.csv",sep=',')
 
 def main(rood_dir,creador, config_path, output):
     metrics = MetricsDataset(rood_dir,creador, config_path, output)
@@ -995,10 +717,10 @@ def compute_mean_gt():
     etiquetadores = {}
     for idx, row in tqdm(dataset.iterrows()):
         disk_name = row.Imagen
-        if 'fx' in disk_name:
+        if 'fx' not in disk_name:
             continue
 
-        # if disk_name not in ['F07c']:
+        # if disk_name not in ['1-s2.0-S0168169915002847-fx2_lrg']:
         #     continue
 
         creator_list = []
@@ -1018,24 +740,28 @@ def compute_mean_gt():
 
         gt_creators = []
         Nr = 360
-        centro = [row.cy, row.cx]
-        rays_list = build_rays(Nr,  width,height, centro)
+        centro = [row.cx, row.cy]
+        rays_list = build_rays(Nr,  width, height, centro)
+        draw_ray_curve_and_intersections([], rays_list, [], img_array, "./debug_rays.png")
+        # MeanDisk.draw_ray_curve_and_intersections(rays_list, creator_gt,
+        #                                           [], [], img_array, './debug.png')
         for idx_creator, creator_file in enumerate(creator_list):
             if creator_file is None:
                 continue
-            helper = AreaInfluencia(creator_file, '', '', Nr, disk_name)
+            helper = InfluenceArea(creator_file, '', '', Nr, disk_name)
             creator_points = helper.load_ring_stimation(creator_file)
-            creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list) for poly in creator_points]
+            creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list, img_array) for poly in creator_points]
             data[idx, idx_creator] = len(creator_gt)
             gt_creators.append(creator_gt)
 
-        # MeanDisk.draw_ray_curve_and_intersections(rays_list, creator_gt,
-        #                                           [], [], img_array, './debug.png')
+
         ################################################################################################################
         #computar gt medio
         output_filename = f'{gt_proccessed_path}/{disk_name}_mean.json'
-        mean_disk = MeanDisk( gt_creators, height, width, row.cy, row.cx, image_name, output_filename, img_array)
+        print(output_filename)
+        mean_disk = MeanDisk( gt_creators, height, width, row.cx, row.cy, image_name, output_filename, img_array)
         data[idx,[4,5]] = [height, width]
+
 
 
     np.savetxt(f'{gt_proccessed_path}/comparison/data.txt',data)
@@ -1134,7 +860,7 @@ class MeanDisk:
         for idx, mean_ring in enumerate(mean_ring_gt):
             anillo = {"label": str(idx + 1)}
             y, x = mean_ring.exterior.coords.xy
-            anillo["points"] = [[i,j] for i,j in zip(y,x)]
+            anillo["points"] = [[j,i] for i,j in zip(y,x)]
             anillo["shape_type"] = "polygon"
             anillo["flags"] = {}
             labelme_json["shapes"].append(anillo)
@@ -1147,14 +873,20 @@ class MeanDisk:
 
 
     @staticmethod
-    def compute_intersections( gt_ring, rays_list, cy, cx):
-        center = [cy,cx]
+    def compute_intersections( gt_ring, rays_list, cy, cx, img = None):
+        center = [cy, cx][::-1]
+        if not gt_ring.contains(Point(center)):
+            return
+        #draw_ray_curve_and_intersections([], rays_list, [gt_ring.exterior.coords], img, "./debug_rays.png")
         chain_id = -1
         intersection_list = []
+        #draw_ray_curve_and_intersections([], rays_list, [gt_ring.exterior.coords], img, "./debug_rays.png")
         for radii in rays_list:
             try:
+
                 inter = radii.intersection(gt_ring)
             except Exception:
+                draw_ray_curve_and_intersections([], [radii], [gt_ring.exterior.coords], img, "./debug_rays.png")
                 from shapely.validation import make_valid
                 valid_shape = make_valid(gt_ring)
                 inter = radii.intersection(valid_shape)
@@ -1183,7 +915,8 @@ class MeanDisk:
                 intersection_list.append(dot)
 
             else:
-                raise
+                draw_ray_curve_and_intersections([], [radii], [gt_ring.exterior.coords], img, "./debug_rays.png")
+                return None
 
         return intersection_list
 
@@ -1205,10 +938,15 @@ def draw_creator_annotation_over_disk():
     height_pdf = 140
     for idx, row in tqdm(dataset.iterrows()):
         disk_name = row.Imagen
-        if 'fx' in disk_name:
+
+        if 'fx' not in disk_name:
             continue
-        # if disk_name not in ['F07c']:
-        #     continue
+
+        if disk_name not in ['1-s2.0-S0168169915002847-fx6_lrg']:
+            continue
+
+        print(disk_name)
+
         image_name = f'/data/maestria/database_new_nomenclature/images/{disk_name}.png'
         creator_list = []
         maria = f'{gt_processed_path}/{disk_name}_maria.json'
@@ -1235,24 +973,26 @@ def draw_creator_annotation_over_disk():
         if img_array is None:
             break
         img = np.zeros_like(img_array)
-        height, widht, _ = img_array.shape
+        height, width, _ = img_array.shape
         img[:, :, 0] = img_array[:, :, 0]
         img[:, :, 1] = img_array[:, :, 1]
         img[:, :, 2] = img_array[:, :, 2]
-        centro = [row.cy, row.cx]
+        centro = [row.cx, row.cy]
         Nr = 360
-        rays_list = build_rays(Nr, widht, height, centro)
+        rays_list = build_rays(Nr, width, height, centro)
+        draw_ray_curve_and_intersections([], rays_list, [], img, "./debug_rays.png")
         color = Color()
         for creator in creator_list:
-            helper = AreaInfluencia(creator, '', '', Nr, disk_name)
+            helper = InfluenceArea(creator, '', '', Nr, disk_name)
             creator_points = helper.load_ring_stimation(creator)
-            creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list) for poly in creator_points]
-            creator_color = color.get_next_color() if  'mean' not in Path(creator).name else Color.black
+            creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list, img_array) for poly in creator_points]
+            print(len(creator_gt))
+            creator_color = color.get_next_color() if 'mean' not in Path(creator).name else Color.black
             for gt in creator_gt:
                 img = Drawing.curve(gt.exterior.coords, img_array, creator_color, thickness = 1)
 
         output_filename = f'{str(gt_processed_path_images)}/{disk_name}_creators_only.png'
-        cv.imwrite( output_filename, img)
+        cv.imwrite(output_filename, img)
 
         pdf.add_page()
         pdf.cell(0, 0, disk_name)
@@ -1335,9 +1075,67 @@ def main(rood_dir,creador, config_path, output):
 
     return
 
+class MetricsDataset_over_detection_files:
+    def __init__(self, disk_name,  detection_files_list, filename_path):
+        root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed/annotations"
+        self.file_name_path = filename_path
+        config_path = "./config/general.json"
+        self.disk_name = disk_name
+        self.results_path = get_path('results')
+        self.gt_dir = root_dir
+        self.root_dir = root_dir
+        self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
+        config = load_json(config_path)
+        self.Nr = config.get("Nr")
+        self.detection_files_list = detection_files_list
+
+    def compute(self):
+        for dt_file in tqdm( self.detection_files_list, desc='Computing metrics'):
+            gt_file = Path(self.gt_dir) / f"{self.disk_name}_mean.json"
+            if (not gt_file.exists()) or (not dt_file.exists()):
+                row = {'imagen': self.disk_name,'TP': None,'FP': None,'TN': None,'FN': None,'P': None,'R': None,'F': None}
+
+            else:
+                img_dir = dt_file.parent
+                (img_dir).mkdir(exist_ok=True)
+                metrics = InfluenceArea(gt_file, dt_file, str(img_dir), self.Nr)
+                TP, FP, TN, FN = metrics.compute_indicators()
+
+                # 3.0 compute metrics
+                F = metrics.fscore(TP, FP, TN, FN)
+                P = metrics.precision(TP, FP, TN, FN)
+                R = metrics.recall(TP, FP, TN, FN)
+                metrics.compute_error_with_gt()
+                metrics.compute_mse_per_gt()
+                RMSE = metrics.compute_rmse_global()
+
+                row = {'imagen': dt_file.parent.name,'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'P': P, 'R': R, 'F': F,
+                       'RMSE':RMSE,'exec_time': load_json(str(dt_file))['exec_time(s)']}
+
+
+            self.table = self.table.append(row, ignore_index=True)
+
+
+        #Add average
+        row = {'imagen': "Average", 'TP': -1, 'FP': -1, 'TN': -1, 'FN': -1, 'P': self.table.P.values.mean(),
+               'R': self.table.R.values.mean(), 'F': self.table.F.values.mean(),
+               'RMSE': self.table.RMSE.values.mean()}
+        self.table = self.table.append(row, ignore_index=True)
+
+        self.table = self.table.set_index('imagen')
+        return None
+
+    def print_results(self):
+        print(self.table)
+        return None
+
+    def save_results(self):
+        self.table.to_csv(self.file_name_path, sep=',', float_format='%.3f')
+
+
 
 class MetricsDataset_comparison:
-    def __init__(self,root_dir, creador, config_path, output_dir):
+    def __init__(self,root_dir, creador, config_path, output_dir, threshold = 0.75):
         dataset = pd.read_csv(f"/data/maestria/database_new_nomenclature/dataset_ipol.csv")
         self.creator = creador
         self.results_path = get_path('results')
@@ -1349,38 +1147,35 @@ class MetricsDataset_comparison:
         self.Nr = config.get("Nr")
         self.output_dir = output_dir
         Path(output_dir).mkdir(exist_ok=True)
+        self.threshold = threshold
 
     def compute(self):
         for index in tqdm(range(self.data.shape[0]),desc='Computing metrics'):
             disco = self.data.iloc[index]
-            imagenNombre = disco["Imagen"]
-            # if imagenNombre  not in ['L02c']:
+            disk_name = disco["Imagen"]
+            # if 'fx' not in disk_name:
             #     continue
-            print(imagenNombre)
-            dt_file = Path(f"{self.root_dir}/{imagenNombre}_{self.creator}.json")
-            # if (not dt_file.exists()):
-            #     continue
-            gt_file = Path(self.gt_dir) / f"{imagenNombre}_mean.json"
-            #(self.results_path / f"v{self.version}/{imagenNombre[:-4]}").mkdir(exist_ok=True)
-            #if (not dt_file.exists() or not gt_file.exists()):
+            if 'F03d' not in disk_name:
+                continue
+            dt_file = Path(f"{self.root_dir}/{disk_name}_{self.creator}.json")
+            gt_file = Path(self.gt_dir) / f"{disk_name}_mean.json"
             if (not gt_file.exists()) or (not dt_file.exists()):
-                row = {'imagen': imagenNombre,'TP': None,'FP': None,'TN': None,'FN': None,'P': None,'R': None,'F': None}
+                row = {'imagen': disk_name,'TP': None,'FP': None,'TN': None,'FN': None,'P': None,'R': None,'F': None}
 
             else:
-                #metrics = ActiveCoutours(gt_file, dt_file)
-                img_dir = Path(self.output_dir) / f"{imagenNombre}"
+                img_dir = Path(self.output_dir) / f"{disk_name}"
                 (img_dir).mkdir(exist_ok=True)
-                metrics = AreaInfluencia( gt_file, dt_file, str(img_dir), self.Nr)
+                metrics = InfluenceArea(gt_file, dt_file, str(img_dir), self.Nr, self.threshold)
                 TP, FP, TN, FN = metrics.compute_indicators()
 
                 # 3.0 compute metrics
                 F = metrics.fscore(TP, FP, TN, FN)
                 P = metrics.precision(TP, FP, TN, FN)
                 R = metrics.recall(TP, FP, TN, FN)
-                metrics.calcular_error_respecto_a_gt()
-                metrics.calcular_mse_por_gt()
-                RMSE = metrics.calcular_rmse_global()
-                row = {'imagen': imagenNombre,'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'P': P, 'R': R, 'F': F,
+                metrics.compute_error_with_gt()
+                metrics.compute_mse_per_gt()
+                RMSE = metrics.compute_rmse_global()
+                row = {'imagen': disk_name,'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'P': P, 'R': R, 'F': F,
                        'RMSE':RMSE,'exec_time': load_json(str(dt_file))['exec_time(s)']}
 
             self.table = self.table.append(row, ignore_index=True)
@@ -1400,36 +1195,48 @@ class MetricsDataset_comparison:
         return None
 
     def save_results(self):
-        self.table.to_csv(f"{self.output_dir}/results_{self.creator}.csv", sep=',', float_format='%.3f')
+        self.table.to_csv(f"{self.output_dir}/results_{self.creator}_th_{self.threshold}_contornos_activos.csv", sep=',', float_format='%.3f')
 
-def main_comparison(creator):
+def main_comparison(creator, threshold=0.75):
     root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed/annotations"
     output = f"/data/maestria/database_new_nomenclature/ground_truth_processed/annotations/comparison/{creator}"
     config_path = "./config/general.json"
-    metrics = MetricsDataset_comparison(root_dir,creator, config_path, output)
+    metrics = MetricsDataset_comparison(root_dir, creator, config_path, output, threshold)
     metrics.compute()
     metrics.print_results()
     metrics.save_results()
 
     return
 
-def mean_gt_generation_and_comparison_between_creator():
+def metric_dependance_with_threshold():
+    creator = 'ipol_refactoring_resize_experiment_1500_3'
+    th_range = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100]
+    for th in th_range:
+        print(th)
+        main_comparison(creator,th/100)
+
+    return 0
+
+
+def mean_gt_generation_and_comparison_between_creator(creator):
     #compute_mean_gt()
     #draw_creator_annotation_over_disk()
-    main_comparison('ipol_refactoring')
-    # main_comparison('veronica')
-    # main_comparison('serrana')
+    #main_comparison('ipol_refactoring_resize_experiment_1500')
+    main_comparison(creator)
+    #main_comparison('serrana')
     # main_comparison('christine')
 
 if __name__=="__main__":
-    # parser = argparse.ArgumentParser()
-    # #parser.add_argument("--creator", type=str, required=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--creator", type=str, required=True)
     # parser.add_argument("--config_path", type=str, required=True)
     # parser.add_argument("--root_dir", type=str, required=True)
     # parser.add_argument("--output", type=str, required=True)
-    # args = parser.parse_args()
+
+    args = parser.parse_args()
+    mean_gt_generation_and_comparison_between_creator(args.creator)
     # main(str(args.root_dir),'mean',str(args.config_path), str(args.output))
-    mean_gt_generation_and_comparison_between_creator()
+    #metric_dependance_with_threshold()
     #process_gt_files()
     #cp_gt_files_to_new_location()
 
