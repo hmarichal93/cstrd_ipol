@@ -53,6 +53,8 @@ def save_config(args, root_path, output_dir):
     if args.debug:
         config['debug'] = True
 
+    config['devernay_path'] = str(Path(root_path) / "externas/devernay_1.0")
+
     write_json(config, Path(root_path) / 'config/general.json')
 
     return 0
