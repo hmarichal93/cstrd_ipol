@@ -23,8 +23,8 @@ def TreeRingDetection(im_in, cy, cx, height, width, sigma, low, high, edges_th, 
     @param im_in: segmented input image
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
-    @param height: new image height size
-    @param width: new image width size
+    @param height: new image height_output size
+    @param width: new image width_output size
     @param sigma: edge detection gaussian filtering
     @param low: gradient threshold low
     @param high: gradient threshold high

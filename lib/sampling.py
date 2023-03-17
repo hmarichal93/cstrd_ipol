@@ -61,7 +61,7 @@ def build_rays(Nr, M, N, center):
 
     @param Nr: total rays
     @param N: widht image
-    @param M: height image
+    @param M: height_output image
     @param center: (y,x)
     @return: list_position rays
     """
