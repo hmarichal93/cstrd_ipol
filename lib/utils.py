@@ -100,8 +100,8 @@ def chain_2_labelme_json(chain_list: List[ch.Chain],image_path,image_height,imag
 
 
 
-    width_cte = init_width / image_width if image_width is not None else 1
-    height_cte = init_height / image_height if image_height is not None else 1
+    width_cte = init_width / image_width if image_width is not 0 else 1
+    height_cte = init_height / image_height if image_height is not 0 else 1
     labelme_json = {"imagePath":image_path, "imageHeight":None,
                     "imageWidth":None, "version":"5.0.1",
                     "flags":{},"shapes":[],"imageData": None, 'exec_time(s)':exec_time,'center':[cy*height_cte, cx*width_cte]}

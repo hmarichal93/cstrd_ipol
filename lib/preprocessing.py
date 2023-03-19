@@ -131,7 +131,7 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx) if None not in \
+    im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx) if 0 not in \
                                                                 [height_output, width_output] else ( im_in, cy, cx)
 
     im_g = rgb2gray(im_r)
