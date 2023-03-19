@@ -6,6 +6,9 @@ from shapely.geometry.linestring import LineString
 
 from lib.drawing import Color
 
+DELIMITE_CURVE_ROW = np.array([-1, -1])
+
+
 class Curve(LineString):
     def __init__(self, pixels_list, name):
         self.id = name
@@ -47,37 +50,34 @@ def dilatation(dilatation_size, src):
     dilatation_dst = cv2.dilate(src, element)
     return dilatation_dst
 
-def get_disk_border(img, curves_list):
-    """
-    @param img: segmented gray image
-    @param curves_list:
-    @return:
-
-    """
-    background_color = img[0, 0]
+def mask_background(img):
     mask = np.zeros((img.shape[0],img.shape[1]), dtype=np.uint8)
-    mask[ img[ :, :] == background_color] = 255
+    mask[ img[ :, :] == Color.gray_white ] = Color.gray_white
+    return mask
 
+def blur(img, blur_size=11):
+    return cv2.GaussianBlur(img, (blur_size, blur_size), 0)
 
-    blur = 11
-    mask = cv2.GaussianBlur(mask, (blur, blur), 0)
-
-    mask = np.where(mask>0,255,0).astype(np.uint8)
+def thresholding(mask, threshold=0):
+    mask = np.where(mask>threshold,Color.gray_white,0).astype(np.uint8)
+    return mask
+def padding_mask(mask):
     pad = 3
-    mask = np.pad(mask,((pad,pad),(pad,pad)), mode='constant', constant_values=255).astype(np.uint8)
-
-
+    mask = np.pad(mask, ( (pad,pad), (pad,pad) ), mode='constant', constant_values=255).astype(np.uint8)
+    return mask
+def find_border_contour(mask, img):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     perimeter_image = 2*img.shape[0]+2*img.shape[1]
-    # find the biggest contour
+    error_threshold = 0.1*perimeter_image
     max_cont = None
     area_difference_min = np.inf
     area_image = img.shape[0] * img.shape[1]
     approximate_disk_area = area_image / 2
-    for idx,c in enumerate(contours):
+    for idx, c in enumerate(contours):
         contour_area = cv2.contourArea(c)
         contour_perimeter = cv2.arcLength(c, True)
-        if np.abs(contour_perimeter-perimeter_image)<0.1*perimeter_image:
+        if np.abs(contour_perimeter-perimeter_image) < error_threshold:
+            # contour is the border of the image. Need to discart it
             continue
 
         area_difference = np.abs(contour_area-approximate_disk_area)
@@ -86,48 +86,37 @@ def get_disk_border(img, curves_list):
             max_cont = c.reshape((-1, 2))
             area_difference_min = area_difference
 
-    curve = Curve(max_cont, len(curves_list))
+    return max_cont
+def contour_to_curve(contour, name):
+    curve = Curve(contour, name)
+    return curve
+def get_border_curve(img, curves_list):
+    """
+    @param img: segmented gray image
+    @param curves_list:
+    @return:
+
+    """
+    mask = mask_background(img)
+    mask = blur(mask)
+    mask = thresholding(mask)
+    mask = padding_mask(mask)
+    border_contour = find_border_contour(mask, img)
+    curve = contour_to_curve(border_contour, len(curves_list))
     return curve
 
-def filter_edges(ch_e, cy, cx, Gx, Gy, edges_th, img):
-    """
-    Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
-    cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
-    collineary with the ray direction is computed and filter depending on threshold (edges_th)
-    @param ch_e: devernay curves
-    @param cy: pith y's coordinate
-    @param cx: pith x's coordinate
-    @param Gx: Gradient over x direction
-    @param Gy: Gradient over y direction
-    @param edges_th: threshold filter
-    @param img: input image
-    @return:
-    - ch_f: filtered devernay curves
-    """
-    #1.0 normalize ray vector at each edge
-    delimiter_curve_row = np.array([-1, -1])
+
+def change_reference_axis(ch_e, cy, cx):
     center = [cx, cy]
-    curve_border_index = np.where(ch_e == delimiter_curve_row)[0]
+    curve_border_index = np.where(ch_e == DELIMITE_CURVE_ROW)[0]
     X = ch_e.copy()
     X[curve_border_index] = 0
     Xb = np.array([[1, 0], [0, 1]]).dot(X.T) + (np.array([-1, -1]) * np.array(center, dtype=float)).reshape(
         (-1, 1))
-    #2.0 get normalized gradient at each edge
-    gradient = np.vstack(
-        (Gx[X[:, 1].astype(int), X[:, 0].astype(int)], Gy[X[:, 1].astype(int), X[:, 0].astype(int)])).T
+    return Xb
 
-    #3.0 Normalize gradient and rays
-    Xb_normed = normalized_row_matrix(Xb.T)
-    gradient_normed = normalized_row_matrix(gradient)
-    #4.0 Compute angle between gradient and edges
-    theta = np.arccos(np.clip((gradient_normed * Xb_normed).sum(axis=1), -1.0, 1.0)) * 180 / np.pi
-
-    #5.0 filter pixels by threshold
-    X_edges_filtered = ch_e.copy()
-    X_edges_filtered[theta > edges_th] = -1
-
-    #5.0 Convert masked pixel to object curve
-    curve_border_index = np.unique(np.where(X_edges_filtered == delimiter_curve_row)[0])
+def convert_masked_pixels_to_curves(X_edges_filtered):
+    curve_border_index = np.unique(np.where(X_edges_filtered == DELIMITE_CURVE_ROW)[0])
     start = -1
     ch_f = []
     for end in curve_border_index:
@@ -136,8 +125,51 @@ def filter_edges(ch_e, cy, cx, Gx, Gy, edges_th, img):
             curve = Curve(pixel_list, len(ch_f))
             ch_f.append(curve)
         start = end
+
+    return ch_f
+def get_gradient_vector_for_each_edge_pixel(ch_e, Gx, Gy):
+    gradient = np.vstack(
+        (Gx[ch_e[:, 1].astype(int), ch_e[:, 0].astype(int)], Gy[ch_e[:, 1].astype(int), ch_e[:, 0].astype(int)])).T
+    return gradient
+
+def compute_angle_beetween_gradient_and_edges(Xb_normed, gradient_normed):
+    theta = np.arccos(np.clip((gradient_normed * Xb_normed).sum(axis=1), -1.0, 1.0)) * 180 / np.pi
+    return theta
+def filter_edges_by_threshold(ch_e, theta, alpha):
+    X_edges_filtered = ch_e.copy()
+    X_edges_filtered[theta >= alpha] = -1
+    return X_edges_filtered
+def filter_edges(ch_e, cy, cx, Gx, Gy, alpha, im_pre):
+    """
+    Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
+    cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
+    collineary with the ray direction is computed and filter depending on threshold (alpha)
+    @param ch_e: devernay curves
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @param Gx: Gradient over x direction
+    @param Gy: Gradient over y direction
+    @param alpha: threshold filter
+    @param im_pre: input image
+    @return:
+    - ch_f: filtered devernay curves
+    """
+    #1.0 change reference axis
+    Xb = change_reference_axis(ch_e, cy, cx)
+    #2.0 get normalized gradient at each edge
+    G = get_gradient_vector_for_each_edge_pixel(ch_e, Gx, Gy)
+    #3.0 Normalize gradient and rays
+    Xb_normalized = normalized_row_matrix(Xb.T)
+    G_normalized = normalized_row_matrix(G)
+    #4.0 Compute angle between gradient and edges
+    theta = compute_angle_beetween_gradient_and_edges(Xb_normalized, G_normalized)
+    #5.0 filter pixels by threshold
+    X_edges_filtered = filter_edges_by_threshold(ch_e, theta, alpha)
+    #5.0 Convert masked pixel to object curve
+    ch_f = convert_masked_pixels_to_curves(X_edges_filtered)
     #6.0 Border disk is added as a curve
-    ch_f.append(get_disk_border(img, ch_f))
+    border_curve = get_border_curve(im_pre, ch_f)
+    ch_f.append(border_curve)
 
     return ch_f
 

@@ -17,18 +17,18 @@ from lib.connect_chains import connect_chains
 from lib.postprocessing import postprocessing
 from lib.utils import chain_2_labelme_json, save_config, saving_results
 
-def TreeRingDetection(im_in, cy, cx, height, width, sigma, low, high, edges_th, nr, mc, debug, image_input_path, output_dir):
+def TreeRingDetection(im_in, cy, cx, height, width, sigma, low, high, alpha, nr, mc, debug, image_input_path, output_dir):
     """
     Method for delineating tree ring over pine cross sections images.
-    @param im_in: segmented input image
+    @param im_in: segmented input image. Background mast be white.
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
-    @param height: new image height_output size
-    @param width: new image width_output size
-    @param sigma: edge detection gaussian filtering
-    @param low: gradient threshold low
-    @param high: gradient threshold high
-    @param edges_th: Edge filtering parameter. Collinearity threshold
+    @param height: height of the image after the resize step
+    @param width: width of the image after thre resize step
+    @param sigma: Canny edge detector gausssian kernel parameter
+    @param low: Low threshold on the module of the gradient. Canny edge detector parameter.
+    @param high: High threshold on the module of the gradient. Canny edge detector parameter.
+    @param alpha: Edge filtering parameter. Collinearity threshold
     @param nr: rays number
     @param mc: min chain lenght
     @param debug: deb
@@ -47,7 +47,7 @@ def TreeRingDetection(im_in, cy, cx, height, width, sigma, low, high, edges_th, 
 
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
     ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, low, high)
-    ch_f = filter_edges(ch_e, cy, cx, gx, gy, edges_th, im_pre)
+    ch_f = filter_edges(ch_e, cy, cx, gx, gy, alpha, im_pre)
     ch_s, nodes_s = sampling_edges(ch_f, cy, cx, nr, mc, im_pre, debug=debug)
     ch_c,  nodes_c = connect_chains(ch_s, nodes_s, cy, cx, nr, im_pre, debug, output_dir)
     ch_p = postprocessing(ch_c, nodes_c, cy, cx, output_dir, im_pre, debug)

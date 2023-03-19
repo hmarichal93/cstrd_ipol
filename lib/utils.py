@@ -66,7 +66,7 @@ def saving_results( res, output_dir, save_imgs=True):
     M,N,_ = im_seg.shape
     M_n, N_n = im_pre.shape
     if M != M_n:
-        im_seg,_,_ = resize(im_seg, (M_n, N_n))
+        im_seg,_,_ = resize(im_seg, M_n, N_n)
     ch.visualize_chains_over_image(img=im_seg, filename=f"{output_dir}/segmentation.png")
     ch.visualize_chains_over_image(img=im_pre, filename=f"{output_dir}/preprocessing.png")
     ch.visualize_chains_over_image(img=im_pre, filename=f"{output_dir}/edges.png", devernay=ch_e)
@@ -77,6 +77,7 @@ def saving_results( res, output_dir, save_imgs=True):
     ch.visualize_chains_over_image(chain_list=[chain for chain in ch_p if chain.is_full() and chain.type not in
         [ ch.TypeChains.center, ch.TypeChains.border] ], img=im_seg, filename=f"{output_dir}/output.png")
 
+
     return
 
 
@@ -86,7 +87,7 @@ def chain_2_labelme_json(chain_list: List[ch.Chain],image_path,image_height,imag
     @param chain_list: chain list
     @param image_path: image input path
     @param image_height: image hegith
-    @param image_width: image width
+    @param image_width: image width_output
     @param img_orig: input image
     @param exec_time: method execution time
     @param cy: pith y's coordinate
@@ -124,7 +125,7 @@ def save_results(results,output_file):
     labelme_json, cadenas_completas = chain_2_labelme_json(listaCadenas, image_path, M, N)
     write_json(labelme_json, filepath=f"{SAVE_PATH}/labelme.json")
 
-    listaCadenas, img = results['chain_list'], results['img']
+    listaCadenas, img = results['chain_list'], results['im_pre']
     ch.visualize_chains_over_image([cad for cad in cadenas_completas if not cad.is_center and not cad.corteza], img,
                                    output_file, labels=False, save=SAVE_PATH, gray=True)
     results['tf'] = time.time()

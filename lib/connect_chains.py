@@ -355,7 +355,7 @@ def connect_chains_main_logic(chain_list, nodes_list, intersections_matrix, img_
 
                 ch_j = candidates_chi[j_pointer]
                 if state.debug:
-                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j], state.chains_list, img = state.img,
+                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j], state.chains_list, im_pre = state.im_pre,
                     #                                                 filename = f'{state.path}/{state.counter}_1.png')
                     state.counter += 1
 
@@ -363,26 +363,26 @@ def connect_chains_main_logic(chain_list, nodes_list, intersections_matrix, img_
                 closest_b = get_closest_chain_logic(state, candidates_chi, ch_j, no_intersection_j, chain_support_ch_i, location,
                                         ch.EndPoints.B)
                 if state.debug and closest_b is not None:
-                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest_b], state.chains_list, img = state.img,
+                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest_b], state.chains_list, im_pre = state.im_pre,
                     #                                                 filename = f'{state.path}/{state.counter}_2.png')
                     state.counter += 1
 
                 closest_a = get_closest_chain_logic(state, candidates_chi, ch_j, no_intersection_j, chain_support_ch_i, location,
                                                     ch.EndPoints.A)
                 if state.debug and closest_a is not None:
-                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest_a], state.chains_list, img = state.img,
+                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest_a], state.chains_list, im_pre = state.im_pre,
                     #                                                 filename = f'{state.path}/{state.counter}_3.png')
                     state.counter += 1
 
                 closest, endpoint = select_closest_chain(ch_j, closest_a, closest_b)
                 if state.debug and closest is not None:
-                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest], state.chains_list, img = state.img,
+                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j, closest], state.chains_list, im_pre = state.im_pre,
                     #                                                 filename=f'{state.path}/{state.counter}_4.png')
                     state.counter += 1
 
                 connect_two_chains(state, ch_j, closest, candidates_chi, endpoint, chain_support_ch_i)
                 if state.debug:
-                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j], state.chains_list, img = state.img,
+                    # ch.visualize_selected_ch_and_chains_over_image_([chain_support_ch_i, ch_j], state.chains_list, im_pre = state.im_pre,
                     #                                                 filename=f'{state.path}/{state.counter}_5.png')
                     state.counter += 1
 

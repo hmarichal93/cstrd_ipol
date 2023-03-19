@@ -16,6 +16,8 @@ class Color:
     green = (0, 255, 0)
     white = (255,255,255)
     black = (0,0,0)
+    gray_white = 255
+    gray_black = 0
 
     def __init__(self):
         self.list = [Color.yellow, Color.red,Color.blue, Color.dark_yellow, Color.cyan,Color.orange,Color.purple,Color.maroon]

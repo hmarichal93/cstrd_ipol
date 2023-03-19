@@ -738,7 +738,7 @@ def complete_chains_if_required(ch_p):
     chain_list = [chain for chain in ch_p if chain.type not in [ch.TypeChains.border]]
     for chain in chain_list:
         if chain.is_full() and chain.size < chain.Nr:
-            # ch.visualize_selected_ch_and_chains_over_image_([chain], chain_list, img, './output/img_post.png')
+            # ch.visualize_selected_ch_and_chains_over_image_([chain], chain_list, im_pre, './output/img_post.png')
             inward_chain, outward_chain, _ = get_up_and_down_chains(chain_list, chain, ch.EndPoints.A)
             if inward_chain is not None and outward_chain is not None:
                 complete_chain_using_2_support_ring(inward_chain, outward_chain, chain)
