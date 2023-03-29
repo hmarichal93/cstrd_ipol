@@ -14,7 +14,7 @@ class Disk:
         self.width = image.shape[1]
         self.debug = config.get('debug', False)
         self.data_dic = {}
-        self.nr = config['Nr']
+        self.nr = config['nr']
         self.resize = config['resize']
         self.th_low = config['th_low']
         self.th_high = config['th_high']

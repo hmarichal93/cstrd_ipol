@@ -29,7 +29,7 @@ def save_config(args, root_path, output_dir):
     config['result_path'] = output_dir
 
     if args.nr:
-        config['Nr'] = args.nr
+        config['nr'] = args.nr
 
     if args.hsize and args.wsize:
         if args.hsize>0 and args.wsize>0:

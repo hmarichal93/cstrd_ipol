@@ -8,8 +8,8 @@ import lib.chain as ch
 from lib.drawing import Drawing
 from lib.interpolation_nodes import complete_chain_using_2_support_ring, connect_2_chain_via_inward_and_outward_ring, \
     complete_chain_using_support_ring
-from lib.basic_properties import radials_conditions
-from lib.connect_chains import intersection_between_chains, get_up_and_down_chains, SystemStatus
+from lib.basic_properties import similarity_conditions
+from lib.connect_chains import intersection_between_chains, get_inward_and_outward_visible_chains, SystemStatus
 
 
 def build_boundary_poly(outward_ring, inward_ring):
@@ -45,8 +45,8 @@ def search_shapely_inward_chain(shapley_incomplete_chain, outward_ring, inward_r
     """
     Search for shapely polygon inside region delimitad for outward and inward rings
     @param shapley_incomplete_chain: shapely polygon chains not completed. Not nr nodes
-    @param outward_ring: shapely polygon chain completed.Nr nodes
-    @param inward_ring: shapely polygon chain completed.Nr nodes
+    @param outward_ring: shapely polygon chain completed.nr nodes
+    @param inward_ring: shapely polygon chain completed.nr nodes
     @return:
     """
     poly = build_boundary_poly(outward_ring, inward_ring)
@@ -478,8 +478,7 @@ def split_and_connect_chains_in_region(inward_node_list: List[ch.Node], inward_c
     if debug:
         counter_init = iteration[0]
         state = SystemStatus([src_chain.nodes_list], [src_chain], np.zeros((2, 2)), src_chain.center, img, debug=debug,
-                             save=f"{save_path}",
-                             counter=iteration[0])
+                             save=f"{save_path}", counter=iteration[0])
     else:
         state = None
     # 2.6.1 Order candidate chains by distance
@@ -493,8 +492,8 @@ def split_and_connect_chains_in_region(inward_node_list: List[ch.Node], inward_c
         candidate_chain = search_chain_set[candidate_chain_idx]
         candidate_chain_idx += 1
 
-        check_pass, distribution_distance = radials_conditions(state, 0.2, 3, 2, False, support_chain, src_chain,
-                                                               candidate_chain, endpoint, check_overlapping=False)
+        check_pass, distribution_distance = similarity_conditions(state, 0.2, 3, 2, False, support_chain, src_chain,
+                                                                  candidate_chain, endpoint, check_overlapping=False)
         if check_pass:
             candidate_chains.append(candidate_chain)
             radial_distance_candidate_chains.append(distribution_distance)
@@ -739,7 +738,7 @@ def complete_chains_if_required(ch_p):
     for chain in chain_list:
         if chain.is_full() and chain.size < chain.Nr:
             # ch.visualize_selected_ch_and_chains_over_image_([chain], chain_list, im_pre, './output/img_post.png')
-            inward_chain, outward_chain, _ = get_up_and_down_chains(chain_list, chain, ch.EndPoints.A)
+            inward_chain, outward_chain, _ = get_inward_and_outward_visible_chains(chain_list, chain, ch.EndPoints.A)
             if inward_chain is not None and outward_chain is not None:
                 complete_chain_using_2_support_ring(inward_chain, outward_chain, chain)
 
@@ -792,9 +791,9 @@ def posprocessing_more_than_one_chain_without_intersection(ctx, chain_subset, ou
 
     while len(no_intersecting_subset) > 0:
         next_chain = no_intersecting_subset[0]
-        check_pass, distribution_distance = radials_conditions(None, 0.2, 2, 2, False, support_chain, src_chain,
-                                                               next_chain, endpoint, check_overlapping=True,
-                                                               chain_list=chain_subset)
+        check_pass, distribution_distance = similarity_conditions(None, 0.2, 2, 2, False, support_chain, src_chain,
+                                                                  next_chain, endpoint, check_overlapping=True,
+                                                                  chain_list=chain_subset)
 
         if check_pass:
             connect_2_chain_via_support_chain(outward_ring_chain, inward_ring_chain, src_chain,

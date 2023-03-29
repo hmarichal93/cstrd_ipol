@@ -63,7 +63,7 @@ class InfluenceArea:
         self.image_name = image_name[:-5]
         self.img, self.center = load_image(self.image_name, disk_name)
         M, N, _ = self.img.shape
-        # self.rayos_img = build_radial_directions_matrix(np.zeros((M,N)),self.center, Nr).astype(int)
+        # self.rayos_img = build_radial_directions_matrix(np.zeros((M,N)),self.center, nr).astype(int)
         # nr, height_output, witdh, [cy, cx]
         self.rays_list = build_rays(Nr, M, N, self.center[::-1])
         # draw_ray_curve_and_intersections([],self.rays_list, [], self.im_pre, "./debug_rays.png")
@@ -609,7 +609,7 @@ class MetricsDataset:
         self.root_dir = root_dir
         self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
         config = load_json(config_path)
-        self.Nr = config.get("Nr")
+        self.Nr = config.get("nr")
         self.output_dir = output_dir
         Path(output_dir).mkdir(exist_ok=True)
 
@@ -886,7 +886,7 @@ class MeanDisk:
             mean_ring_gt.append(Polygon(mean_ring_point))
 
         self.intersection_full_list = [node for key in intersection_list.keys() for node in intersection_list[key]]
-        params = {'y': cy, 'x': cx, 'angle': int(0), 'radial_distance':
+        params = {'y': cy, 'x': cx, 'angle': int(0), 'next_chain_radial_distance':
             0, 'chain_id': -1}
 
         dot = ch.Node(**params)
@@ -949,7 +949,7 @@ class MeanDisk:
                     continue
 
                 i, j = np.array(y)[-1], np.array(x)[-1]
-                params = {'y': i, 'x': j, 'angle': int(radii.direction), 'radial_distance':
+                params = {'y': i, 'x': j, 'angle': int(radii.direction), 'next_chain_radial_distance':
                     ch.euclidean_distance([i, j], center), 'chain_id': chain_id}
 
                 dot = ch.Node(**params)
@@ -1123,7 +1123,7 @@ class MetricsDataset_over_detection_files:
         self.root_dir = root_dir
         self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
         config = load_json(config_path)
-        self.Nr = config.get("Nr")
+        self.Nr = config.get("nr")
         self.detection_files_list = detection_files_list
 
     def compute(self):
@@ -1179,7 +1179,7 @@ class MetricsDataset_comparison:
         self.root_dir = root_dir
         self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
         config = load_json(config_path)
-        self.Nr = config.get("Nr")
+        self.Nr = config.get("nr")
         self.output_dir = output_dir
         Path(output_dir).mkdir(exist_ok=True)
         self.threshold = threshold

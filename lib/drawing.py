@@ -77,7 +77,7 @@ class Drawing:
     @staticmethod
     def chain(chain, img, color=(0, 255, 0), thickness=5):
         y, x = chain.get_nodes_coordinates()
-        pts = np.vstack((x, y)).T.astype(int)
+        pts = np.vstack((y, x)).T.astype(int)
         isClosed = False
         img = cv2.polylines(img, [pts],
                             isClosed, color, thickness)

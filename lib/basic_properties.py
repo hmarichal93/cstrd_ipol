@@ -22,8 +22,10 @@ class InfoVirtualBand:
     INSIDE = 1
     UP = 2
 
-    def __init__(self, virtual_nodes, src_chain, dst_chain, endpoint, support_chain=None, inf_orig=None, sup_orig=None,
-                 inf_cand=None, sup_cand=None, band_width=0.1):
+    def __init__(self, virtual_nodes, src_chain, dst_chain, endpoint, support_chain=None, band_width=None):
+        if band_width is None:
+            band_width = 0.05 if support_chain.type == ch.TypeChains.center else 0.1
+
         self.virtual_nodes = virtual_nodes
         self.src_chain = src_chain
         self.dst_chain = dst_chain
@@ -33,23 +35,17 @@ class InfoVirtualBand:
                   'chain_id': -1}
         self.center = ch.Node(**params)
 
-        if band_width:
-            ext1 = self.src_chain.extB if endpoint == ch.EndPoints.B else self.src_chain.extA
-            ext1_support = self.support_chain.get_node_by_angle(ext1.angle) if self.support_chain is not None else self.center
-            ext2 = self.dst_chain.extB if endpoint == ch.EndPoints.A else self.dst_chain.extA
-            ext2_support = self.support_chain.get_node_by_angle(ext2.angle) if self.support_chain is not None else self.center
-            delta_r1 = ch.euclidean_distance_between_nodes(ext1, ext1_support)
-            delta_r2 = ch.euclidean_distance_between_nodes(ext2, ext2_support)
-            self.inf_cand = delta_r2 * (1 - band_width)
-            self.sup_cand = delta_r2 * (1 + band_width)
-            self.inf_orig = delta_r1 * (1 - band_width)
-            self.sup_orig = delta_r1 * (1 + band_width)
 
-        else:
-            self.inf_orig = inf_orig
-            self.inf_cand = inf_cand
-            self.sup_orig = sup_orig
-            self.sup_cand = sup_cand
+        ext1 = self.src_chain.extB if endpoint == ch.EndPoints.B else self.src_chain.extA
+        ext1_support = self.support_chain.get_node_by_angle(ext1.angle) if self.support_chain is not None else self.center
+        ext2 = self.dst_chain.extB if endpoint == ch.EndPoints.A else self.dst_chain.extA
+        ext2_support = self.support_chain.get_node_by_angle(ext2.angle) if self.support_chain is not None else self.center
+        delta_r1 = ch.euclidean_distance_between_nodes(ext1, ext1_support)
+        delta_r2 = ch.euclidean_distance_between_nodes(ext2, ext2_support)
+        self.inf_cand = delta_r2 * (1 - band_width)
+        self.sup_cand = delta_r2 * (1 + band_width)
+        self.inf_orig = delta_r1 * (1 - band_width)
+        self.sup_orig = delta_r1 * (1 + band_width)
 
         self.generate_band()
 
@@ -138,63 +134,65 @@ class InfoVirtualBand:
 
 
 
-def vector_derivative(f, Nr, paso=2):
+def vector_derivative(f, Nr):
+    """center derivative of a vector f"""
     return np.gradient(f)
 
 
 
-def max_derivative(state, Nr, nodes_list, src_chain_nodes, dst_chain_nodes, endpoint, threshold=1):
+def regularity_of_the_derivative_condition(state, Nr, ch_j_nodes, ch_i_nodes, ch_k_nodes, endpoint_i, th_deriv=1):
     """
     Compute radial derivative of the serie formed by src nodes + virtual nodes + dst nodes
-    @param Nr:
-    @param nodes_list:
-    @param nodes_radial_distance_src_chain:
-    @param nodes_radial_distance_dst_chain:
-    @param threshold:
-    @return:
+    @param Nr: number of rays
+    @param ch_j_nodes: all nodes involved. src nodes + virtual nodes + dst nodes
+    @param ch_i_nodes: src nodes
+    @param ch_k_nodes: dst nodes
+    @param th_deriv: threshold of the derivative
+    @param endpoint_i: endpoint of the src chain
+    @return: boolean indicative of the regularity of the derivative
     """
-    virtual_radials = [node.radial_distance for node in nodes_list]
-    nodes_radial_distance_src_chain = [node.radial_distance for node in src_chain_nodes]
-    nodes_radial_distance_dst_chain = [node.radial_distance for node in dst_chain_nodes]
+    ch_j_radials = [node.radial_distance for node in ch_j_nodes]
+    nodes_radial_distance_src_chain = [node.radial_distance for node in ch_i_nodes]
+    nodes_radial_distance_dst_chain = [node.radial_distance for node in ch_k_nodes]
 
     abs_der_1 = np.abs(vector_derivative(nodes_radial_distance_src_chain, Nr))
     abs_der_2 = np.abs(vector_derivative(nodes_radial_distance_dst_chain, Nr))
-    abs_der_3 = np.abs(vector_derivative(virtual_radials, Nr))
-    max_derivative_init = np.maximum(abs_der_1.max(), abs_der_2.max())
+    abs_der_3 = np.abs(vector_derivative(ch_j_radials, Nr))
+    maximum_derivative_chains = np.maximum(abs_der_1.max(), abs_der_2.max())
 
     max_derivative_end = np.max(abs_der_3)
-    res = max_derivative_end <= threshold * max_derivative_init
+    RegularDeriv = max_derivative_end <= maximum_derivative_chains * th_deriv
 
     if state is not None and state.debug:
         f, (ax2, ax1) = plt.subplots(2, 1)
         ax1.plot(abs_der_3)
-        if endpoint == ch.EndPoints.A :
+        if endpoint_i == ch.EndPoints.A :
             ax1.plot(np.arange(0,len(abs_der_2)), abs_der_2[::-1])
-            ax1.plot(np.arange(len(virtual_radials)-len(nodes_radial_distance_src_chain), len(virtual_radials)), abs_der_1)
+            ax1.plot(np.arange(len(ch_j_radials)-len(nodes_radial_distance_src_chain), len(ch_j_radials)), abs_der_1)
         else:
             ax1.plot(np.arange(0, len(abs_der_1)), abs_der_1[::-1])
-            ax1.plot(np.arange(len(virtual_radials) - len(nodes_radial_distance_dst_chain), len(virtual_radials)), abs_der_2)
+            ax1.plot(np.arange(len(ch_j_radials) - len(nodes_radial_distance_dst_chain), len(ch_j_radials)), abs_der_2)
 
         ax1.hlines(y=max_derivative_end, xmin=0, xmax= np.maximum(len(nodes_radial_distance_src_chain), len(nodes_radial_distance_dst_chain)), label='Salto')
-        ax1.hlines(y=threshold * max_derivative_init, xmin=0, xmax=np.maximum(len(nodes_radial_distance_dst_chain), len(nodes_radial_distance_src_chain)),colors='r', label='umbral')
+        ax1.hlines(y=th_deriv * maximum_derivative_chains, xmin=0, xmax=np.maximum(len(nodes_radial_distance_dst_chain), len(nodes_radial_distance_src_chain)), colors='r', label='umbral')
         ax1.legend()
 
-        ax2.plot(virtual_radials)
-        if endpoint == ch.EndPoints.A :
+        ax2.plot(ch_j_radials)
+        if endpoint_i == ch.EndPoints.A :
             ax2.plot( np.arange( 0, len(abs_der_2)), nodes_radial_distance_dst_chain[::-1] , 'r')
-            ax2.plot(np.arange(len(virtual_radials)-len(nodes_radial_distance_src_chain), len(virtual_radials)),
+            ax2.plot(np.arange(len(ch_j_radials)-len(nodes_radial_distance_src_chain), len(ch_j_radials)),
                      nodes_radial_distance_src_chain)
         else:
             ax2.plot(np.arange(0, len(abs_der_1)), nodes_radial_distance_src_chain[::-1], 'r')
-            ax2.plot(np.arange(len(virtual_radials) - len(nodes_radial_distance_dst_chain), len(virtual_radials)),
+            ax2.plot(np.arange(len(ch_j_radials) - len(nodes_radial_distance_dst_chain), len(ch_j_radials)),
                      nodes_radial_distance_dst_chain)
 
-        plt.title(f'{res}')
-        plt.savefig(f'{str(state.path)}/{state.counter}_derivada_{res}.png')
+        plt.title(f'{RegularDeriv}')
+        plt.savefig(f'{str(state.path)}/{state.counter}_derivada_{RegularDeriv}.png')
         plt.close()
         state.counter += 1
 
-    return res
+    return RegularDeriv
 
 
 def generate_virtual_nodes_without_support_chain(ch_1, ch_2, endpoint):
@@ -206,11 +204,24 @@ def generate_virtual_nodes_without_support_chain(ch_1, ch_2, endpoint):
     domain_interpolation(support_chain, ch1_border, ch2_border, endpoint, ch_1, virtual_nodes)
     return virtual_nodes
 
-def derivative_condition(state, cad_1, cad_2, endpoint, node_list, src_chain_nodes,
-                         dst_chain_nodes, threshold=None, derivative_from_center=False):
+def regularity_of_the_derivative(state, ch_i, ch_k, endpoint_i, node_list, ch_i_nodes, ch_k_nodes, th_deriv=1,
+                                 derivative_from_center=False):
+    """
+    Regularity of the derivative for the virtual nodes generated between the two chains.
+    @param state: at this moment is used only for debug
+    @param ch_i: source chain to be connected
+    @param ch_k: destination chain to be connected
+    @param endpoint_i: endpoint of ch_i to be connected
+    @param node_list: all the nodes involved in the connection, including the virtual nodes
+    @param ch_i_nodes: nodes of ch_i
+    @param ch_k_nodes: nodes of ch_k
+    @param th_deriv: derivative threshold
+    @param derivative_from_center: bool for regenerating the virtual nodes interpolating from the center of the chain.
+    @return: boolean indicative of the regularity of the derivative
+    """
     if derivative_from_center:
         new_list = []
-        virtual_nodes = generate_virtual_nodes_without_support_chain(cad_1, cad_2, endpoint)
+        virtual_nodes = generate_virtual_nodes_without_support_chain(ch_i, ch_k, endpoint_i)
         angles = [n.angle for n in virtual_nodes]
         for node in node_list:
             if node.angle not in angles:
@@ -220,10 +231,10 @@ def derivative_condition(state, cad_1, cad_2, endpoint, node_list, src_chain_nod
 
         node_list = new_list
 
-    res = max_derivative(state, cad_1.Nr, node_list, src_chain_nodes,
-                         dst_chain_nodes, endpoint, threshold=threshold)
+    RegularDeriv = regularity_of_the_derivative_condition(state, ch_i.Nr, node_list, ch_i_nodes, ch_k_nodes, endpoint_i,
+                                                          th_deriv=th_deriv)
 
-    return res
+    return RegularDeriv
 
 
 
@@ -238,33 +249,49 @@ def generate_virtual_nodes_between_two_chains(src_chain, dst_chain, support_chai
     return virtual_nodes
 
 
-def max_radial_condition(state, threshold, endpoints_radial):
+def radial_tolerance_for_connecting_chains(state, th_radial_tolerance, endpoints_radial):
     """
     Check maximum radial distance allowed to connect chains
-    @param threshold:
-    @param endpoints_radial:
-    @return:
+    @param state: state of the algorithm. At this point, it is used to debug.
+    @param th_radial_tolerance: radial tolerance threshold
+    @param endpoints_radial: radial distance between endpoints and support chain
+    @return: bool indicating if radial distance is within tolerance
     """
-    src_radial = endpoints_radial[0]
-    dst_radial = endpoints_radial[1]
-    inf_src_radial = src_radial * (1 - threshold)
-    sup_src_radial = src_radial * (1 + threshold)
-    pass_check = inf_src_radial <= dst_radial <= sup_src_radial
+    delta_ri = endpoints_radial[0]
+    delta_ri_plus_i = endpoints_radial[1]
+    inf_delta_ri = delta_ri * (1 - th_radial_tolerance)
+    sup_delta_ri = delta_ri * (1 + th_radial_tolerance)
+    RadialTol = inf_delta_ri <= delta_ri_plus_i <= sup_delta_ri
+
+    #debug info
     if state is not None and state.debug:
         plt.figure()
-        plt.axvline(x=src_radial, color='b', label=f'src_radial')
-        plt.axvline(x=dst_radial, color='r', label=f'dst_radial')
-        plt.axvline(x=inf_src_radial, color='k', label=f'inf radial')
-        plt.axvline(x=sup_src_radial, color='k', label=f'sup radial')
-        plt.title(f"{pass_check}: Th {state.radio_limit}.")
+        plt.axvline(x=delta_ri, color='b', label=f'delta_ri')
+        plt.axvline(x=delta_ri_plus_i, color='r', label=f'delta_ri_plus_i')
+        plt.axvline(x=inf_delta_ri, color='k', label=f'inf radial')
+        plt.axvline(x=sup_delta_ri, color='k', label=f'sup radial')
+        plt.title(f"{RadialTol}: Th {state.radio_limit}.")
         plt.savefig(f'{str(state.path)}/{state.counter}_max_radial_condition.png')
         plt.close()
         state.counter += 1
-    return pass_check, src_radial, dst_radial, inf_src_radial, sup_src_radial
+
+    return RadialTol
 
 
 class Neighbourhood:
-    def __init__(self, src_chain, dst_chain, support_chain, endpoint, chain_neighbourhoood=20):
+    """
+    Class to compute and store the neighbourhood of a chain and the candidate chains to connect to it. It generates the virtual nodes
+    to compute the similarity condition.
+    """
+    def __init__(self, src_chain, dst_chain, support_chain, endpoint, n_nodes=20):
+        """
+
+        @param src_chain: src chain to be connected
+        @param dst_chain: dst chain to be connected
+        @param support_chain: support chain to be used to generate the virtual nodes
+        @param endpoint: src chain endpoint to be connected
+        @param n_nodes: number of nodes to be considered in the neighbourhood
+        """
         self.virtual_nodes = generate_virtual_nodes_between_two_chains(src_chain, dst_chain, support_chain, endpoint)
         self.src_endpoint = src_chain.extB if endpoint == ch.EndPoints.B else src_chain.extA
         self.dst_endpoint = dst_chain.extA if endpoint == ch.EndPoints.B else dst_chain.extB
@@ -276,14 +303,14 @@ class Neighbourhood:
             self.virtual_nodes, support_chain)
 
         self.src_chain_nodes = src_chain.sort_dots(direction=ch.ClockDirection.anti_clockwise)[
-                          :chain_neighbourhoood] if endpoint == ch.EndPoints.A \
-            else src_chain.sort_dots(direction=ch.ClockDirection.clockwise)[:chain_neighbourhoood]
+                               :n_nodes] if endpoint == ch.EndPoints.A \
+            else src_chain.sort_dots(direction=ch.ClockDirection.clockwise)[:n_nodes]
         self.dst_chain_nodes = dst_chain.sort_dots(direction=ch.ClockDirection.clockwise)[
-                          :chain_neighbourhoood] if endpoint == ch.EndPoints.A \
-            else dst_chain.sort_dots(direction=ch.ClockDirection.anti_clockwise)[:chain_neighbourhoood]
-        self.radial_distance_src_nodes_to_support = radial_distance_between_nodes_belonging_to_same_ray(self.src_chain_nodes,
-                                                                                                        support_chain)
-        self.radial_distance_dst_nodes_to_support = radial_distance_between_nodes_belonging_to_same_ray(
+                               :n_nodes] if endpoint == ch.EndPoints.A \
+            else dst_chain.sort_dots(direction=ch.ClockDirection.anti_clockwise)[:n_nodes]
+        self.set_i = radial_distance_between_nodes_belonging_to_same_ray(self.src_chain_nodes,
+                                                                         support_chain)
+        self.set_k = radial_distance_between_nodes_belonging_to_same_ray(
             self.dst_chain_nodes, support_chain)
 
         # sort all nodes, src + virtuales + dst
@@ -300,45 +327,64 @@ class Neighbourhood:
         plt.close()
 
 
-def distribution_condition(state, width_std, src_radial, dst_radial):
-    mean_src = np.mean(src_radial)
-    std_src = np.std(src_radial)
-    inf_limit = mean_src - width_std * std_src
-    sup_limit = mean_src + width_std * std_src
+def similar_radial_distances_of_nodes_in_both_chains(state, distribution_th, set_i, set_k):
+    """
+    Check if the radial distances of the nodes in both chains are similar via distribution of the radial distances
+    @param state: state of the algorithm. At this point, it is used to debug.
+    @param distribution_th: size of the distributions to check if they are similar
+    @param set_i: radial distance between nodes of the first chain and the support chain
+    @param set_k: radial distances between nodes of the second chain and the support chain
+    @return:
+    + bool indicating if the radial distances are similar
+    + distance between the mean of the distributions
+    """
+    mean_i = np.mean(set_i)
+    sigma_i = np.std(set_i)
+    inf_range_i = mean_i - distribution_th * sigma_i
+    sup_range_i = mean_i + distribution_th * sigma_i
 
-    mean_dst = np.mean(dst_radial)
-    inf_dst = mean_dst - width_std * np.std(dst_radial)
-    sup_dst = mean_dst + width_std * np.std(dst_radial)
-    pass_check = inf_dst <= sup_limit and inf_limit <= sup_dst
+    mean_k = np.mean(set_k)
+    std_k = np.std(set_k)
+    inf_range_k = mean_k - distribution_th * std_k
+    sup_range_k = mean_k + distribution_th * std_k
+    # check intersection between intervals
+    SimilarRadialDist = inf_range_k <= sup_range_i and inf_range_i <= sup_range_k
 
     if state is not None and state.debug:
         plt.figure()
-        plt.hist(src_radial, bins=10, alpha=0.3, color='r', label='src radial')
-        plt.hist(dst_radial, bins=10, alpha=0.3, color='b', label='dst radial')
-        plt.axvline(x=inf_limit, color='r', label=f'inf src')
-        plt.axvline(x=sup_limit, color='r', label=f'sup src')
-        plt.axvline(x=inf_dst, color='b', label=f'inf dst')
-        plt.axvline(x=sup_dst, color='b', label=f'sup dst')
+        plt.hist(set_i, bins=10, alpha=0.3, color='r', label='src radial')
+        plt.hist(set_k, bins=10, alpha=0.3, color='b', label='dst radial')
+        plt.axvline(x=inf_range_i, color='r', label=f'inf src')
+        plt.axvline(x=sup_range_i, color='r', label=f'sup src')
+        plt.axvline(x=inf_range_k, color='b', label=f'inf dst')
+        plt.axvline(x=sup_range_k, color='b', label=f'sup dst')
         plt.legend()
-        plt.title(f"{pass_check}: Th {width_std}.")
+        plt.title(f"{SimilarRadialDist}: Th {distribution_th}.")
         plt.savefig(f'{str(state.path)}/{state.counter}_distribution_condition.png')
         plt.close()
         state.counter += 1
-    return pass_check, np.abs(mean_src - mean_dst)
+
+    return SimilarRadialDist, np.abs(mean_i - mean_k)
 
 
-def radials_conditions(state, radial_th, distribution_th,derivative_th, derivative_from_center, support_chain, src_chain,
-                       dst_chain, endpoint, check_overlapping=True, chain_list=None):
+def similarity_conditions(state, th_radial_tolerance, distribution_th, derivative_th, derivative_from_center,
+                          support_chain, src_chain, dst_chain, endpoint, check_overlapping=True, chain_list=None):
     """
-    Check radials conditions.
+    Similarity conditions defined in equation 6 in the paper
     @param state:
+    @param th_radial_tolerance:
+    @param distribution_th:
+    @param derivative_th:
+    @param derivative_from_center:
     @param support_chain:
     @param src_chain:
     @param dst_chain:
     @param endpoint:
+    @param check_overlapping:
+    @param chain_list:
     @return:
+    
     """
-    assert support_chain is not None
     neighbourhood = Neighbourhood(src_chain, dst_chain, support_chain, endpoint)
     if state is not None and state.debug:
         ch.visualize_selected_ch_and_chains_over_image_([support_chain, src_chain, dst_chain], state.chains_list,
@@ -347,46 +393,44 @@ def radials_conditions(state, radial_th, distribution_th,derivative_th, derivati
         neighbourhood.draw_neighbourhood(f'{state.path}/{state.counter}_radials_conditions_neighbourdhood_{src_chain.label_id}_{dst_chain.label_id}.png')
         state.counter += 1
 
-    if len(neighbourhood.radial_distance_src_nodes_to_support) <= 1 or len(
-            neighbourhood.radial_distance_dst_nodes_to_support) <= 1:
+    if len(neighbourhood.set_i) <= 1 or len(
+            neighbourhood.set_k) <= 1:
         return False, -1
 
-    # 1. Max radial condition
-    pass_check_max_radial_condition, src_radial, dst_radial, inf_src_radial, sup_src_radial = max_radial_condition( state, radial_th,
-                                                                                neighbourhood.radial_distance_endpoints_to_support)
+    # 1. Radial tolerance for connecting chains
+    RadialTol = radial_tolerance_for_connecting_chains(state, th_radial_tolerance,
+                                                                   neighbourhood.radial_distance_endpoints_to_support)
 
 
 
-    # 2. Distribution Condition
-    pass_check_distribution_condition, distribution_distance = distribution_condition(state, distribution_th,
-                                                                                      neighbourhood.radial_distance_src_nodes_to_support,
-                                                                                      neighbourhood.radial_distance_dst_nodes_to_support)
+    # 2. Similar radial distances of nodes in both chains
+    SimilarRadialDist, distribution_distance = similar_radial_distances_of_nodes_in_both_chains(state, distribution_th,
+                                                                                                neighbourhood.set_i,
+                                                                                                neighbourhood.set_k)
 
-    check_pass = pass_check_max_radial_condition or pass_check_distribution_condition
+    check_pass = RadialTol or SimilarRadialDist
     if not check_pass:
-        return (check_pass, distribution_distance)
+        return (False, distribution_distance)
 
     # 3. Derivative condition
-    pass_check_derivative_condition = derivative_condition(state, src_chain, dst_chain, endpoint,
-                                                           neighbourhood.neighbourhood_nodes,
-                                                           src_chain_nodes = neighbourhood.src_chain_nodes,
-                                                           dst_chain_nodes = neighbourhood.dst_chain_nodes,
-                                                           threshold = derivative_th,
-                                                           derivative_from_center= derivative_from_center)
+    RegularDeriv = regularity_of_the_derivative(state, src_chain, dst_chain, endpoint,
+                                                neighbourhood.neighbourhood_nodes,
+                                                ch_i_nodes=neighbourhood.src_chain_nodes,
+                                                ch_k_nodes=neighbourhood.dst_chain_nodes, th_deriv=derivative_th,
+                                                derivative_from_center=derivative_from_center)
 
-    if not pass_check_derivative_condition:
-        return (pass_check_derivative_condition, distribution_distance)
+    if not RegularDeriv:
+        return (False, distribution_distance)
 
     # 4.0 Check there is not chains in region
     if check_overlapping:
-        info_band = InfoVirtualBand(neighbourhood.endpoint_and_virtual_nodes, src_chain, dst_chain, endpoint,
-                                    support_chain, band_width=0.05 if support_chain.type == ch.TypeChains.center else 0.1)
-        chain_list = state.chains_list if chain_list is None else chain_list
-        exist_chain = exist_chain_in_band(chain_list, info_band)
-        if exist_chain:
-            return (not exist_chain, distribution_distance)
+        exist_chain = exist_chain_overlapping(state.chains_list if chain_list is None else chain_list,
+                    neighbourhood.endpoint_and_virtual_nodes, src_chain, dst_chain, endpoint, support_chain)
 
-    return (pass_check_derivative_condition, distribution_distance)
+        if exist_chain:
+            return (False, distribution_distance)
+
+    return (True, distribution_distance)
 
 
 def radial_distance_between_nodes_belonging_to_same_ray(node_list, support_chain):
@@ -420,14 +464,19 @@ def exist_chain_in_band_logic(chain_list, band_info):
     return [fist_chain_in_region] if fist_chain_in_region is not None else []
 
 
-def exist_chain_in_band(chains_list, info_band):
+def exist_chain_overlapping(chains_list, endpoints_and_virtual_nodes, src_chain, dst_chain, endpoint, support_chain):
     """
-
-    @param state:
-    @param info_band:
-    @return:
+    Check if there is a chain in the region defined by the band
+    @param chains_list: full chain list
+    @param endpoints_and_virtual_nodes: both endpoints and virtual nodes
+    @param src_chain: source chain
+    @param dst_chain: destination chain
+    @param endpoint: source chain endpoint
+    @param support_chain: support chain
+    @return: boolean indicating if exist chain in band
     """
-
+    info_band = InfoVirtualBand(endpoints_and_virtual_nodes, src_chain, dst_chain, endpoint,
+                                support_chain)
     chains_in_band = exist_chain_in_band_logic(chains_list, info_band)
     exist_chain = len(chains_in_band) > 0
 
