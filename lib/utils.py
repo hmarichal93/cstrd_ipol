@@ -81,9 +81,11 @@ def saving_results( res, output_dir, save_imgs=True):
     return
 
 
-def chain_2_labelme_json(chain_list: List[ch.Chain],image_path,image_height,image_width, img_orig, exec_time, cy, cx):
+def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, cx, cy, img_orig, image_path,
+                         exec_time):
     """
-    Converting chain list object to labelme format.
+    Converting chain list object to labelme format. This format is used to store the coordinates of the rings at the image
+    original resolution
     @param chain_list: chain list
     @param image_path: image input path
     @param image_height: image hegith
@@ -115,22 +117,6 @@ def chain_2_labelme_json(chain_list: List[ch.Chain],image_path,image_height,imag
     return labelme_json
 
 
-def save_results(results,output_file):
-    listaCadenas= results['chain_list']
-    SAVE_PATH= results['save_path']
-
-    M = results.get('M')
-    N = results.get('N')
-    image_path = results.get("image_path")
-    labelme_json, cadenas_completas = chain_2_labelme_json(listaCadenas, image_path, M, N)
-    write_json(labelme_json, filepath=f"{SAVE_PATH}/labelme.json")
-
-    listaCadenas, img = results['chain_list'], results['im_pre']
-    ch.visualize_chains_over_image([cad for cad in cadenas_completas if not cad.is_center and not cad.corteza], img,
-                                   output_file, labels=False, save=SAVE_PATH, gray=True)
-    results['tf'] = time.time()
-    print(f"Execution Time: {results['tf']-results['to']}")
-    return 0
 
 def setup_log(nroImagen,VERSION):
     logname = f"./logs/{nroImagen}.log"

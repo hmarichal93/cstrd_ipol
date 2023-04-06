@@ -90,11 +90,12 @@ def find_border_contour(mask, img):
 def contour_to_curve(contour, name):
     curve = Curve(contour, name)
     return curve
-def get_border_curve(img, curves_list):
+def get_border_curve(img, ch_f_list):
     """
+    Get disk border border_curve of the image
     @param img: segmented gray image
-    @param curves_list:
-    @return:
+    @param ch_f_list: list of curves
+    @return: border object border_curve
 
     """
     mask = mask_background(img)
@@ -102,17 +103,21 @@ def get_border_curve(img, curves_list):
     mask = thresholding(mask)
     mask = padding_mask(mask)
     border_contour = find_border_contour(mask, img)
-    curve = contour_to_curve(border_contour, len(curves_list))
-    return curve
+    border_curve = contour_to_curve(border_contour, len(ch_f_list))
+    return border_curve
 
 
-def change_reference_axis(ch_e, cy, cx):
+def change_reference_axis(ch_e_matrix, cy, cx):
     center = [cx, cy]
-    curve_border_index = np.where(ch_e == DELIMITE_CURVE_ROW)[0]
-    X = ch_e.copy()
-    X[curve_border_index] = 0
+    curve_border_index = np.where(ch_e_matrix == DELIMITE_CURVE_ROW)[0]
+    X = ch_e_matrix.copy()
+
+    #change reference axis
     Xb = np.array([[1, 0], [0, 1]]).dot(X.T) + (np.array([-1, -1]) * np.array(center, dtype=float)).reshape(
         (-1, 1))
+
+    #mask delimiting edge row by -1
+    Xb[:,curve_border_index] = -1
     return Xb
 
 def convert_masked_pixels_to_curves(X_edges_filtered):
@@ -128,9 +133,9 @@ def convert_masked_pixels_to_curves(X_edges_filtered):
 
     return ch_f
 def get_gradient_vector_for_each_edge_pixel(ch_e, Gx, Gy):
-    gradient = np.vstack(
+    G = np.vstack(
         (Gx[ch_e[:, 1].astype(int), ch_e[:, 0].astype(int)], Gy[ch_e[:, 1].astype(int), ch_e[:, 0].astype(int)])).T
-    return gradient
+    return G
 
 def compute_angle_beetween_gradient_and_edges(Xb_normed, gradient_normed):
     theta = np.arccos(np.clip((gradient_normed * Xb_normed).sum(axis=1), -1.0, 1.0)) * 180 / np.pi
@@ -139,12 +144,12 @@ def filter_edges_by_threshold(ch_e, theta, alpha):
     X_edges_filtered = ch_e.copy()
     X_edges_filtered[theta >= alpha] = -1
     return X_edges_filtered
-def filter_edges(ch_e, cy, cx, Gx, Gy, alpha, im_pre):
+def filter_edges(ch_e_matrix, cy, cx, Gx, Gy, alpha, im_pre):
     """
     Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
     cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
     collineary with the ray direction is computed and filter depending on threshold (alpha)
-    @param ch_e: devernay curves
+    @param ch_e_matrix: devernay curves in matrix format
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param Gx: Gradient over x direction
@@ -152,26 +157,26 @@ def filter_edges(ch_e, cy, cx, Gx, Gy, alpha, im_pre):
     @param alpha: threshold filter
     @param im_pre: input image
     @return:
-    - ch_f: filtered devernay curves
+    - ch_f_list: filtered devernay curves
     """
     #1.0 change reference axis
-    Xb = change_reference_axis(ch_e, cy, cx)
+    Xb = change_reference_axis(ch_e_matrix, cy, cx)
     #2.0 get normalized gradient at each edge
-    G = get_gradient_vector_for_each_edge_pixel(ch_e, Gx, Gy)
+    G = get_gradient_vector_for_each_edge_pixel(ch_e_matrix, Gx, Gy)
     #3.0 Normalize gradient and rays
     Xb_normalized = normalized_row_matrix(Xb.T)
     G_normalized = normalized_row_matrix(G)
     #4.0 Compute angle between gradient and edges
     theta = compute_angle_beetween_gradient_and_edges(Xb_normalized, G_normalized)
     #5.0 filter pixels by threshold
-    X_edges_filtered = filter_edges_by_threshold(ch_e, theta, alpha)
+    X_edges_filtered = filter_edges_by_threshold(ch_e_matrix, theta, alpha)
     #5.0 Convert masked pixel to object curve
-    ch_f = convert_masked_pixels_to_curves(X_edges_filtered)
+    ch_f_list = convert_masked_pixels_to_curves(X_edges_filtered)
     #6.0 Border disk is added as a curve
-    border_curve = get_border_curve(im_pre, ch_f)
-    ch_f.append(border_curve)
+    border_curve = get_border_curve(im_pre, ch_f_list)
+    ch_f_list.append(border_curve)
 
-    return ch_f
+    return ch_f_list
 
 def write_filter_curves_to_image(curves, img):
     img = np.zeros_like(img) +255

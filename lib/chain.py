@@ -287,10 +287,16 @@ def get_closest_chain_border_to_angle(chain: Chain, angle: int):
     return dot
 
 
-def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_list: List[Chain], angle: int):
+def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_to_center(chains_list: List[Chain],
+                                                                                         angle: int):
+    """
+    get nodes of all chains that are over the ray defined by angle and sort them by ascending distance to center
+    @param chains_list: full chain list
+    @param angle: ray angle direction
+    @return: nodes list sorted by ascending distance to center over ray direction angle.
+    """
     node_list_over_ray = []
     for chain in chains_list:
-        #dot = get_closest_chain_dot_to_angle(chain, angle)
         try:
             node =  [node for node in chain.nodes_list if node.angle == angle][0]
         except IndexError:
@@ -299,9 +305,10 @@ def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_t
 
         if node not in node_list_over_ray:
             node_list_over_ray.append(node)
-    #write_log(MODULE_NAME,label,f"{lista_puntos_perfil}")
+
     if len(node_list_over_ray)>0:
         node_list_over_ray= sorted(node_list_over_ray, key=lambda x: x.radial_distance, reverse=False)
+
     return node_list_over_ray
 
 

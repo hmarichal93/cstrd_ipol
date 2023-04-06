@@ -17,10 +17,10 @@ from lib.drawing import Drawing
 def load_curves(output_txt):
     curves_list = pd.read_csv(output_txt, delimiter=" ", header=None).values
     return curves_list
-def convert_image_to_pgm(img):
+def convert_image_to_pgm(im_pre):
     config = load_config(default=False)
     image_path = Path(config.get("result_path")) / f"test.pgm"
-    cv2.imwrite(str(image_path), img)
+    cv2.imwrite(str(image_path), im_pre)
     return config, image_path
 def write_curves_to_image(curves_list, img):
     img_aux = np.zeros(( img.shape[0], img.shape[1])) + 255
@@ -39,7 +39,8 @@ def gradient_load( img, gx_path, gy_path):
     Gx[1:-1, 1:-1] = pd.read_csv(gx_path, delimiter=" ", header=None).values.T
     Gy[1:-1, 1:-1] = pd.read_csv(gy_path, delimiter=" ", header=None).values.T
     return Gx, Gy
-def execute_command(config,image_path , sigma, low, high):
+
+def execute_command(config, image_path, sigma, low, high):
     root_path = Path(config.get("devernay_path"))
     results_path = Path(config.get("result_path"))
     output_txt = results_path / f"output.txt"
@@ -59,13 +60,13 @@ def canny_deverney_edge_detector(im_pre, sigma, low, high):
     @param low: gradient threshold low
     @param high: gradient threshold high
     @return:
-    - curves_list: devernay curves
+    - ch_e_matrix: devernay curves
     - Gx: gradient image over x direction
     - Gy: gradient image over y direction
     """
     config, im_path = convert_image_to_pgm(im_pre)
     gx_path, gy_path, output_txt = execute_command(config, im_path, sigma, low, high)
     Gx, Gy = gradient_load(im_pre, gx_path, gy_path)
-    curves_list = load_curves(output_txt)
+    ch_e_matrix = load_curves(output_txt)
     delete_files([output_txt, im_path, gx_path, gy_path])
-    return curves_list, Gx, Gy
+    return ch_e_matrix, Gx, Gy

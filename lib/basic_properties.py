@@ -280,7 +280,7 @@ def radial_tolerance_for_connecting_chains(state, th_radial_tolerance, endpoints
 
 class Neighbourhood:
     """
-    Class to compute and store the neighbourhood of a chain and the candidate chains to connect to it. It generates the virtual nodes
+    Class to compute and store the total_nodes of a chain and the candidate chains to connect to it. It generates the virtual nodes
     to compute the similarity condition.
     """
     def __init__(self, src_chain, dst_chain, support_chain, endpoint, n_nodes=20):
@@ -290,7 +290,7 @@ class Neighbourhood:
         @param dst_chain: dst chain to be connected
         @param support_chain: support chain to be used to generate the virtual nodes
         @param endpoint: src chain endpoint to be connected
-        @param n_nodes: number of nodes to be considered in the neighbourhood
+        @param n_nodes: number of nodes to be considered in the total_nodes
         """
         self.virtual_nodes = generate_virtual_nodes_between_two_chains(src_chain, dst_chain, support_chain, endpoint)
         self.src_endpoint = src_chain.extB if endpoint == ch.EndPoints.B else src_chain.extA
@@ -367,23 +367,24 @@ def similar_radial_distances_of_nodes_in_both_chains(state, distribution_th, set
     return SimilarRadialDist, np.abs(mean_i - mean_k)
 
 
-def similarity_conditions(state, th_radial_tolerance, distribution_th, derivative_th, derivative_from_center,
-                          support_chain, src_chain, dst_chain, endpoint, check_overlapping=True, chain_list=None):
+def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_regular_derivative,
+                          derivative_from_center, support_chain, src_chain, dst_chain, endpoint, check_overlapping=True,
+                          chain_list=None):
     """
     Similarity conditions defined in equation 6 in the paper
-    @param state:
-    @param th_radial_tolerance:
-    @param distribution_th:
-    @param derivative_th:
-    @param derivative_from_center:
-    @param support_chain:
-    @param src_chain:
-    @param dst_chain:
-    @param endpoint:
-    @param check_overlapping:
-    @param chain_list:
-    @return:
-    
+    @param state: state of the algorithm. At this point is used to debug.
+    @param th_radial_tolerance:  Described at Table1 in the paper
+    @param th_distribution_size:  Described at Table1 in the paper
+    @param th_regular_derivative:  Described at Table1 in the paper
+    @param derivative_from_center: Described at Table1 in the paper
+    @param support_chain: support chain
+    @param src_chain: source chain to connect
+    @param dst_chain: destination chain to connect
+    @param endpoint: endpoint of the source chain
+    @param check_overlapping: check if the chains are overlapping
+    @param chain_list: list of chains to check if the chains are overlapping
+    @return: return a bool indicating if the similarity conditions are satisfied and the radial distance between
+    the chains radial distributions
     """
     neighbourhood = Neighbourhood(src_chain, dst_chain, support_chain, endpoint)
     if state is not None and state.debug:
@@ -404,7 +405,7 @@ def similarity_conditions(state, th_radial_tolerance, distribution_th, derivativ
 
 
     # 2. Similar radial distances of nodes in both chains
-    SimilarRadialDist, distribution_distance = similar_radial_distances_of_nodes_in_both_chains(state, distribution_th,
+    SimilarRadialDist, distribution_distance = similar_radial_distances_of_nodes_in_both_chains(state, th_distribution_size,
                                                                                                 neighbourhood.set_i,
                                                                                                 neighbourhood.set_k)
 
@@ -416,7 +417,7 @@ def similarity_conditions(state, th_radial_tolerance, distribution_th, derivativ
     RegularDeriv = regularity_of_the_derivative(state, src_chain, dst_chain, endpoint,
                                                 neighbourhood.neighbourhood_nodes,
                                                 ch_i_nodes=neighbourhood.src_chain_nodes,
-                                                ch_k_nodes=neighbourhood.dst_chain_nodes, th_deriv=derivative_th,
+                                                ch_k_nodes=neighbourhood.dst_chain_nodes, th_deriv=th_regular_derivative,
                                                 derivative_from_center=derivative_from_center)
 
     if not RegularDeriv:
@@ -424,7 +425,7 @@ def similarity_conditions(state, th_radial_tolerance, distribution_th, derivativ
 
     # 4.0 Check there is not chains in region
     if check_overlapping:
-        exist_chain = exist_chain_overlapping(state.chains_list if chain_list is None else chain_list,
+        exist_chain = exist_chain_overlapping(state.ch_s_list if chain_list is None else chain_list,
                     neighbourhood.endpoint_and_virtual_nodes, src_chain, dst_chain, endpoint, support_chain)
 
         if exist_chain:

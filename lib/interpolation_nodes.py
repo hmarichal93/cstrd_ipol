@@ -5,7 +5,6 @@ import lib.chain as ch
 
 def compute_interpolation_domain(endpoint:str, endpoint_cad1: ch.Node, endpoint_cad2: ch.Node, Nr):
     interpolation_domain = []
-
     step = 360 / Nr if endpoint == ch.EndPoints.B else - 360 /  Nr
     current_angle = endpoint_cad1.angle
     while current_angle % 360 != endpoint_cad2.angle:
@@ -94,25 +93,37 @@ def compute_radial_ratio(cadena_inferior,cadena_superior, dot):
     r1_inferior = get_radial_distance_to_chain(cadena_inferior, dot)
     r1_superior = get_radial_distance_to_chain(cadena_superior, dot)
     return  r1_inferior / (r1_superior+r1_inferior)
-def interpolate_in_angular_domain_via_2_chains(inward_support_chain, outward_support_chain, ch1_endpoint, ch2_endpoint,
+def interpolate_in_angular_domain_via_2_chains( inward_support_chain, outward_support_chain, ch1_endpoint, ch2_endpoint,
                                                endpoint, ch1, node_list):
-
-    domian_angle_interpolation = compute_interpolation_domain(endpoint, ch1_endpoint, ch2_endpoint, ch1.Nr)
+    """
+    Interpolate between chain endpoints via two support chains.
+    @param inward_support_chain:
+    @param outward_support_chain:
+    @param ch1_endpoint: source endpoint
+    @param ch2_endpoint: destination endpoint
+    @param endpoint: source endpoint type
+    @param ch1: source chain
+    @param node_list: node list to be updated
+    @return: None. Generated nodes are returned via node_list
+    """
+    # 1. Domain angle interpolation
+    domain_angle_interpolation = compute_interpolation_domain(endpoint, ch1_endpoint, ch2_endpoint, ch1.Nr)
     center = ch1.center
 
+    # 2. Compute radial ratio
     r1_ratio = compute_radial_ratio(inward_support_chain, outward_support_chain, ch1_endpoint)
     r2_ratio = compute_radial_ratio(inward_support_chain, outward_support_chain, ch2_endpoint)
 
 
 
-    ###
-    total_nodes = len(domian_angle_interpolation)
+    # 3. Generate nodes
+    total_nodes = len(domain_angle_interpolation)
     if total_nodes == 0:
         return
 
     generated_nodes = generate_node_list_between_two_support_chains_and_two_radial_distances(r2_ratio, r1_ratio,
                                                                                              total_nodes,
-                                                                                             domian_angle_interpolation,
+                                                                                             domain_angle_interpolation,
                                                                                              center,
                                                                                              inward_support_chain,
                                                                                              outward_support_chain, ch1)
@@ -140,7 +151,7 @@ def domain_interpolation(support_chain: ch.Chain, endpoint_cad1: ch.Node, endpoi
         r1 = endpoint_cad1.radial_distance
         r2 = endpoint_cad2.radial_distance
         sign = 1
-    ###
+
     total_nodes = len(domain_angles)
     if total_nodes == 0:
         return
@@ -153,6 +164,13 @@ def domain_interpolation(support_chain: ch.Chain, endpoint_cad1: ch.Node, endpoi
     return
 
 def complete_chain_using_2_support_ring(inward_chain, outward_chain, ch1):
+    """
+    Complete chain using two support rings
+    @param inward_chain: inward support chain
+    @param outward_chain: outward support chain
+    @param ch1: chain to be completed
+    @return: boolean indicating if the border of the chain has changed
+    """
     ch1_endpoint = ch1.extB
     ch2_endpoint = ch1.extA
     endpoint = ch.EndPoints.B
@@ -175,8 +193,18 @@ def complete_chain_using_support_ring(support_chain, ch1):
 
     return change_border
 
-def connect_2_chain_via_inward_and_outward_ring(outward_chain, inward_chain, chain1, chain2, node_list, endpoint,
-                                                add=True, chain_list=None):
+def connect_2_chain_via_inward_and_outward_ring(outward_chain, inward_chain, chain1, chain2, node_list, endpoint):
+    """
+    Connect 2 chain via inward and outward ring
+    @param outward_chain: outward chain
+    @param inward_chain: inward chain
+    @param chain1: chain1 to connect
+    @param chain2: chain2 to connect
+    @param node_list: full node list
+    @param endpoint: endpoint to connect
+    @param add: add generated node list to chain 1
+    @return: generated node list and boolean value indicating if border has changed
+    """
     ch1_endpoint = chain1.extA if endpoint == ch.EndPoints.A else chain1.extB
     ch2_endpoint = chain2.extB if endpoint == ch.EndPoints.A else chain2.extA
 
@@ -188,21 +216,12 @@ def connect_2_chain_via_inward_and_outward_ring(outward_chain, inward_chain, cha
 
 
     #2.0
-    nodes = []
-    nodes += chain2.nodes_list
-    for node in nodes:
+    chain_2_nodes = []
+    chain_2_nodes += chain2.nodes_list
+    for node in chain_2_nodes:
         node.chain_id = chain1.id
 
-    # assert not chain1.check_if_nodes_are_missing()
-    # assert len([node.angle for node in nodes if chain1.get_node_by_angle(node.angle)]) == 0
-
-    if add:
-        change_border = chain1.add_nodes_list(nodes + generated_node_list)
-    else:
-        change_border = chain1.add_nodes_list(nodes)
-
-
-    # ##########################################################
+    change_border = chain1.add_nodes_list(chain_2_nodes + generated_node_list)
 
     return generated_node_list, change_border
 

@@ -7,8 +7,8 @@ WHITE=255
 def get_image_shape(im_in: np.array):
     """
     Get image shape
-    @param im_in: 
-    @return: 
+    @param im_in: input image
+    @return: heigh and width of the image
     """
     if im_in.ndim > 2:
         height, width, _ = im_in.shape
@@ -28,9 +28,9 @@ def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     @return: 
     """
 
-    height, width = get_image_shape(im_in)
-
     img_r = resize_image_using_pil_lib(im_in, height_output, width_output)
+
+    height, width = get_image_shape(im_in)
 
     cy_output, cx_output = convert_center_coordinate_to_output_coordinate(cy, cx, height, width, height_output,
                                                                           width_output)
@@ -38,13 +38,13 @@ def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     return img_r, cy_output, cx_output
 
 
-def resize_image_using_pil_lib(im_in: np.array, height_output, width_output):
+def resize_image_using_pil_lib(im_in: np.array, height_output: object, width_output: object) -> np.ndarray:
     """
     Resize image using PIL library.
-    @param im_in:
-    @param height_output:
-    @param width_output:
-    @return:
+    @param im_in: input image
+    @param height_output: output image height_output
+    @param width_output: output image width_output
+    @return: matrix with the resized image
     """
 
     pil_img = Image.fromarray(im_in)
@@ -52,8 +52,8 @@ def resize_image_using_pil_lib(im_in: np.array, height_output, width_output):
     flag = Image.ANTIALIAS
     # flag = Image.Resampling.LANCZOS
     pil_img = pil_img.resize((height_output, width_output), flag)
-    np_img = np.array(pil_img)
-    return np_img
+    im_r = np.array(pil_img)
+    return im_r
 
 
 def convert_center_coordinate_to_output_coordinate(cy, cx, height, width, height_output, width_output):
@@ -65,7 +65,7 @@ def convert_center_coordinate_to_output_coordinate(cy, cx, height, width, height
     @param width: input image width_output
     @param height_output: output image height_output
     @param width_output: output image width_output
-    @return:
+    @return: resized pith coordinates
     """
     hscale = height_output / height
     wscale = width_output / width
@@ -93,12 +93,17 @@ def equalize_image_using_clahe(img_eq):
     img_eq = clahe.apply(img_eq)
     return img_eq
 
-def equalize(imageGray):
+def equalize(im_g):
+    """
+    Equalize image using CLAHE algorithm
+    @param im_g: gray scale image
+    @return: equalized image
+    """
     # equalize image
-    img_eq, mask = change_background_intensity_to_mean(imageGray)
-    img_eq = equalize_image_using_clahe(img_eq)
-    img_eq = change_background_to_value(img_eq, mask, WHITE)
-    return img_eq
+    im_pre, mask = change_background_intensity_to_mean(im_g)
+    im_pre = equalize_image_using_clahe(im_pre)
+    im_pre = change_background_to_value(im_pre, mask, WHITE)
+    return im_pre
 def change_background_to_value(im_in, mask, value=255):
     """
     Change background intensity to white.
@@ -127,15 +132,17 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @return:
-    - im_eq: equalized image
+    - im_pre: equalized image
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx) if 0 not in \
-                                                                [height_output, width_output] else ( im_in, cy, cx)
+    if 0 in [height_output, width_output]:
+        im_r, cy_output, cx_output = ( im_in, cy, cx)
+    else:
+        im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx)
 
     im_g = rgb2gray(im_r)
 
-    im_eq = equalize(im_g)
+    im_pre = equalize(im_g)
 
-    return im_eq, cy_output, cx_output
+    return im_pre, cy_output, cx_output
