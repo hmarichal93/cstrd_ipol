@@ -24,11 +24,15 @@ python main.py --input IMAGE_PATH --cx CX --cy CY
 ```
 
 ## Automatic center detection
-Detecting pith center automatically can be done using software from IPOL paper [Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends][link_ipol_pith_paper].
+Detecting pith center automatically can be done using software from IPOL paper "Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends" [IPOL][link_ipol_pith_paper].
 
 [link_ipol_pith_paper]: https://www.ipol.im/pub/art/2022/338/?utm_source=doi
 
 ## Citation
+
+
+## License
+License for th source code: [MIT](./LICENSE)
 
 
 
