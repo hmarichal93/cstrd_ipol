@@ -1,7 +1,36 @@
-# template-python
+# Semiautomatic Tree Ring Detection method for Pine Cross-Sections
+Repository for the IPOL paper "Semiautomatic Tree Ring Detection method for Pine Cross-Sections"
+[IPOL][link_ipol_paper].
 
-This repository can be used as a template for IPOL/MLBriefs demos, especially those using Python.
+[link_ipol_paper]: https://ipolcore.ipol.im/demo/clientApp/demo.html?id=77777000390
 
-In this Readme file, include information about how to run the code outside of IPOL, as well as the licence to the code and a very brief description of what the code does, on which paper it is based, where the official implementation is, etc.
+## Installation
+```bash
+apt-get update && apt-get install -y $(cat .ipol/packages.txt) &&
+  rm -rf /var/lib/apt/lists/* 
+```
 
-The DDL.json file is shown here for information, there is no need to keep it in your git project.
+```bash
+pip3 install --no-cache-dir -r requirements.txt
+```
+```bash
+cd ./externas/devernay_1.0 && make clean && make
+```
+
+## Usage
+```bash
+python main.py --input IMAGE_PATH --cx CX --cy CY 
+  --output_dir OUTPUT_DIR --root REPO_ROOT_DIR
+```
+
+## Automatic center detection
+Detecting pith center automatically can be done using software from IPOL paper [Ant Colony Optimization for Estimating Pith Position on Images of Tree Log Ends][link_ipol_pith_paper].
+
+[link_ipol_pith_paper]: https://www.ipol.im/pub/art/2022/338/?utm_source=doi
+
+## Citation
+
+
+
+
+
