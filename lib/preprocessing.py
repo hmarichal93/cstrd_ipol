@@ -127,7 +127,7 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - image is converted to gray scale
     - gray scale image is equalized
     @param im_in: segmented image
-    @param height_output: new image height
+    @param height_output: new image img_height
     @param width_output: new image widht
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
@@ -136,7 +136,7 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    if 0 in [height_output, width_output]:
+    if 0 in [height_output, width_output] :
         im_r, cy_output, cx_output = ( im_in, cy, cx)
     else:
         im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx)

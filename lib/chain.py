@@ -72,23 +72,23 @@ class ClockDirection:
 
 
 class Chain:
-    def __init__(self, chain_id: int, Nr: int, center, M: int, N:int, type: TypeChains = TypeChains.normal, A_up=None, A_down=None, B_up=None,
-                 B_down=None):
-        self.nodes_list = []
+    def __init__(self, chain_id: int, Nr: int, center, img_height: int, img_width: int,
+                 type: TypeChains = TypeChains.normal, A_outward=None, A_inward=None, B_outward=None, B_inward=None):
+        self.l_nodes = []
         self.id = chain_id
         self.label_id = chain_id
         self.size = 0
         self.Nr = Nr
-        self.A_up = A_up
-        self.A_down = A_down
-        self.B_up = B_up
-        self.B_down = B_down
+        self.A_outward = A_outward
+        self.A_inward = A_inward
+        self.B_outward = B_outward
+        self.B_inward = B_inward
         self.type = type
         self.extA = None
         self.extB = None
         self.center = center
-        self.M = M
-        self.N = N
+        self.img_height = img_height
+        self.img_width = img_width
 
     def __eq__(self, other):
         if other is None:
@@ -96,7 +96,7 @@ class Chain:
         return self.id == other.id and self.size == other.size
 
     def is_full(self, regions_count=16):
-        if len(self.nodes_list) >= (regions_count - 1) * self.Nr / regions_count:
+        if len(self.l_nodes) >= (regions_count - 1) * self.Nr / regions_count:
             return True
         else:
             return False
@@ -124,11 +124,11 @@ class Chain:
         diff = np.zeros(self.size)
         extA_init = self.extA if self.extA is not None else None
         extB_init = self.extB if self.extB is not None else None
-        self.nodes_list.sort(key=lambda x: x.angle, reverse=False)
-        diff[0] = (self.nodes_list[0].angle + 360 - self.nodes_list[-1].angle) % 360
+        self.l_nodes.sort(key=lambda x: x.angle, reverse=False)
+        diff[0] = (self.l_nodes[0].angle + 360 - self.l_nodes[-1].angle) % 360
 
         for i in range(1, self.size):
-            diff[i] = (self.nodes_list[i].angle - self.nodes_list[i - 1].angle)
+            diff[i] = (self.l_nodes[i].angle - self.l_nodes[i - 1].angle)
 
         border1 = diff.argmax()
         if border1 == 0:
@@ -140,20 +140,20 @@ class Chain:
         self.extBind = border2
 
         change_border = True if (extA_init is None or extB_init is None) or \
-                                (extA_init != self.nodes_list[border1] or extB_init != self.nodes_list[
+                                (extA_init != self.l_nodes[border1] or extB_init != self.l_nodes[
                                     border2]) else False
-        self.extA = self.nodes_list[border1]
-        self.extB = self.nodes_list[border2]
+        self.extA = self.l_nodes[border1]
+        self.extB = self.l_nodes[border2]
 
         return change_border
 
-    def add_nodes_list(self, nodes_list):
-        self.nodes_list += nodes_list
+    def add_nodes_list(self, l_nodes):
+        self.l_nodes += l_nodes
         change_border = self.update()
         return change_border
 
     def update(self):
-        self.size = len(self.nodes_list)
+        self.size = len(self.l_nodes)
         if self.size > 1:
             change_border = self.__find_borders()
             self.clockwise_sorted_dots = self._sort_dots()
@@ -163,20 +163,20 @@ class Chain:
         return change_border
 
     def get_nodes_coordinates(self):
-        x = [dot.x for dot in self.nodes_list]
-        y = [dot.y for dot in self.nodes_list]
+        x = [dot.x for dot in self.l_nodes]
+        y = [dot.y for dot in self.l_nodes]
         x_rot = np.roll(x, -self.extAind)
         y_rot = np.roll(y, -self.extAind)
         return x_rot, y_rot
 
     def get_dot_angle_values(self):
-        return [dot.angle for dot in self.nodes_list]
+        return [dot.angle for dot in self.l_nodes]
 
     def get_node_by_angle(self, angle):
-        return get_node_from_list_by_angle(self.nodes_list, angle)
+        return get_node_from_list_by_angle(self.l_nodes, angle)
 
     def change_id(self, index):
-        for dot in self.nodes_list:
+        for dot in self.l_nodes:
             dot.chain_id = index
         self.id = index
         return 0
@@ -198,9 +198,9 @@ class Chain:
         return not self.size == len([angle for angle in angle_domain if self.get_node_by_angle(angle) is not None])
 
 def copy_chain(chain : Chain):
-    aux_chain = Chain(chain.id, chain.Nr, chain.center, chain.M, chain.N, type=chain.type)
-    aux_chain_node_list = [ copy_node(node)
-                        for node in chain.nodes_list]
+    aux_chain = Chain(chain.id, chain.Nr, chain.center, chain.img_height, chain.img_width, type=chain.type)
+    aux_chain_node_list = [copy_node(node)
+                           for node in chain.l_nodes]
     aux_chain.add_nodes_list(aux_chain_node_list)
 
     return aux_chain
@@ -213,10 +213,10 @@ class ChainLocation:
     outwards = 1
 def angular_distance_between_chains_endpoints(cad_1, cad_2, border):
     """
-    Compute angular distance between chains endpoints. If border == A then compute distance between ch1.extA and
-    cad2.extB. In the other case, compute distance between ch1.extB and cad2.extA
-    @param cad_1: chain source
-    @param cad_2: chain dst
+    Compute angular distance between chains endpoints. If border == A then compute distance between chain.extA and
+    cad2.extB. In the other case, compute distance between chain.extB and cad2.extA
+    @param cad_1: ch_i source
+    @param cad_2: ch_i dst
     @param border: cad_1 endpoint
     @return: angular distance between enpoints in degrees
     """
@@ -248,7 +248,7 @@ def distance_to_endpoint(ext, matriz):
 
 def minimum_euclidean_distance_between_chains_endpoints(c1: Chain, c2: Chain):
     """
-    Compute minimum distance between chain endpoints.
+    Compute minimum distance between ch_i endpoints.
     @param c1:
     @param c2:
     @return:
@@ -291,14 +291,14 @@ def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_t
                                                                                          angle: int):
     """
     get nodes of all chains that are over the ray defined by angle and sort them by ascending distance to center
-    @param chains_list: full chain list
+    @param chains_list: full ch_i list
     @param angle: ray angle direction
     @return: nodes list sorted by ascending distance to center over ray direction angle.
     """
     node_list_over_ray = []
     for chain in chains_list:
         try:
-            node =  [node for node in chain.nodes_list if node.angle == angle][0]
+            node =  [node for node in chain.l_nodes if node.angle == angle][0]
         except IndexError:
             node = get_closest_chain_border_to_angle(chain, angle)
             pass
@@ -315,7 +315,7 @@ def get_closest_dots_to_angle_on_radial_direction_sorted_by_ascending_distance_t
 def get_nodes_from_chain_list(chain_list: List[Chain]):
     inner_nodes = []
     for chain in chain_list:
-        inner_nodes += chain.nodes_list
+        inner_nodes += chain.l_nodes
     return inner_nodes
 
 def get_nodes_angles_from_list_nodes(node_list: List[Node]):
@@ -367,7 +367,7 @@ def visualize_selected_ch_and_chains_over_image_(selected_ch=[], chain_list=[], 
         plt.plot(x, y, 'w', linewidth=3)
 
 
-    #draw selected chain
+    #draw selected ch_i
     for ch in selected_ch:
         x, y = ch.get_nodes_coordinates()
         plt.plot(x, y,  linewidth=3)

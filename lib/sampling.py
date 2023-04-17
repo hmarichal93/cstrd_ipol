@@ -113,7 +113,7 @@ def intersections_between_rays_and_devernay_curves(center, radii_list, curve_lis
             continue
 
         dot_list += curve_dots
-        chain = Chain(chain_id, nr, center=center, M=height, N=witdh)
+        chain = Chain(chain_id, nr, center=center, img_height=height, img_width=witdh)
         chain.add_nodes_list(curve_dots)
         chain_list.append(chain)
 
@@ -127,12 +127,13 @@ def generate_virtual_center_chain(cy, cx, nr , chains_list, dots_list,  height, 
                   'chain_id': chain_id}) for angle in np.arange(0,360, 360/nr)]
     dots_list += center_list
 
-    chain = Chain(chain_id, nr,center=chains_list[0].center, M=height, N=witdh, type=TypeChains.center)
+    chain = Chain(chain_id, nr, center=chains_list[0].center, img_height=height, img_width=witdh,
+                  type=TypeChains.center)
     chain.add_nodes_list(center_list)
 
     chains_list.append(chain)
 
-    #set border chain as the last element of the list
+    #set border ch_i as the last element of the list
     chains_list[-2].change_id(len(chains_list) - 1)
 
 
@@ -140,7 +141,8 @@ def generate_virtual_center_chain(cy, cx, nr , chains_list, dots_list,  height, 
 
 
 def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img, filename):
-    img_draw = img.copy()
+    img_draw = np.zeros((img.shape[0],img.shape[1],3))
+
     for ray in rays_list:
         img_draw = Drawing.radii(ray, img_draw)
 
@@ -151,25 +153,25 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img, fi
         img_draw = Drawing.intersection(dot, img_draw)
 
     cv2.imwrite(filename, img_draw)
-def sampling_edges(ch_f_list, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
+def sampling_edges(l_ch_f, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
     """
     Devernay curves are sampled using the rays directions.
-    @param ch_f_list:  edges devernay curves
+    @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param nr: total ray number
-    @param min_chain_lenght:  minumin chain lenght
+    @param min_chain_lenght:  minumin ch_i lenght
     @param im_pre: input image
     @param debug: debugging flag
     @return:
-    - ch_s_list: sampled edges curves. List of chain object
-    - nodes_k_list: nodes list.
+    - l_ch_s: sampled edges curves. List of ch_i object
+    - l_nodes_s: nodes list.
     """
     height, width = im_pre.shape
-    rays_list = build_rays(nr, height, width,   [cy, cx])
-    nodes_k_list, ch_s_list = intersections_between_rays_and_devernay_curves([cy, cx], rays_list, ch_f_list, min_chain_lenght, nr, height, width)
-    generate_virtual_center_chain(cy, cx, nr, ch_s_list, nodes_k_list, height, width)
+    l_rays = build_rays(nr, height, width,   [cy, cx])
+    l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_lenght, nr, height, width)
+    generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
     if debug:
-        draw_ray_curve_and_intersections(nodes_k_list, rays_list, ch_f_list, im_pre, './dots_curve_and_rays.png')
+        draw_ray_curve_and_intersections(l_nodes_s, l_rays, l_ch_f, im_pre, './dots_curve_and_rays.png')
 
-    return ch_s_list, nodes_k_list
+    return l_ch_s, l_nodes_s

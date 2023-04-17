@@ -60,13 +60,13 @@ def canny_deverney_edge_detector(im_pre, sigma, low, high):
     @param low: gradient threshold low
     @param high: gradient threshold high
     @return:
-    - ch_e_matrix: devernay curves
+    - m_ch_e: devernay curves
     - Gx: gradient image over x direction
     - Gy: gradient image over y direction
     """
     config, im_path = convert_image_to_pgm(im_pre)
     gx_path, gy_path, output_txt = execute_command(config, im_path, sigma, low, high)
     Gx, Gy = gradient_load(im_pre, gx_path, gy_path)
-    ch_e_matrix = load_curves(output_txt)
+    m_ch_e = load_curves(output_txt)
     delete_files([output_txt, im_path, gx_path, gy_path])
-    return ch_e_matrix, Gx, Gy
+    return m_ch_e, Gx, Gy

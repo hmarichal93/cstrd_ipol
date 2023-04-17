@@ -84,9 +84,9 @@ def saving_results( res, output_dir, save_imgs=True):
 def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, cx, cy, img_orig, image_path,
                          exec_time):
     """
-    Converting chain list object to labelme format. This format is used to store the coordinates of the rings at the image
+    Converting ch_i list object to labelme format. This format is used to store the coordinates of the rings at the image
     original resolution
-    @param chain_list: chain list
+    @param chain_list: ch_i list
     @param image_path: image input path
     @param image_height: image hegith
     @param image_width: image width_output
@@ -109,7 +109,7 @@ def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, 
                     "flags":{},"shapes":[],"imageData": None, 'exec_time(s)':exec_time,'center':[cy*height_cte, cx*width_cte]}
     for idx, chain in enumerate(completed_chains):
         ring = {"label":str(idx+1)}
-        ring["points"] = [[node.x*width_cte,node.y*height_cte] for node in chain.nodes_list]
+        ring["points"] = [[node.x*width_cte,node.y*height_cte] for node in chain.l_nodes]
         ring["shape_type"]="polygon"
         ring["flags"]={}
         labelme_json["shapes"].append(ring)
@@ -126,7 +126,7 @@ def setup_log(nroImagen,VERSION):
         filename=logname,
         filemode="a",
         format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
-        datefmt="%H:%M:%S",
+        datefmt="%H:%img_height:%S",
         level=logging.INFO,
     )
     

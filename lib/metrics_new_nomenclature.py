@@ -63,7 +63,7 @@ class InfluenceArea:
         self.image_name = image_name[:-5]
         self.img, self.center = load_image(self.image_name, disk_name)
         M, N, _ = self.img.shape
-        # self.rayos_img = build_radial_directions_matrix(np.zeros((M,N)),self.center, nr).astype(int)
+        # self.rayos_img = build_radial_directions_matrix(np.zeros((img_height,width)),self.center, nr).astype(int)
         # nr, height_output, witdh, [cy, cx]
         self.rays_list = build_rays(Nr, M, N, self.center[::-1])
         # draw_ray_curve_and_intersections([],self.rays_list, [], self.im_pre, "./debug_rays.png")
@@ -564,7 +564,7 @@ class InfluenceArea:
 def extraerPixelesPertenecientesAlPerfil(copia, angle, centro=None):
     """
         angulo =  {0,pi/4,pi/2,3pi/4,pi,5pi/4,6pi/4,7pi/4}
-        ptosCard= {S, SE , E  , NE  , N, NW  , W   , SW   }
+        ptosCard= {S, SE , E  , NE  , width, NW  , W   , SW   }
          |
         ----------->x
          |
@@ -707,29 +707,34 @@ from fpdf import FPDF
 
 
 def compute_mean_gt():
-    gt_proccessed_path = '/data/maestria/database_new_nomenclature/ground_truth_processed/annotations'
-    dataset = pd.read_csv(f"/data/maestria/database_new_nomenclature/dataset_ipol.csv")
+    dataset = 'active_contours'
+    root_dir = f'/data/maestria/datasets/cross-section/{dataset}'
+    gt_proccessed_path = f'{root_dir}/annotations/processed'
+    dataset = pd.read_csv(f"{root_dir}/dataset_ipol.csv")
     data = np.zeros((dataset.shape[0], 6))
     etiquetadores = {}
+    images_name = []
     for idx, row in tqdm(dataset.iterrows()):
         disk_name = row.Imagen
-        if 'fx' not in disk_name:
-            continue
+        output_filename = f'{root_dir}/annotations/mean_gt/{disk_name}.json'
+        # if Path(output_filename).exists():
+        #     continue
+        # if 'fx'  in disk_name:
+        #     continue
 
-        # if disk_name not in ['1-s2.0-S0168169915002847-fx2_lrg']:
+        # if disk_name not in ['F10a']:
         #     continue
 
         creator_list = []
         for creator in ['maria', 'veronica', 'serrana', 'christine']:
-            file_gt = f'{gt_proccessed_path}/{disk_name}_{creator}.json'
+            file_gt = f'{gt_proccessed_path}/{creator}/{disk_name}.json'
             if Path(file_gt).exists():
                 creator_list.append(file_gt)
             else:
                 creator_list.append(None)
 
         ################################################################################################################
-        image_name = f'/data/maestria/database_new_nomenclature/images/{disk_name}.png'
-        print(image_name)
+        image_name = f'{root_dir}/images/segmented/{disk_name}.png'
         img_array = cv.imread(image_name)
         height, width, _ = img_array.shape
         ################################################################################################################
@@ -747,17 +752,24 @@ def compute_mean_gt():
             helper = InfluenceArea(creator_file, '', '', Nr, disk_name)
             creator_points = helper.load_ring_stimation(creator_file)
             creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list, img_array) for poly in creator_points]
+            MeanDisk.draw_ray_curve_and_intersections(rays_list, creator_gt,
+                                                       [], [], img_array, './debug.png')
             data[idx, idx_creator] = len(creator_gt)
             gt_creators.append(creator_gt)
 
         ################################################################################################################
         # computar gt medio
-        output_filename = f'{gt_proccessed_path}/{disk_name}_mean.json'
         print(output_filename)
         mean_disk = MeanDisk(gt_creators, height, width, row.cx, row.cy, image_name, output_filename, img_array)
         data[idx, [4, 5]] = [height, width]
+        images_name.append(disk_name)
 
-    np.savetxt(f'{gt_proccessed_path}/comparison/data.txt', data)
+    # create a Pandas DataFrame from the NumPy array
+    df = pd.DataFrame(data, columns=['maria', 'veronica', 'serrana', 'christine','img_height', 'width'])
+    df['imagen'] = images_name
+    df.set_index('imagen', inplace=True)
+    df.to_csv(f'{root_dir}/annotations/mean_gt/summary.txt')
+    #np.savetxt(f'{root_dir}/annotations/mean_gt/summary.txt', data)
 
 
 
@@ -794,14 +806,15 @@ def process_gt():
         centro = [row.cx, row.cy]
         rays_list = build_rays(Nr, width, height, centro)
         draw_ray_curve_and_intersections([], rays_list, [], img_array, "./debug_rays.png")
-        # MeanDisk.draw_ray_curve_and_intersections(rays_list, creator_gt,
-        #                                           [], [], img_array, './debug.png')
+
         for idx_creator, creator_file in enumerate(creator_list):
             if creator_file is None:
                 continue
             helper = InfluenceArea(creator_file, '', '', Nr, disk_name)
             creator_points = helper.load_ring_stimation(creator_file)
             creator_gt = [helper._sampling_poly(poly, row.cy, row.cx, rays_list, img_array) for poly in creator_points]
+            MeanDisk.draw_ray_curve_and_intersections(rays_list, creator_gt,
+                                                      [], [], img_array, './debug.png')
             data[idx, idx_creator] = len(creator_gt)
             gt_creators.append(creator_gt)
 
@@ -886,7 +899,7 @@ class MeanDisk:
             mean_ring_gt.append(Polygon(mean_ring_point))
 
         self.intersection_full_list = [node for key in intersection_list.keys() for node in intersection_list[key]]
-        params = {'y': cy, 'x': cx, 'angle': int(0), 'next_chain_radial_distance':
+        params = {'y': cy, 'x': cx, 'angle': int(0), 'radial_distance':
             0, 'chain_id': -1}
 
         dot = ch.Node(**params)
@@ -949,7 +962,7 @@ class MeanDisk:
                     continue
 
                 i, j = np.array(y)[-1], np.array(x)[-1]
-                params = {'y': i, 'x': j, 'angle': int(radii.direction), 'next_chain_radial_distance':
+                params = {'y': i, 'x': j, 'angle': int(radii.direction), 'radial_distance':
                     ch.euclidean_distance([i, j], center), 'chain_id': chain_id}
 
                 dot = ch.Node(**params)
@@ -1171,17 +1184,17 @@ class MetricsDataset_over_detection_files:
 
 class MetricsDataset_comparison:
     def __init__(self, root_dir,gt_root_dir, creador, config_path, output_dir, threshold=0.75):
-        dataset = pd.read_csv(f"/data/maestria/database_new_nomenclature/dataset_ipol.csv")
+        dataset = pd.read_csv(f"{gt_root_dir}/dataset_ipol.csv")
         self.creator = creador
         self.results_path = get_path('results')
-        self.gt_dir = gt_root_dir
+        self.gt_dir = f"{gt_root_dir}/annotations/mean_gt"
         self.data = dataset
         self.root_dir = root_dir
         self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
         config = load_json(config_path)
         self.Nr = config.get("nr")
         self.output_dir = output_dir
-        Path(output_dir).mkdir(exist_ok=True)
+        Path(output_dir).mkdir(exist_ok=True, parents=True)
         self.threshold = threshold
 
     def compute(self):
@@ -1193,7 +1206,7 @@ class MetricsDataset_comparison:
             # if 'F03d' not in disk_name:
             #     continue
             dt_file = Path(f"{self.root_dir}/{disk_name}_{self.creator}.json")
-            gt_file = Path(self.gt_dir) / f"{disk_name}_mean.json"
+            gt_file = Path(self.gt_dir) / f"{disk_name}.json"
             if (not gt_file.exists()) or (not dt_file.exists()):
                 row = {'imagen': disk_name, 'TP': None, 'FP': None, 'TN': None, 'FN': None, 'P': None, 'R': None,
                        'F': None}
@@ -1234,10 +1247,11 @@ class MetricsDataset_comparison:
                           sep=',', float_format='%.3f')
 
 
-def main_comparison(creator, threshold=0.75):
+def main_comparison(creator, threshold=0.60):
     root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed/annotations"
     gt_root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed_pith"
-    output = f"/data/maestria/database_new_nomenclature/ground_truth_processed/annotations/comparison/{creator}"
+    gt_root_dir = "/data/maestria/datasets/cross-section/X-Pine/"
+    output = f"/data/maestria/database_new_nomenclature/ground_truth_processed/annotations_new_gt/comparison/{creator}"
     config_path = "./config/general.json"
     metrics = MetricsDataset_comparison(root_dir, gt_root_dir, creator, config_path, output, threshold)
     metrics.compute()
@@ -1261,8 +1275,8 @@ def mean_gt_generation_and_comparison_between_creator(creator):
     #process_gt()
     #compute_mean_gt()
     # draw_creator_annotation_over_disk()
-    #main_comparison('ipol_refactoring_resize_experiment_1500')
     main_comparison(creator)
+    #main_comparison(creator)
     # main_comparison('serrana')
     # main_comparison('christine')
 

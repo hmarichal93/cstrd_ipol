@@ -27,34 +27,34 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     @param sigma: Canny edge detector gausssian kernel parameter
     @param th_low: Low threshold on the module of the gradient. Canny edge detector parameter.
     @param th_high: High threshold on the module of the gradient. Canny edge detector parameter.
-    @param height: height of the image after the resize step
+    @param height: img_height of the image after the resize step
     @param width: width of the image after the resize step
     @param alpha: Edge filtering parameter. Collinearity threshold
     @param nr: rays number
-    @param mc: min chain length
+    @param mc: min ch_i length
     @param debug: deb
     @param image_input_path: path to input image. Used to write labelme json.
     @param output_dir: Output directory. Debug results are saved here.
     @return:
      - im_pre: preprocessing image results
-     - ch_e_matrix: Intermediate results. Devernay curves in matrix format
-     - ch_f_list: Intermediate results. Filtered Devernay curves
-     - ch_s_list: Intermediate results. Sampled devernay curves as Chain objects
-     - ch_s_list: Intermediate results. Chain lists after connect stage.
-     - ch_p_list: Intermediate results. Chain lists after posprocessing stage.
-     - rings: Final results. Json file with rings coordinates.
+     - m_ch_e: Intermediate results. Devernay curves in matrix format
+     - l_ch_f: Intermediate results. Filtered Devernay curves
+     - l_ch_s: Intermediate results. Sampled devernay curves as Chain objects
+     - l_ch_s: Intermediate results. Chain lists after connect stage.
+     - l_ch_p: Intermediate results. Chain lists after posprocessing stage.
+     - l_rings: Final results. Json file with rings coordinates.
     """
     to = time.time()
 
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
-    ch_e_matrix, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
-    ch_f_list = filter_edges(ch_e_matrix, cy, cx, gx, gy, alpha, im_pre)
-    ch_s_list, nodes_s_list = sampling_edges(ch_f_list, cy, cx, nr, mc, im_pre, debug=debug)
-    ch_c_list,  nodes_c_list = connect_chains(ch_s_list, nodes_s_list, cy, cx, nr, im_pre, debug, output_dir)
-    ch_p_list = postprocessing(ch_c_list, nodes_c_list, cy, cx, output_dir, im_pre, debug)
+    m_ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
+    l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
+    l_ch_s, nodes_s = sampling_edges(l_ch_f, cy, cx, nr, mc, im_pre, debug=debug)
+    l_ch_c,  nodes_c = connect_chains(l_ch_s, nodes_s, cy, cx, nr, im_pre, debug, output_dir)
+    l_ch_p = postprocessing(l_ch_c, nodes_c, cy, cx, im_pre, output_dir, debug)
     tf = time.time()
-    rings = chain_2_labelme_json(ch_p_list, height, width, cx, cy, im_in, image_input_path, tf - to)
-    return im_in, im_pre, ch_e_matrix, ch_f_list, ch_s_list, ch_c_list, ch_p_list, rings
+    l_rings = chain_2_labelme_json(l_ch_p, height, width, cx, cy, im_in, image_input_path, tf - to)
+    return im_in, im_pre, m_ch_e, l_ch_f, l_ch_s, l_ch_c, l_ch_p, l_rings
 
 
 
@@ -81,8 +81,8 @@ if __name__ == "__main__":
     parser.add_argument("--save_imgs", type=str, required=False)
     parser.add_argument("--sigma", type=float, required=True,default=3)
     parser.add_argument("--nr", type=int, required=False,default=360)
-    parser.add_argument("--hsize", type=int, required=False, default=None)
-    parser.add_argument("--wsize", type=int, required=False, default=None)
+    parser.add_argument("--hsize", type=int, required=False, default=0)
+    parser.add_argument("--wsize", type=int, required=False, default=0)
     parser.add_argument("--edge_th", type=int, required=False, default=30)
     parser.add_argument("--th_high", type=int, required=False, default=20)
     parser.add_argument("--th_low", type=int, required=False, default=5)
