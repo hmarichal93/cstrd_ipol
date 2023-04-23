@@ -22,7 +22,8 @@ class InfoVirtualBand:
     INSIDE = 1
     UP = 2
 
-    def __init__(self, l_nodes, ch_j, ch_k, endpoint, ch_i=None, band_width=None):
+    def __init__(self, l_nodes, ch_j, ch_k, endpoint, ch_i=None, band_width=None, debug=False, inf_band=None,
+                 sup_band=None, domain=None):
         """
         Class for generating a virtual band between two chains. It also incorporates a method to check if ch_j i is inside the band
         @param l_nodes: list of interpolated nodes between the two chains plus the two endpoints
@@ -56,7 +57,12 @@ class InfoVirtualBand:
         self.inf_orig = delta_r1 * (1 - band_width)
         self.sup_orig = delta_r1 * (1 + band_width)
 
-        self.generate_band()
+        if not debug:
+            self.generate_band()
+        else:
+            self.inf_band = inf_band
+            self.sup_band = sup_band
+            self.interpolation_domain = domain
 
     def generate_band_limit(self, r2, r1, total_nodes):
         interpolation_domain = [node.angle for node in self.l_nodes]
@@ -112,14 +118,14 @@ class InfoVirtualBand:
         node_chain_in_interval = [node for node in chain.l_nodes if
                                   node.angle in self.interpolation_domain]
         res = False
-        prev_status = False
+        prev_status = None
         for node in node_chain_in_interval:
             res = self.is_dot_in_band(node)
             if res == InfoVirtualBand.INSIDE:
                 res = True
                 break
 
-            if prev_status and prev_status != res:
+            if prev_status is not None  and prev_status != res:
                 res = True
                 break
 
@@ -128,10 +134,10 @@ class InfoVirtualBand:
 
         return res
 
-    def generate_chain_from_node_list(self, node_list: List[ch.Node]):
-        chain = ch.Chain(node_list[0].chain_id, self.ch_j.center, self.ch_j.img_height,
-                         self.ch_j.width, )
-        chain.add_nodes_list(node_list)
+    def generate_chain_from_node_list(self, l_node: List[ch.Node]):
+        chain = ch.Chain(chain_id = l_node[0].chain_id, center = self.ch_j.center, img_height=self.ch_j.img_height,
+                         img_width= self.ch_j.img_width, Nr = self.ch_j.Nr)
+        chain.add_nodes_list(l_node)
 
         return chain
 
@@ -393,10 +399,10 @@ def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_r
     @param th_distribution_size:  Described at Table1 in the paper
     @param th_regular_derivative:  Described at Table1 in the paper
     @param derivative_from_center: Described at Table1 in the paper
-    @param ch_i: support ch_i
-    @param ch_j: source ch_i to connect
-    @param candidate_chain: destination ch_i to connect
-    @param endpoint: endpoint of the source ch_i
+    @param ch_i: support chain
+    @param ch_j: chain j to connect
+    @param candidate_chain: candidate chain to connect
+    @param endpoint: endpoint of the source chain
     @param check_overlapping: check if the chains are overlapping
     @param chain_list: list of chains to check if the chains are overlapping
     @return: return a bool indicating if the similarity conditions are satisfied and the radial distance between
@@ -484,14 +490,14 @@ def exist_chain_in_band_logic(chain_list:List[ch.Chain], band_info:InfoVirtualBa
 
 def exist_chain_overlapping(l_ch_s, l_nodes, ch_j, ch_k, endpoint_type, ch_i):
     """
-    Check if there is a ch_j in the region defined by the band
-    @param l_ch_s: full ch_j list
+    Check if there is a chain in the area within the band
+    @param l_ch_s: full chains list
     @param l_nodes: both endpoints and virtual nodes
-    @param ch_j: source ch_i
-    @param ch_k: destination ch_i
-    @param endpoint_type: source ch_i endpoint
+    @param ch_j: chain j
+    @param ch_k: chain k
+    @param endpoint_type: ch_j endpoint type
     @param ch_i: support ch_i
-    @return: boolean indicating if exist ch_i in band
+    @return: boolean indicating if exist chain in band
     """
     info_band = InfoVirtualBand(l_nodes, ch_j, ch_k, endpoint_type,
                                 ch_i)

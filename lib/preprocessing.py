@@ -4,6 +4,7 @@ import numpy as np
 
 
 WHITE=255
+NONE=0
 def get_image_shape(im_in: np.array):
     """
     Get image shape
@@ -136,7 +137,7 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    if 0 in [height_output, width_output] :
+    if NONE in [height_output, width_output] :
         im_r, cy_output, cx_output = ( im_in, cy, cx)
     else:
         im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx)

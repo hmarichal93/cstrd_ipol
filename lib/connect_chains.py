@@ -74,7 +74,7 @@ def copy_chains_and_nodes(ch_s):
         nodes_s += chain.l_nodes
 
     return  ch_s, nodes_s
-def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, im_pre, debug, output_dir):
+def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction
     @param l_ch_s: ch_i list
@@ -97,20 +97,19 @@ def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, im_pre, debug, output_dir):
     for counter in range(parameters.iterations):
         iteration_params = parameters.get_iteration_parameters(counter)
 
-        ch_c_list, nodes_c_list, M = connect_chains_main_logic(M=M, center=[cy, cx], debug_imgs=debug, nr=nr,
-                                                               im_pre=im_pre, save=f"{output_dir}/output_{counter}_",
-                                                               **iteration_params)
+        l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, center=[cy, cx], nr=nr, debug_imgs=debug, im_pre=im_pre,
+                                                         save=f"{output_dir}/output_{counter}_", **iteration_params)
 
-        parameters.update_list_for_next_iteration(ch_c_list, nodes_c_list)
+        parameters.update_list_for_next_iteration(l_ch_c, l_nodes_c)
 
 
-    return ch_c_list, nodes_c_list
+    return l_ch_c, l_nodes_c
 
 
 class SystemStatus:
-    def __init__(self, l_nodes, l_ch, M, center, img, neighbourhood_size=45, th_radial_tolerance=0.1, debug=False,
-                 th_distribution_size=2, derivative_from_center=False, th_regular_derivative=1.5, Nr=360, save=None,
-                 counter=0):
+    def __init__(self, l_ch, l_nodes, M, center, Nr=360, th_radial_tolerance=0.1, th_distribution_size=2,
+                 th_regular_derivative=1.5, neighbourhood_size=45, derivative_from_center=False, debug=False, counter=0,
+                 save=None, img=None):
         #initialization
         self.l_nodes_s = l_nodes
         self.l_ch_s = l_ch
@@ -174,7 +173,7 @@ class SystemStatus:
         if chain.size >= chain.Nr:
             return
 
-        if not chain.is_full(regions_count=8):
+        if not chain.is_closed(threshold=0.9):
             return
 
         ch_i, l_nodes, endpoint_type = \
@@ -275,22 +274,21 @@ class SystemStatus:
     def update_system_status(self, ch_i, l_s_outward, l_s_inward):
         """
         Update the system state after the iteration
-        @param ch_i: support ch_i in current iteration
+        @param ch_i: support chain in current iteration
         @param l_s_outward: outward list of ch_i
-        @param l_s_inward: inward list of chains
-        @return: self.next_chain_index: index of the next ch_i to be processed
+        @param l_s_inward: inward list of ch_i
+        @return: self.next_chain_index: index of the next support chain to be processed
         """
 
 
         if self._system_status_change():
-            self.l_ch_s = sorted(self.l_ch_s, key=lambda x: x.size, reverse=True)
+            self.l_ch_s.sort(key=lambda x: x.size, reverse=True)
             self.iterations_since_last_change = 0
 
             l_current_iteration = [ch_i] + l_s_outward + l_s_inward
             l_current_iteration.sort(key=lambda x: x.size, reverse=True)
             longest_chain = l_current_iteration[0]
             if longest_chain.id == ch_i.id:
-
                 self.next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
             else:
                 self.next_chain_index = self.l_ch_s.index(longest_chain)
@@ -337,9 +335,9 @@ def debugging_chains(state, chains_to_debug, filename):
         state.counter += 1
 
 
-def connect_chains_main_logic(l_ch_s, l_nodes_s, M, center, th_radial_tolerance=2, th_distribution_size=2,
+def connect_chains_main_logic(M, center, nr, l_ch_s, l_nodes_s, th_radial_tolerance=2, th_distribution_size=2,
                               th_regular_derivative=1.5, neighbourhood_size=22, derivative_from_center=False,
-                              im_pre=None, nr=360, debug_imgs=False, save=None):
+                              debug_imgs=False, im_pre=None, save=None):
     """
     Logic for connecting chains based on similarity conditions
     @param l_ch_s: list of chains
@@ -357,10 +355,10 @@ def connect_chains_main_logic(l_ch_s, l_nodes_s, M, center, th_radial_tolerance=
     @param save: image save locating. Debug only
     @return: nodes and ch_i list after connecting
     """
-    state = SystemStatus(l_nodes_s, l_ch_s, M, center, im_pre, neighbourhood_size=neighbourhood_size,
-                         th_radial_tolerance=th_radial_tolerance, debug=debug_imgs,
-                         th_distribution_size=th_distribution_size, derivative_from_center=derivative_from_center,
-                         th_regular_derivative=th_regular_derivative, Nr=nr, save=save)
+    state = SystemStatus(l_ch_s, l_nodes_s, M, center, Nr=nr, th_radial_tolerance=th_radial_tolerance,
+                         th_distribution_size=th_distribution_size, th_regular_derivative=th_regular_derivative,
+                         neighbourhood_size=neighbourhood_size, derivative_from_center=derivative_from_center,
+                         debug=debug_imgs, save=save, img=im_pre)
 
     while state.continue_in_loop():
         ch_i = state.get_next_chain()
@@ -473,10 +471,10 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
 
 def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location, endpoint):
     """
-    Get the ch_k ch_i tha met condition  if it is symmetric. If it is not symmetric return None.
+    Get the ch_k chain tha met condition  if it is symmetric. If it is not symmetric return None.
     @param state: System status instance. It contains all the information about the system.
     @param l_candidates_chi: List of chains that can be candidates to be connected to ch_j
-    @param ch_j: Chain that is going to be connected to another ch_i
+    @param ch_j: Chain that is going to be connected to another chain
     @param l_no_intersection_j: List of chains that do not intersect with ch_j
     @param ch_i: Chain that support ch_j
     @param location: Location of ch_j regard to support ch_i (inward/outward)
@@ -544,11 +542,11 @@ def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoi
     """
     Connect chains ch_j and ch_k updating all the information about the system.
     @param state: class object that contains all the information about the system.
-    @param ch_j: source connect ch_j
-    @param ch_k: destination connect ch_j
-    @param l_candidates_chi: list of chains that belong to the same ch_i of ch_j
+    @param ch_j: chain j to connect
+    @param ch_k: chain k to connect
+    @param l_candidates_chi: list of chains that have support chain ch_i
     @param endpoint: endpoint of ch_j that is going to be connected
-    @param ch_i:
+    @param ch_i: support chain
     @return:
     """
     if endpoint is None:
@@ -563,7 +561,7 @@ def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoi
     updating_chain_nodes(state, ch_j, ch_k)
     # 3.0 update chains
     update_chain_after_connect(state, ch_j, ch_k)
-    # 4.0 delete ch_k  list l_candidate_chi  and state.l_ch_s
+    # 4.0 delete ch_k from  list l_candidate_chi  and state.l_ch_s
     delete_closest_chain(state, ch_k, l_candidates_chi)
     # 5.0 update intersection matrix
     update_intersection_matrix(state, ch_j, ch_k)
@@ -693,7 +691,7 @@ def get_chains_in_neighbourhood(neighbourhood_size: float, l_no_intersection_j: 
     """
     l_chains_in_neighbourhood = []
     for cand_chain in l_no_intersection_j:
-        angular_distance = ch.angular_distance_between_chains_endpoints(ch_j, cand_chain, endpoint)
+        angular_distance = ch.angular_distance_between_chains(ch_j, cand_chain, endpoint)
         if angular_distance < neighbourhood_size and cand_chain.id != ch_j.id:
             l_chains_in_neighbourhood.append(Set(angular_distance, cand_chain))
 
@@ -753,13 +751,13 @@ def check_endpoints(support_chain: ch.Chain, ch_j: ch.Chain, candidate_chain: ch
 def connectivity_goodness_condition(state: SystemStatus, ch_j: ch.Chain, candidate_chain: ch.Chain, ch_i: ch.Chain,
                                     endpoint: int) -> Tuple[bool, float]:
     """
-    Check if the ch_i candidate_chain can be connected to the ch_i ch_j
+    Check if the chain candidate_chain can be connected to the chain ch_j
     @param state: system status
-    @param ch_j: source ch_i
-    @param candidate_chain: destination ch_i
-    @param ch_i: support ch_i
+    @param ch_j: chain j
+    @param candidate_chain: candidate chain
+    @param ch_i: support chain
     @param endpoint: ch_j endpoint
-    @return: True if the ch_i candidate_chain can be connected to the ch_i ch_j
+    @return: True if the chain candidate_chain can be connected to the chain ch_j
     """
     # 0. Size criterion
     if ch_j.size + candidate_chain.size > ch_j.Nr:

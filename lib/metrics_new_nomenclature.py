@@ -707,7 +707,7 @@ from fpdf import FPDF
 
 
 def compute_mean_gt():
-    dataset = 'active_contours'
+    dataset = 'X-Pine'
     root_dir = f'/data/maestria/datasets/cross-section/{dataset}'
     gt_proccessed_path = f'{root_dir}/annotations/processed'
     dataset = pd.read_csv(f"{root_dir}/dataset_ipol.csv")
@@ -722,8 +722,8 @@ def compute_mean_gt():
         # if 'fx'  in disk_name:
         #     continue
 
-        # if disk_name not in ['F10a']:
-        #     continue
+        if disk_name not in ['L07e']:
+            continue
 
         creator_list = []
         for creator in ['maria', 'veronica', 'serrana', 'christine']:
@@ -768,8 +768,8 @@ def compute_mean_gt():
     df = pd.DataFrame(data, columns=['maria', 'veronica', 'serrana', 'christine','img_height', 'width'])
     df['imagen'] = images_name
     df.set_index('imagen', inplace=True)
-    df.to_csv(f'{root_dir}/annotations/mean_gt/summary.txt')
-    #np.savetxt(f'{root_dir}/annotations/mean_gt/summary.txt', data)
+    #df.to_csv(f'{root_dir}/annotations/mean_gt/summary.txt')
+    #np.savetxt(f'{dt_dir}/annotations/mean_gt/summary.txt', data)
 
 
 
@@ -1183,13 +1183,11 @@ class MetricsDataset_over_detection_files:
 
 
 class MetricsDataset_comparison:
-    def __init__(self, root_dir,gt_root_dir, creador, config_path, output_dir, threshold=0.75):
+    def __init__(self, dt_dir, gt_root_dir, config_path, output_dir, threshold=0.75):
         dataset = pd.read_csv(f"{gt_root_dir}/dataset_ipol.csv")
-        self.creator = creador
-        self.results_path = get_path('results')
         self.gt_dir = f"{gt_root_dir}/annotations/mean_gt"
         self.data = dataset
-        self.root_dir = root_dir
+        self.dt_dir = dt_dir
         self.table = pd.DataFrame(columns=['imagen', 'TP', 'FP', 'TN', 'FN', 'P', 'R', 'F'])
         config = load_json(config_path)
         self.Nr = config.get("nr")
@@ -1201,11 +1199,11 @@ class MetricsDataset_comparison:
         for index in tqdm(range(self.data.shape[0]), desc='Computing metrics'):
             disco = self.data.iloc[index]
             disk_name = disco["Imagen"]
-            if 'fx' in disk_name:
-                continue
-            # if 'F03d' not in disk_name:
+            # if 'fx' in disk_name:
             #     continue
-            dt_file = Path(f"{self.root_dir}/{disk_name}_{self.creator}.json")
+            # if 'L07e' not in disk_name:
+            #     continue
+            dt_file = Path(f"{self.dt_dir}/{disk_name}/labelme.json")
             gt_file = Path(self.gt_dir) / f"{disk_name}.json"
             if (not gt_file.exists()) or (not dt_file.exists()):
                 row = {'imagen': disk_name, 'TP': None, 'FP': None, 'TN': None, 'FN': None, 'P': None, 'R': None,
@@ -1243,17 +1241,19 @@ class MetricsDataset_comparison:
         return None
 
     def save_results(self):
-        self.table.to_csv(f"{self.output_dir}/results_{self.creator}_th_{self.threshold}_contornos_activos.csv",
+        self.table.to_csv(f"{self.output_dir}/results_th_{self.threshold}.csv",
                           sep=',', float_format='%.3f')
 
 
-def main_comparison(creator, threshold=0.60):
-    root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed/annotations"
-    gt_root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed_pith"
-    gt_root_dir = "/data/maestria/datasets/cross-section/X-Pine/"
-    output = f"/data/maestria/database_new_nomenclature/ground_truth_processed/annotations_new_gt/comparison/{creator}"
+def main_comparison(dt_dir, gt_root_dir, output, threshold=0.60):
+    # dt_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed/annotations"
+    # dt_dir = f"/data/maestria/resultados/{creator}"
+    # gt_root_dir = "/data/maestria/database_new_nomenclature/ground_truth_processed_pith"
+    # gt_root_dir = "/data/maestria/datasets/cross-section/X-Pine/"
+    # gt_root_dir = "/data/maestria/datasets/cross-section/active_contours/"
+    # output = f"/data/maestria/database_new_nomenclature/ground_truth_processed/annotations_new_gt/comparison/{creator}"
     config_path = "./config/general.json"
-    metrics = MetricsDataset_comparison(root_dir, gt_root_dir, creator, config_path, output, threshold)
+    metrics = MetricsDataset_comparison(dt_dir, gt_root_dir, config_path, output, threshold)
     metrics.compute()
     metrics.print_results()
     metrics.save_results()
@@ -1271,11 +1271,11 @@ def metric_dependance_with_threshold():
     return 0
 
 
-def mean_gt_generation_and_comparison_between_creator(creator):
+def mean_gt_generation_and_comparison_between_creator(dt_dir, gt_root_dir, output, th):
     #process_gt()
     #compute_mean_gt()
     # draw_creator_annotation_over_disk()
-    main_comparison(creator)
+    main_comparison(dt_dir, gt_root_dir, output, th/100)
     #main_comparison(creator)
     # main_comparison('serrana')
     # main_comparison('christine')
@@ -1283,15 +1283,17 @@ def mean_gt_generation_and_comparison_between_creator(creator):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--creator", type=str, required=True)
-    # parser.add_argument("--config_path", type=str, required=True)
-    # parser.add_argument("--root_dir", type=str, required=True)
-    # parser.add_argument("--output", type=str, required=True)
+    #parser.add_argument("--creator", type=str, required=True)
+    #parser.add_argument("--config_path", type=str, required=True)
+    parser.add_argument("--dt_dir", type=str, required=True)
+    parser.add_argument("--gt_dir", type=str, required=True)
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--th", type=int, required=True)
 
     args = parser.parse_args()
-    mean_gt_generation_and_comparison_between_creator(args.creator)
+    mean_gt_generation_and_comparison_between_creator(args.dt_dir, args.gt_dir, args.output, args.th)
     #mean_gt_generation_and_comparison_between_creator('')
-    # main(str(args.root_dir),'mean',str(args.config_path), str(args.output))
+    # main(str(args.dt_dir),'mean',str(args.config_path), str(args.output))
     # metric_dependance_with_threshold()
     # process_gt_files()
     # cp_gt_files_to_new_location()

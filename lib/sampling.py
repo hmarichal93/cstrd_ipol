@@ -5,7 +5,7 @@ from shapely.geometry.linestring import LineString
 from lib.drawing import Drawing
 import cv2
 
-from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains, visualize_chains_over_image
+from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
 
 
 class Ray(LineString):
@@ -87,10 +87,10 @@ def get_coordinates_from_intersection(inter):
 
     return y,x
 def intersections_between_rays_and_devernay_curves(center, radii_list, curve_list, min_chain_lenght, nr, height, witdh):
-    chain_list, dot_list = [], []
+    l_chain, l_nodes = [], []
     for idx,curve in enumerate(curve_list):
-        curve_dots = []
-        chain_id = len(chain_list)
+        l_curve_nodes = []
+        chain_id = len(l_chain)
         for radii in radii_list:
             inter = radii.intersection(curve)
             if not inter.is_empty:
@@ -103,23 +103,22 @@ def intersections_between_rays_and_devernay_curves(center, radii_list, curve_lis
                     euclidean_distance([ i, j], center),'chain_id': chain_id}
 
                 dot = Node(**params)
-                if dot not in curve_dots and get_node_from_list_by_angle(curve_dots, radii.direction) is None:
-                    curve_dots.append(dot)
+                if dot not in l_curve_nodes and get_node_from_list_by_angle(l_curve_nodes, radii.direction) is None:
+                    l_curve_nodes.append(dot)
 
-            # elif idx == len(curve_list) -1:
-            #     print(radii.direction)
 
-        if len(curve_dots) < min_chain_lenght:
+
+        if len(l_curve_nodes) < min_chain_lenght:
             continue
 
-        dot_list += curve_dots
+        l_nodes += l_curve_nodes
         chain = Chain(chain_id, nr, center=center, img_height=height, img_width=witdh)
-        chain.add_nodes_list(curve_dots)
-        chain_list.append(chain)
+        chain.add_nodes_list(l_curve_nodes)
+        l_chain.append(chain)
 
-    chain_list[-1].type = TypeChains.border
+    l_chain[-1].type = TypeChains.border
 
-    return dot_list, chain_list
+    return l_nodes, l_chain
 
 def generate_virtual_center_chain(cy, cx, nr , chains_list, dots_list,  height, witdh):
     chain_id = len(chains_list)-1
@@ -153,23 +152,24 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img, fi
         img_draw = Drawing.intersection(dot, img_draw)
 
     cv2.imwrite(filename, img_draw)
-def sampling_edges(l_ch_f, cy, cx, nr, min_chain_lenght, im_pre, debug=False):
+def sampling_edges(l_ch_f, cy, cx, nr, min_chain_length, im_pre, debug=False):
     """
     Devernay curves are sampled using the rays directions.
     @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param nr: total ray number
-    @param min_chain_lenght:  minumin ch_i lenght
+    @param min_chain_length:  minumim chain length
     @param im_pre: input image
     @param debug: debugging flag
     @return:
-    - l_ch_s: sampled edges curves. List of ch_i object
+    - l_ch_s: sampled edges curves. List of chain objects
     - l_nodes_s: nodes list.
     """
     height, width = im_pre.shape
     l_rays = build_rays(nr, height, width,   [cy, cx])
-    l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_lenght, nr, height, width)
+    l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_length, nr,
+                                                                       height, width)
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
     if debug:
         draw_ray_curve_and_intersections(l_nodes_s, l_rays, l_ch_f, im_pre, './dots_curve_and_rays.png')
