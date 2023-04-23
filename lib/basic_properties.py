@@ -111,8 +111,8 @@ class InfoVirtualBand:
 
     def is_chain_in_band(self, chain: ch.Chain):
         """
-        Check if a ch_j is inside the band
-        @param chain: ch_j to check if belong to band
+        Check if a chain is inside the band
+        @param chain: chain to check if belong to band
         @return: boolean
         """
         node_chain_in_interval = [node for node in chain.l_nodes if
@@ -496,7 +496,7 @@ def exist_chain_overlapping(l_ch_s, l_nodes, ch_j, ch_k, endpoint_type, ch_i):
     @param ch_j: chain j
     @param ch_k: chain k
     @param endpoint_type: ch_j endpoint type
-    @param ch_i: support ch_i
+    @param ch_i: support chain
     @return: boolean indicating if exist chain in band
     """
     info_band = InfoVirtualBand(l_nodes, ch_j, ch_k, endpoint_type,
