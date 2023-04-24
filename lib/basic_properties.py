@@ -25,13 +25,14 @@ class InfoVirtualBand:
     def __init__(self, l_nodes, ch_j, ch_k, endpoint, ch_i=None, band_width=None, debug=False, inf_band=None,
                  sup_band=None, domain=None):
         """
-        Class for generating a virtual band between two chains. It also incorporates a method to check if ch_j i is inside the band
+        Class for generating a virtual band between two chains. It also incorporates a method to check if chain is
+        inside the band
         @param l_nodes: list of interpolated nodes between the two chains plus the two endpoints
-        @param ch_j: source ch_j to compute the band
-        @param ch_k: destination ch_j to compute the band
+        @param ch_j: chain ch_j to compute the band
+        @param ch_k: chain ch_j to compute the band
         @param endpoint: ch_j endpoint
-        @param ch_i: support ch_j of ch_j and ch_k
-        @param band_width: band with in percentage of the distance between ch_j and support ch_j (ch_i)
+        @param ch_i: support chain of ch_j and ch_k
+        @param band_width: band with in percentage of the distance between ch_j and support chain (ch_i)
         """
         if band_width is None:
             band_width = 0.05 if ch_i.type == ch.TypeChains.center else 0.1
@@ -162,24 +163,24 @@ def vector_derivative(f, Nr):
 
 
 
-def regularity_of_the_derivative_condition(state, Nr, ch_j_nodes, ch_i_nodes, ch_k_nodes, endpoint_i, th_deriv=1):
+def regularity_of_the_derivative_condition(state, Nr, ch_jk_nodes, ch_j_nodes, ch_k_nodes, endpoint_j, th_deriv=1):
     """
     Compute radial derivative of the serie formed by src nodes + virtual nodes + dst nodes
     @param Nr: number of rays
-    @param ch_j_nodes: all nodes involved. src nodes + virtual nodes + dst nodes
-    @param ch_i_nodes: src nodes
+    @param ch_jk_nodes: all nodes involved. src nodes + virtual nodes + dst nodes
+    @param ch_j_nodes: src nodes
     @param ch_k_nodes: dst nodes
     @param th_deriv: threshold of the derivative
-    @param endpoint_i: endpoint of the src ch_i
+    @param endpoint_j: endpoint of the src ch_j
     @return: boolean indicative of the regularity of the derivative
     """
-    ch_j_radials = [node.radial_distance for node in ch_j_nodes]
-    nodes_radial_distance_src_chain = [node.radial_distance for node in ch_i_nodes]
+    ch_jk_radials = [node.radial_distance for node in ch_jk_nodes]
+    nodes_radial_distance_src_chain = [node.radial_distance for node in ch_j_nodes]
     nodes_radial_distance_dst_chain = [node.radial_distance for node in ch_k_nodes]
 
     abs_der_1 = np.abs(vector_derivative(nodes_radial_distance_src_chain, Nr))
     abs_der_2 = np.abs(vector_derivative(nodes_radial_distance_dst_chain, Nr))
-    abs_der_3 = np.abs(vector_derivative(ch_j_radials, Nr))
+    abs_der_3 = np.abs(vector_derivative(ch_jk_radials, Nr))
     maximum_derivative_chains = np.maximum(abs_der_1.max(), abs_der_2.max())
 
     max_derivative_end = np.max(abs_der_3)
@@ -188,25 +189,25 @@ def regularity_of_the_derivative_condition(state, Nr, ch_j_nodes, ch_i_nodes, ch
     if state is not None and state.debug:
         f, (ax2, ax1) = plt.subplots(2, 1)
         ax1.plot(abs_der_3)
-        if endpoint_i == ch.EndPoints.A :
+        if endpoint_j == ch.EndPoints.A :
             ax1.plot(np.arange(0,len(abs_der_2)), abs_der_2[::-1])
-            ax1.plot(np.arange(len(ch_j_radials)-len(nodes_radial_distance_src_chain), len(ch_j_radials)), abs_der_1)
+            ax1.plot(np.arange(len(ch_jk_radials)-len(nodes_radial_distance_src_chain), len(ch_jk_radials)), abs_der_1)
         else:
             ax1.plot(np.arange(0, len(abs_der_1)), abs_der_1[::-1])
-            ax1.plot(np.arange(len(ch_j_radials) - len(nodes_radial_distance_dst_chain), len(ch_j_radials)), abs_der_2)
+            ax1.plot(np.arange(len(ch_jk_radials) - len(nodes_radial_distance_dst_chain), len(ch_jk_radials)), abs_der_2)
 
         ax1.hlines(y=max_derivative_end, xmin=0, xmax= np.maximum(len(nodes_radial_distance_src_chain), len(nodes_radial_distance_dst_chain)), label='Salto')
         ax1.hlines(y=th_deriv * maximum_derivative_chains, xmin=0, xmax=np.maximum(len(nodes_radial_distance_dst_chain), len(nodes_radial_distance_src_chain)), colors='r', label='umbral')
         ax1.legend()
 
-        ax2.plot(ch_j_radials)
-        if endpoint_i == ch.EndPoints.A :
+        ax2.plot(ch_jk_radials)
+        if endpoint_j == ch.EndPoints.A :
             ax2.plot( np.arange( 0, len(abs_der_2)), nodes_radial_distance_dst_chain[::-1] , 'r')
-            ax2.plot(np.arange(len(ch_j_radials)-len(nodes_radial_distance_src_chain), len(ch_j_radials)),
+            ax2.plot(np.arange(len(ch_jk_radials)-len(nodes_radial_distance_src_chain), len(ch_jk_radials)),
                      nodes_radial_distance_src_chain)
         else:
             ax2.plot(np.arange(0, len(abs_der_1)), nodes_radial_distance_src_chain[::-1], 'r')
-            ax2.plot(np.arange(len(ch_j_radials) - len(nodes_radial_distance_dst_chain), len(ch_j_radials)),
+            ax2.plot(np.arange(len(ch_jk_radials) - len(nodes_radial_distance_dst_chain), len(ch_jk_radials)),
                      nodes_radial_distance_dst_chain)
 
         plt.title(f'{RegularDeriv}')
@@ -226,16 +227,16 @@ def generate_virtual_nodes_without_support_chain(ch_1, ch_2, endpoint):
     domain_interpolation(support_chain, ch1_border, ch2_border, endpoint, ch_1, virtual_nodes)
     return virtual_nodes
 
-def regularity_of_the_derivative(state, ch_i, ch_k, endpoint_i, node_list, ch_i_nodes, ch_k_nodes, th_deriv=1,
+def regularity_of_the_derivative(state, ch_j, ch_k, endpoint_j, node_list, ch_j_nodes, ch_k_nodes, th_deriv=1,
                                  derivative_from_center=False):
     """
     Regularity of the derivative for the virtual nodes generated between the two chains.
     @param state: at this moment is used only for debug
-    @param ch_i: source ch_i to be connected
-    @param ch_k: destination ch_i to be connected
-    @param endpoint_i: endpoint of ch_i to be connected
+    @param ch_j: source chain ch_j to be connected
+    @param ch_k: destination chain ch_j to be connected
+    @param endpoint_j: endpoint of ch_j to be connected
     @param node_list: all the nodes involved in the connection, including the virtual nodes
-    @param ch_i_nodes: nodes of ch_i
+    @param ch_j_nodes: nodes of ch_j
     @param ch_k_nodes: nodes of ch_k
     @param th_deriv: derivative threshold
     @param derivative_from_center: bool for regenerating the virtual nodes interpolating from the center of the ch_i.
@@ -243,7 +244,7 @@ def regularity_of_the_derivative(state, ch_i, ch_k, endpoint_i, node_list, ch_i_
     """
     if derivative_from_center:
         new_list = []
-        virtual_nodes = generate_virtual_nodes_without_support_chain(ch_i, ch_k, endpoint_i)
+        virtual_nodes = generate_virtual_nodes_without_support_chain(ch_j, ch_k, endpoint_j)
         angles = [n.angle for n in virtual_nodes]
         for node in node_list:
             if node.angle not in angles:
@@ -253,7 +254,7 @@ def regularity_of_the_derivative(state, ch_i, ch_k, endpoint_i, node_list, ch_i_
 
         node_list = new_list
 
-    RegularDeriv = regularity_of_the_derivative_condition(state, ch_i.Nr, node_list, ch_i_nodes, ch_k_nodes, endpoint_i,
+    RegularDeriv = regularity_of_the_derivative_condition(state, ch_j.Nr, node_list, ch_j_nodes, ch_k_nodes, endpoint_j,
                                                           th_deriv=th_deriv)
 
     return RegularDeriv
@@ -276,7 +277,7 @@ def radial_tolerance_for_connecting_chains(state, th_radial_tolerance, endpoints
     Check maximum radial distance allowed to connect chains
     @param state: state of the algorithm. At this point, it is used to debug.
     @param th_radial_tolerance: radial tolerance threshold
-    @param endpoints_radial: radial distance between endpoints and support ch_i
+    @param endpoints_radial: radial distance between endpoints and support chain
     @return: bool indicating if radial distance is within tolerance
     """
     delta_ri = endpoints_radial[0]
@@ -302,16 +303,16 @@ def radial_tolerance_for_connecting_chains(state, th_radial_tolerance, endpoints
 
 class Neighbourhood:
     """
-    Class to compute and store the total_nodes of a ch_i and the candidate chains to connect to it. It generates the virtual nodes
-    to compute the similarity condition.
+    Class to compute and store the total_nodes of a chain and the candidate chains to connect to it.
+    It generates the virtual nodes to compute the similarity condition.
     """
     def __init__(self, src_chain, dst_chain, support_chain, endpoint, n_nodes=20):
         """
 
-        @param src_chain: src ch_i to be connected
-        @param dst_chain: dst ch_i to be connected
-        @param support_chain: support ch_i to be used to generate the virtual nodes
-        @param endpoint: src ch_i endpoint to be connected
+        @param src_chain: src chain to be connected
+        @param dst_chain: dst chain to be connected
+        @param support_chain: support chain to be used to generate the virtual nodes
+        @param endpoint: src chain endpoint to be connected
         @param n_nodes: number of nodes to be considered in the total_nodes
         """
         self.virtual_nodes = generate_virtual_nodes_between_two_chains(src_chain, dst_chain, support_chain, endpoint)
@@ -349,35 +350,35 @@ class Neighbourhood:
         plt.close()
 
 
-def similar_radial_distances_of_nodes_in_both_chains(state, distribution_th, set_i, set_k):
+def similar_radial_distances_of_nodes_in_both_chains(state, distribution_th, set_j, set_k):
     """
     Check if the radial distances of the nodes in both chains are similar via distribution of the radial distances
     @param state: state of the algorithm. At this point, it is used to debug.
     @param distribution_th: size of the distributions to check if they are similar
-    @param set_i: radial distance between nodes of the first ch_i and the support ch_i
+    @param set_j: radial distance between nodes of the first chain and the support chain
     @param set_k: radial distances between nodes of the second ch_i and the support ch_i
     @return:
     + bool indicating if the radial distances are similar
     + distance between the mean of the distributions
     """
-    mean_i = np.mean(set_i)
-    sigma_i = np.std(set_i)
-    inf_range_i = mean_i - distribution_th * sigma_i
-    sup_range_i = mean_i + distribution_th * sigma_i
+    mean_j = np.mean(set_j)
+    sigma_j = np.std(set_j)
+    inf_range_j = mean_j - distribution_th * sigma_j
+    sup_range_j = mean_j + distribution_th * sigma_j
 
     mean_k = np.mean(set_k)
     std_k = np.std(set_k)
     inf_range_k = mean_k - distribution_th * std_k
     sup_range_k = mean_k + distribution_th * std_k
     # check intersection between intervals
-    SimilarRadialDist = inf_range_k <= sup_range_i and inf_range_i <= sup_range_k
+    SimilarRadialDist = inf_range_k <= sup_range_j and inf_range_j <= sup_range_k
 
     if state is not None and state.debug:
         plt.figure()
-        plt.hist(set_i, bins=10, alpha=0.3, color='r', label='src radial')
+        plt.hist(set_j, bins=10, alpha=0.3, color='r', label='src radial')
         plt.hist(set_k, bins=10, alpha=0.3, color='b', label='dst radial')
-        plt.axvline(x=inf_range_i, color='r', label=f'inf src')
-        plt.axvline(x=sup_range_i, color='r', label=f'sup src')
+        plt.axvline(x=inf_range_j, color='r', label=f'inf src')
+        plt.axvline(x=sup_range_j, color='r', label=f'sup src')
         plt.axvline(x=inf_range_k, color='b', label=f'inf dst')
         plt.axvline(x=sup_range_k, color='b', label=f'sup dst')
         plt.legend()
@@ -386,7 +387,7 @@ def similar_radial_distances_of_nodes_in_both_chains(state, distribution_th, set
         plt.close()
         state.counter += 1
 
-    return SimilarRadialDist, np.abs(mean_i - mean_k)
+    return SimilarRadialDist, np.abs(mean_j - mean_k)
 
 
 def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_regular_derivative,
@@ -427,7 +428,8 @@ def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_r
 
 
     # 2. Similar radial distances of nodes in both chains
-    SimilarRadialDist, distribution_distance = similar_radial_distances_of_nodes_in_both_chains(state, th_distribution_size,
+    SimilarRadialDist, distribution_distance = similar_radial_distances_of_nodes_in_both_chains(state,
+                                                                                                th_distribution_size,
                                                                                                 neighbourhood.set_i,
                                                                                                 neighbourhood.set_k)
 
@@ -438,8 +440,9 @@ def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_r
     # 3. Derivative condition
     RegularDeriv = regularity_of_the_derivative(state, ch_j, candidate_chain, endpoint,
                                                 neighbourhood.neighbourhood_nodes,
-                                                ch_i_nodes=neighbourhood.src_chain_nodes,
-                                                ch_k_nodes=neighbourhood.dst_chain_nodes, th_deriv=th_regular_derivative,
+                                                ch_j_nodes=neighbourhood.src_chain_nodes,
+                                                ch_k_nodes=neighbourhood.dst_chain_nodes,
+                                                th_deriv=th_regular_derivative,
                                                 derivative_from_center=derivative_from_center)
 
     if not RegularDeriv:
@@ -460,9 +463,9 @@ def similarity_conditions(state, th_radial_tolerance, th_distribution_size, th_r
 def radial_distance_between_nodes_belonging_to_same_ray(node_list, support_chain):
     """
     Compute radial distance between nodes belonging to same ray
-    @param node_list:
-    @param support_chain:
-    @return:
+    @param node_list: list of nodes
+    @param support_chain: support chain
+    @return: list of radial distances between list nodes and support chain nodes
     """
     radial_distances = []
     for node in node_list:

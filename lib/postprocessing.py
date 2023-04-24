@@ -44,9 +44,9 @@ def build_boundary_poly(outward_ring, inward_ring):
 def search_shapely_inward_chain(shapley_incomplete_chain, outward_ring, inward_ring):
     """
     Search for shapely polygon inside region delimitad for outward and inward rings
-    @param shapley_incomplete_chain: shapely polygon chains not completed. Not nr nodes
-    @param outward_ring: shapely polygon ch_i completed.nr nodes
-    @param inward_ring: shapely polygon ch_i completed.nr nodes
+    @param shapley_incomplete_chain: shapely polygon chains not closed. Not nr nodes
+    @param outward_ring: shapely polygon chain closed. Nr nodes
+    @param inward_ring: shapely polygon chain closed. Nr nodes
     @return:
     """
     poly = build_boundary_poly(outward_ring, inward_ring)
@@ -203,7 +203,7 @@ class ChainsBag:
     def __init__(self, inward_chain_set):
         """
         Iterate over chains in a region.
-        @param inward_chain_set: set of inward ch_i inside region sorted by size
+        @param inward_chain_set: set of inward chains inside region sorted by size
         """
         self.chain_set = inward_chain_set
         self.chains_id_already_selected = []
@@ -278,9 +278,9 @@ def angular_domain_overlapping_higher_than_threshold(src_chain_angular_domain: L
 
 def split_chain(chain: ch.Chain, node: ch.Node, id_new=10000000):
     """
-    Split a ch_i in two chains
-    @param chain: Parent ch_i. Chain to be split
-    @param node: node element where the ch_i will be split
+    Split a chain in two chains
+    @param chain: Parent chain. Chain to be split
+    @param node: node element where the chain will be split
     @param id_new: new id
     @return: tuple of child chains
     """
@@ -317,13 +317,13 @@ def split_chain(chain: ch.Chain, node: ch.Node, id_new=10000000):
 def select_no_intersection_chain_at_endpoint(ch1_sub: ch.Chain, ch2_sub: ch.Chain, src_chain: ch.Chain,
                                              ray_direction: int, total_nodes=10):
     """
-    Select the ch_i that does not intersect with the source ch_i at endpoint
-    @param ch1_sub: child ch_i 1
-    @param ch2_sub:  child ch_i 2
-    @param src_chain: source ch_i
-    @param ray_direction: ray direction source ch_i
+    Select the chain that does not intersect with the source chain at endpoint
+    @param ch1_sub: child chain 1
+    @param ch2_sub:  child chain 2
+    @param src_chain: source chain, ch_i
+    @param ray_direction: ray direction source chain
     @param total_nodes:
-    @return: ch_i that does not intersect with the source ch_i at endpoint
+    @return: chain that does not intersect with the ch1_sub at endpoint
     """
     if ch1_sub is None and ch2_sub is None:
         return None
@@ -387,9 +387,9 @@ def split_intersecting_chains(direction, l_filtered_chains, ch_j):
 
 def split_intersecting_chain_in_other_endpoint(endpoint, src_chain, within_chain_set, within_nodes, chain_search_set):
     """
-    Split intersecting ch_i in other endpoint
+    Split intersecting chain in other endpoint
     @param endpoint:
-    @param src_chain: source ch_i
+    @param src_chain: source chain
     @param within_chain_set: chains within the region
     @param within_nodes: nodes within the region
     @param chain_search_set: chains to be split
@@ -416,10 +416,10 @@ def split_intersecting_chain_in_other_endpoint(endpoint, src_chain, within_chain
 def filter_no_intersected_chain_far(no_intersecting_chains, src_chain, endpoint, neighbourhood_size=45):
     """
     Filter the chains that are not intersected with the ch_j and are far from the endpoint
-    @param no_intersecting_chains: list of no intersecting ch_i with src ch_i
-    @param src_chain: source ch_i
-    @param endpoint: endpoint of source ch_i
-    @param neighbourhood_size: max total_nodes size
+    @param no_intersecting_chains: list of no intersecting chain with src chain
+    @param src_chain: source chain
+    @param endpoint: endpoint of source chain
+    @param neighbourhood_size: angular neighbourhood size in degrees
     @return: list of chains that are not intersected with the ch_j and are not far from the endpoint
     """
     closest_chains_set = []
@@ -469,11 +469,11 @@ def get_chains_that_satisfy_similarity_conditions(state, support_chain, src_chai
     """
     Get chains that satisfy similarity conditions
     @param state: debugging variable
-    @param support_chain: support ch_i
-    @param src_chain: source ch_i
+    @param support_chain: support chain
+    @param src_chain: source chain
     @param search_chain_set: list of candidate chains
-    @param endpoint: source ch_i endpoint
-    @return: list of ch_i  that satisfy similarity conditions
+    @param endpoint: source chain endpoint
+    @return: list of chain that satisfy similarity conditions
     """
     candidate_chains = []
     radial_distance_candidate_chains = []
@@ -511,7 +511,7 @@ def select_closest_candidate_chain(l_candidate_chains, l_candidate_chain_euclide
     @param l_candidate_chain_euclidean_distance: euclidean distance of list of candidate chains
     @param l_radial_distance_candidate_chains: radial distance of list of candidate chains
     @param l_within_chains: full list of chain within region
-    @param aux_chain: check if the candidate ch_i is the same as aux_chain
+    @param aux_chain: check if the candidate chain is the same as aux_chain
     @return: closest candidate chain by euclidean distance and radial distance to ch_j chain.
     """
     candidate_chain = None
@@ -773,15 +773,15 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
 def connect_2_chain_via_support_chain(outward_chain, inward_chain, src_chain, candidate_chain, nodes_list, endpoint,
                                       chain_list, inner_chain_list):
     """
-    Connect 2 chains using outward and inward ch_i as support chains
-    @param outward_chain: outward support ch_i
-    @param inward_chain: inward support ch_i
-    @param src_chain: source ch_i
-    @param candidate_chain: candidate ch_i
+    Connect 2 chains using outward and inward chain as support chains
+    @param outward_chain: outward support chain
+    @param inward_chain: inward support chain
+    @param src_chain: source chain
+    @param candidate_chain: candidate chain
     @param nodes_list: full node list
-    @param endpoint: source ch_i endpoint
-    @param chain_list: full ch_i list
-    @param inner_chain_list: ch_i list delimitated by inward_ring and outward_ring
+    @param endpoint: source chain endpoint
+    @param chain_list: full chain list
+    @param inner_chain_list: chain list delimitated by inward_ring and outward_ring
     @return: None. Chains are modified in place. Candidate ch_i is removed from chain_list and inner_chain_list and
      ch_j is modified
     """
@@ -806,15 +806,15 @@ def connect_radially_closest_chain(src_chain, candidate_chain_a, diff_a, support
                                    support_chain_b, ch_p_list, within_chains_subset, node_c_list, inward_ring,
                                    outward_ring):
     """
-    Given 2 candidate chains, connect the one that is radially closer to the source ch_i
-    @param src_chain: source ch_i
-    @param candidate_chain_a: candidate ch_i at endpoint A
-    @param diff_a: difference between source ch_i and candidate ch_i at endpoint A
-    @param support_chain_a: support ch_i at endpoint A
-    @param candidate_chain_b: candidate ch_i at endpoint B
-    @param diff_b: difference between source ch_i and candidate ch_i at endpoint B
-    @param support_chain_b: support ch_i at endpoint B
-    @param ch_p_list: full ch_i list over disk
+    Given 2 candidate chains, connect the one that is radially closer to the source chain
+    @param src_chain: source chain
+    @param candidate_chain_a: candidate chain at endpoint A
+    @param diff_a: difference between source chain and candidate chain at endpoint A
+    @param support_chain_a: support chain at endpoint A
+    @param candidate_chain_b: candidate chain at endpoint B
+    @param diff_b: difference between source chain and candidate chain at endpoint B
+    @param support_chain_b: support chain at endpoint B
+    @param ch_p_list: full chain list over disk
     @param within_chains_subset: chains within the region of interest
     @param node_c_list: full node list over disk
     @param inward_ring: inward ring delimiting region of interest
@@ -845,7 +845,7 @@ def connect_radially_closest_chain(src_chain, candidate_chain_a, diff_a, support
 
 def postprocessing(l_ch_c, l_nodes_c, cy, cx, debug, save_path, img_pre):
     """
-    Posprocessing chain list. Conditions are relaxed in order to re-fine ch_i connections
+    Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections
     @param l_ch_c: chain list
     @param l_nodes_c: node list
     @param cy: pith y's coordinate
@@ -926,7 +926,7 @@ def connect_chains_if_there_is_enough_data(ctx, l_nodes_c, l_ch_p):
 def complete_chains_if_required(ch_p):
     """
     Complete chains if full and size is less than Nr
-    @param ch_p: ch_i list to complete
+    @param ch_p: chain list to complete
     @return:
     """
     chain_list = [chain for chain in ch_p if chain.type not in [ch.TypeChains.border]]
@@ -946,10 +946,10 @@ def complete_chains_if_required(ch_p):
 def postprocessing_unique_chain(within_chain, inward_ring_chain, outward_ring_chain, node_list,
                                 information_threshold=180):
     """
-    Postprocessing for unique ch_i if ch_i size is greater than information threshold
-    @param within_chain: ch_i in region
-    @param inward_ring_chain: inward ring ch_i
-    @param outward_ring_chain: outward ring ch_i
+    Postprocessing for unique chain if chain size is greater than information threshold
+    @param within_chain: chain in region
+    @param inward_ring_chain: inward ring chain
+    @param outward_ring_chain: outward ring chain
     @param node_list: full node list in disk
     @param information_threshold: data threshold
     @return:
@@ -987,9 +987,9 @@ def build_no_intersecting_chain_set(chains_subset):
 def postprocessing_more_than_one_chain_without_intersection(chain_subset, outward_ring_chain, inward_ring_chain,
                                                             node_list, chain_list, information_threshold=180):
     """
-    Postprocessing for more than one chain without intersection. If we have more than one chain in region that not intersect
-    each other. This chain subset also have to have an angular domain higher than information_threshold. Then we iterate over
-     the chains and if satisfy similarity condition, we can connect them.
+    Postprocessing for more than one chain without intersection. If we have more than one chain in region that
+    not intersect each other. This chain subset also have to have an angular domain higher than information_threshold.
+    Then we iterate over the chains and if satisfy similarity condition, we can connect them.
     @param chain_subset: chains in region defined by outward and inward ring
     @param outward_ring_chain: outward ring chain
     @param inward_ring_chain: inward ring chain

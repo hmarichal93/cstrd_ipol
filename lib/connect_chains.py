@@ -22,8 +22,8 @@ MODULE_NAME = 'connect_chains'
 
 def extract_border_chain_from_list(ch_s: List[ch.Chain], nodes_s: List[ch.Node]):
     """
-    Extract border ch_i from ch_i and nodes list
-    @param ch_s: ch_i list.
+    Extract border chain from chain and nodes list
+    @param ch_s: chain list.
     @param nodes_s: node list
     @return:
     """
@@ -77,7 +77,7 @@ def copy_chains_and_nodes(ch_s):
 def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction
-    @param l_ch_s: ch_i list
+    @param l_ch_s: chain list
     @param l_nodes_s: nodes list.
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
@@ -275,8 +275,8 @@ class SystemStatus:
         """
         Update the system state after the iteration
         @param ch_i: support chain in current iteration
-        @param l_s_outward: outward list of ch_i
-        @param l_s_inward: inward list of ch_i
+        @param l_s_outward: outward list of chains
+        @param l_s_inward: inward list of chains
         @return: self.next_chain_index: index of the next support chain to be processed
         """
 
@@ -348,12 +348,12 @@ def connect_chains_main_logic(M, center, nr, l_ch_s, l_nodes_s, th_radial_tolera
     @param th_distribution_size: threshold for distribution size
     @param th_regular_derivative: threshold for regular derivative
     @param neighbourhood_size: size of neighbourhood in which we search for similar chains
-    @param derivative_from_center: if true, derivative is calculated from center, otherwise from support ch_i
+    @param derivative_from_center: if true, derivative is calculated from center, otherwise from support chain
     @param im_pre: image for debug
     @param nr: number of rays
     @param debug_imgs: debug parameter
     @param save: image save locating. Debug only
-    @return: nodes and ch_i list after connecting
+    @return: nodes and chain list after connecting
     """
     state = SystemStatus(l_ch_s, l_nodes_s, M, center, Nr=nr, th_radial_tolerance=th_radial_tolerance,
                          th_distribution_size=th_distribution_size, th_regular_derivative=th_regular_derivative,
@@ -432,7 +432,7 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
     Search for the closest chain to ch_j that does not intersect with ch_j and met conditions.
     @param state: SystemStatus
     @param ch_j: source chain
-    @param l_no_intersection_j: list of chains that do not intersect with ch_j. Set of cancidate chains to connect with
+    @param l_no_intersection_j: list of chains that do not intersect with ch_j. Set of candidate chains to connect with
                                 ch_j
     @param ch_i: support chain of ch_j
     @param location: inward or outward ch_j location regarding ch_i
@@ -477,7 +477,7 @@ def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, 
     @param ch_j: Chain that is going to be connected to another chain
     @param l_no_intersection_j: List of chains that do not intersect with ch_j
     @param ch_i: Chain that support ch_j
-    @param location: Location of ch_j regard to support ch_i (inward/outward)
+    @param location: Location of ch_j regard to support chain (inward/outward)
     @param endpoint: Endpoint of ch_j that is going to be connected
     @return: closest chain, ch_k, to ch_j that met condition
     """
@@ -575,7 +575,7 @@ def get_inward_and_outward_list_chains_via_pointers(l_ch_s:List[ch.Chain], suppo
     """
     Get the inward and outward chains of  ch_i
     @param l_ch_s: list of chains
-    @param support_chain: ch_i to get the inward and outward chains
+    @param support_chain: support chain, ch_i,  to get the inward and outward chains
     @return: inward and outward list chains
     """
     l_s_outward = []
@@ -598,26 +598,26 @@ def get_inward_and_outward_list_chains_via_pointers(l_ch_s:List[ch.Chain], suppo
 
 def get_non_intersection_chains(M, l_candidates_chi, ch_j):
     """
-
-    @param M:
-    @param l_candidates_chi:
-    @param ch_j:
-    @return:
+    Get the list of chains that not intersect with ch_j
+    @param M: intersection matrix
+    @param l_candidates_chi: list of chain
+    @param ch_j: chain j
+    @return:return the list of chains that not intersect with ch_j
     """
     id_inter = np.where(M[ch_j.id] == 1)[0]
     candidates_chi_non_chj_intersection = [cad for cad in l_candidates_chi if cad.id not in id_inter]
     return candidates_chi_non_chj_intersection
 
-def get_intersection_chains(intersection_matrix, candidates_chi, ch_j):
+def get_intersection_chains(M, l_candidates_chi, ch_j):
     """
-
-    @param intersection_matrix:
-    @param candidates_chi:
-    @param ch_j:
-    @return:
+    Get the list of chain that intersect with ch_j
+    @param M: intersection matrix
+    @param l_candidates_chi: list of chain
+    @param ch_j: chain j
+    @return: return the list of chain that intersect with ch_j
     """
-    id_inter = np.where(intersection_matrix[ch_j.id] == 1)[0]
-    candidates_chi_non_chj_intersection = [cad for cad in candidates_chi if cad.id  in id_inter]
+    id_inter = np.where(M[ch_j.id] == 1)[0]
+    candidates_chi_non_chj_intersection = [cad for cad in l_candidates_chi if cad.id in id_inter]
     return candidates_chi_non_chj_intersection
 
 
@@ -631,9 +631,9 @@ def remove_chains_if_present_at_both_groups(S_up, S_down):
 
 def get_chains_in_and_out_wards(l_ch_s, support_chain):
     """
-    Get chains inwards and outwards from l_ch_s given support ch_i
+    Get chains inwards and outwards from l_ch_s given support chain, ch_i
     @param l_ch_s: list of chains
-    @param support_chain: support ch_i
+    @param support_chain: support chain, ch_i
     @return: list of chains inwards and list of chains outwards
     """
     l_s_outward, l_s_inward = get_inward_and_outward_list_chains_via_pointers(l_ch_s, support_chain)
@@ -680,14 +680,14 @@ class Set:
 def get_chains_in_neighbourhood(neighbourhood_size: float, l_no_intersection_j: List[ch.Chain], ch_j: ch.Chain,
                                 ch_i: ch.Chain, endpoint: int, location: int) ->List[Set]:
     """
-    Get all the chains in the total_nodes of the ch_i ch_j included in the list no_intersection_j
-    @param neighbourhood_size: angular total_nodes size
+    Get all the chains in the neighbourhood of the chain ch_j included in the list no_intersection_j
+    @param neighbourhood_size: angular neighbourhood size
     @param l_no_intersection_j: list of chains that do not intersect with ch_j
-    @param ch_j: source ch_i
-    @param ch_i: support ch_i
+    @param ch_j: chain j
+    @param ch_i: support chain, ch_i
     @param endpoint: ch_j endpoint
     @param location: inward or outward location
-    @return: list of chains in the total_nodes of ch_j
+    @return: list of chains in the neighbourhood of ch_j
     """
     l_chains_in_neighbourhood = []
     for cand_chain in l_no_intersection_j:
@@ -716,8 +716,9 @@ def get_chains_in_neighbourhood(neighbourhood_size: float, l_no_intersection_j: 
 def sort_chains_in_neighbourhood(chains_in_neighbourhood: List[Set], ch_j: ch.Chain):
     """
     Sort chains by angular distance. Set of chains with same angular distance, are sorted by euclidean distance to ch_j
-    @param chains_in_neighbourhood: list of Sets. A set elements is composed by a ch_i and a distance between ch_i and ch_j
-    @param ch_j: source ch_i
+    @param chains_in_neighbourhood: list of Sets. A set elements is composed by a chain and a distance between support
+     chain and ch_j
+    @param ch_j: chain j
     @return: sorted list List[Set]
     """
     sorted_chains_in_neighbourhood = []
@@ -733,10 +734,10 @@ def sort_chains_in_neighbourhood(chains_in_neighbourhood: List[Set], ch_j: ch.Ch
 
 def check_endpoints(support_chain: ch.Chain, ch_j: ch.Chain, candidate_chain: ch.Chain, endpoint: int) -> bool:
     """
-    Check if the endpoints of the ch_i ch_j are in the interpolation domain of the support ch_i
-    @param support_chain: support ch_i of ch_j and candidate_chain
-    @param ch_j: source ch_i
-    @param candidate_chain:  destination ch_i
+    Check if the endpoints of the chain ch_j are in the interpolation domain of the support chain, ch_i
+    @param support_chain: support chain of ch_j and candidate_chain
+    @param ch_j: chain j
+    @param candidate_chain:  candidate chain
     @param endpoint: ch_j endpoint
     @return: boolean
     """
