@@ -192,7 +192,7 @@ class SystemStatus:
 
     def get_next_chain(self):
         ch_i = self.l_ch_s[self.next_chain_index]
-        self.size_l_chain_begging = len(self.l_ch_s)
+        self.size_l_chain_init = len(self.l_ch_s)
         self.fill_chain_if_there_is_no_overlapping(ch_i)
         return ch_i
 
@@ -310,7 +310,7 @@ class SystemStatus:
 
     def _system_status_change(self):
         self.chain_size_at_the_end_of_iteration = len(self.l_ch_s)
-        return self.size_l_chain_begging > self.chain_size_at_the_end_of_iteration
+        return self.size_l_chain_init > self.chain_size_at_the_end_of_iteration
 
 
 def update_pointer(ch_j, closest, l_candidates_chi):
