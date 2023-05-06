@@ -5,15 +5,9 @@ Created on Sun Feb  7 12:01:24 2021
 
 @author: henry
 """
-import imageio
+
 import os
 from pathlib import Path
-import numpy as np
-import matplotlib.pyplot as plt
-import time
-import pandas as pd
-from PIL import Image
-import re
 import logging 
 from typing import List
 
@@ -36,7 +30,7 @@ def save_config(args, root_path, output_dir):
             config['resize'] = [args.hsize, args.wsize]
 
     if args.min_chain_length:
-        config["min_chain_lenght"] = args.min_chain_length
+        config["min_chain_length"] = args.min_chain_length
 
     if args.edge_th:
         config["edge_th"] = args.edge_th
@@ -118,32 +112,6 @@ def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, 
 
 
 
-def setup_log(nroImagen,VERSION):
-    logname = f"./logs/{nroImagen}.log"
-    if Path(logname).exists():
-        os.remove(logname)
-    logging.basicConfig(
-        filename=logname,
-        filemode="a",
-        format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
-        datefmt="%H:%img_height:%S",
-        level=logging.INFO,
-    )
-    
-    
-    logger = logging.getLogger(f"{VERSION}")
-    logger.setLevel(logging.INFO)
-    logging.info("Init")
-
-    return logger
-
-def write_log(module_name,function,message,level='info',debug=False):
-    if debug:
-        string = f"[{module_name}][{function}] {message}"
-        if level in 'info':
-            logging.info(string)
-        else:
-            logging.error(string)
 
 
 
