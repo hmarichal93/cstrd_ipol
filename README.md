@@ -1,5 +1,4 @@
-# CS-TRD: a Tree Ring Detection method for tree cross
-sections
+# CS-TRD: a Tree Ring Detection method for tree cross sections
 
 Repository for the IPOL paper "CS-TRD: a Tree Ring Detection method for tree cross
 sections"
