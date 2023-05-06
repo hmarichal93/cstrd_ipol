@@ -1,5 +1,8 @@
-# Semiautomatic Tree Ring Detection method for Pine Cross-Sections
-Repository for the IPOL paper "Semiautomatic Tree Ring Detection method for Pine Cross-Sections"
+# CS-TRD: a Tree Ring Detection method for tree cross
+sections
+
+Repository for the IPOL paper "CS-TRD: a Tree Ring Detection method for tree cross
+sections"
 [IPOL][link_ipol_paper].
 
 [link_ipol_paper]: https://ipolcore.ipol.im/demo/clientApp/demo.html?id=77777000390
