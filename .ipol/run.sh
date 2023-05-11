@@ -4,7 +4,7 @@ set -e
 # Read input parameters
 input=$1
 sigma=$2
-nr=$3
+#nr=$3
 th_low=$4
 th_high=$5
 hsize=$6
@@ -28,5 +28,5 @@ Cx=$(echo $stdout | awk '{print $1}')
 Cy=$(echo $stdout | awk '{print $2}')
 
 # Execute algorithm
-python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./ --nr $nr --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma --save_imgs 1
+python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./  --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma --save_imgs 1
 
