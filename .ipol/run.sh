@@ -5,12 +5,12 @@ set -e
 input=$1
 sigma=$2
 #nr=$3
-th_low=$4
-th_high=$5
-hsize=$6
-wsize=$7
-BIN=$8
-HOME=$9
+th_low=$3
+th_high=$4
+hsize=$5
+wsize=$6
+BIN=$7
+HOME=$8
 
 # Extract center from mask
 if [ -s inpainting_data_0.txt ]; then
