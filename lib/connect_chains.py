@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: henry
+Copyright (c) 2023 Author(s) Henry Marichal (hmarichal93@gmail.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy as np
 from pathlib import Path
@@ -76,7 +82,8 @@ def copy_chains_and_nodes(ch_s):
     return  ch_s, nodes_s
 def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
     """
-    Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction
+    Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction.
+    Implements Algorithm 8 in the paper.
     @param l_ch_s: chain list
     @param l_nodes_s: nodes list.
     @param cy: pith y's coordinate
@@ -339,7 +346,7 @@ def connect_chains_main_logic(M, center, nr, l_ch_s, l_nodes_s, th_radial_tolera
                               th_regular_derivative=1.5, neighbourhood_size=22, derivative_from_center=False,
                               debug_imgs=False, im_pre=None, save=None):
     """
-    Logic for connecting chains based on similarity conditions
+    Logic for connecting chains based on similarity conditions. Implements Algorithm 9 from the paper.
     @param l_ch_s: list of chains
     @param l_nodes_s: list of nodes belonging to chains
     @param M: matrix of intersections between chains
@@ -413,6 +420,18 @@ def get_the_closest_chain_by_radial_distance_that_does_not_intersect(state: Syst
                                                                      candidate_chain_radial_distance: float,
                                                                      candidate_chain: ch.Chain, M,
                                                                      l_sorted_chains_in_neighbourhood):
+    """
+    Implements Algorithm 17 from paper.
+    @param state: Data structure with all the information of the system
+    @param ch_j: current chain
+    @param ch_i: support chain
+    @param endpoint: Chj endpoint
+    @param candidate_chain_radial_distance: radial distance between Chj and candidate chain
+    @param candidate_chain: angular closer chain to Chj
+    @param M: intersection matrix
+    @param l_sorted_chains_in_neighbourhood: chains in Chj endpoint neighbourhood sorted by angular distance
+    @return: closest chain to Chj that satisfies connectivity goodness conditions
+    """
     # 1.0 Get all the chains that intersect to candidate_chain
     l_intersections_candidate = intersection_chains(M, candidate_chain, l_sorted_chains_in_neighbourhood)
     # 2.0 Get all the chains that intersect to candidate_chain and satisfy connectivity_goodness_condition with ch_j
@@ -430,6 +449,7 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
                       location: int, endpoint: int, M):
     """
     Search for the closest chain to ch_j that does not intersect with ch_j and met conditions.
+    Implements Algorithm 16 from the paper
     @param state: SystemStatus
     @param ch_j: source chain
     @param l_no_intersection_j: list of chains that do not intersect with ch_j. Set of candidate chains to connect with
@@ -472,6 +492,7 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
 def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location, endpoint):
     """
     Get the ch_k chain tha met condition  if it is symmetric. If it is not symmetric return None.
+    Implements Algoritm 15 from paper
     @param state: System status instance. It contains all the information about the system.
     @param l_candidates_chi: List of chains that can be candidates to be connected to ch_j
     @param ch_j: Chain that is going to be connected to another chain
@@ -752,7 +773,8 @@ def check_endpoints(support_chain: ch.Chain, ch_j: ch.Chain, candidate_chain: ch
 def connectivity_goodness_condition(state: SystemStatus, ch_j: ch.Chain, candidate_chain: ch.Chain, ch_i: ch.Chain,
                                     endpoint: int) -> Tuple[bool, float]:
     """
-    Check if the chain candidate_chain can be connected to the chain ch_j
+    Check if the chain candidate_chain can be connected to the chain ch_j.
+    Implements Algorithm 18 of the paper
     @param state: system status
     @param ch_j: chain j
     @param candidate_chain: candidate chain

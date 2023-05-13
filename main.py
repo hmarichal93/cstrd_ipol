@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: henry marichal, hmarichal93@gmail.com
-@brief: Method for delineating tree ring over pine cross sections images.
+Copyright (c) 2023 Author(s) Henry Marichal (hmarichal93@gmail.com)
 
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 from pathlib import Path
 import time
@@ -20,7 +24,7 @@ from lib.utils import chain_2_labelme_json, save_config, saving_results
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
                       debug_image_input_path, debug_output_dir):
     """
-    Method for delineating tree ring over pine cross sections images.
+    Method for delineating tree ring over pine cross sections images. Implements Algorithm 1 from the paper.
     @param im_in: segmented input image. Background must be white (255,255,255).
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate

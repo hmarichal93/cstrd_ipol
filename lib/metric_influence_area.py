@@ -1,3 +1,12 @@
+"""
+Copyright (c) 2023 Author(s) Henry Marichal (hmarichal93@gmail.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
 import numpy as np
 import argparse
 from shapely.geometry import Polygon, LineString
@@ -35,7 +44,9 @@ class InfluenceArea:
         height, width, _ = self.img.shape
         l_rays = build_rays(self.Nr, height, width, self.center)
         self.dt_poly = self.get_sampled_polygon_rings(dt_file, l_rays, self.center)
+        self.dt_poly.sort(key=lambda x: x.area)
         self.gt_poly = self.get_sampled_polygon_rings(gt_file, l_rays, self.center)
+        self.gt_poly.sort(key=lambda x: x.area)
         # 5.0 draw rays and rings
         self.draw_ray_and_dt_and_gt(l_rays, self.gt_poly, self.dt_poly, self.img.copy(),
                                     f'{self.output_dir}/dots_curve_and_rays.png')
@@ -128,9 +139,17 @@ class InfluenceArea:
         # plt.show();
         plt.close()
 
+
+    def get_x_and_y_coordinates(self, poly: Polygon_node):
+        # if type(poly) is Polygon:
+        #     y, x  = poly.exterior.coords.xy
+        #     return x, y
+        x = [int(node.x) for node in poly.node_list]
+        y = [int(node.y) for node in poly.node_list]
+        return x, y
     def extract_poly_coordinates(self, poly):
-        x, y = poly.exterior.coords.xy
-        pts = np.vstack((x, y)).T.astype(np.int32)
+        x, y = self.get_x_and_y_coordinates(poly)
+        pts = np.vstack((y, x)).T.astype(np.int32)
         return pts
 
     def generate_radial_error_heat_map(self):
@@ -140,7 +159,7 @@ class InfluenceArea:
         """
         self.color_map = np.zeros((len(self.gt_poly), self.Nr)) + np.nan
         for idx, dt in enumerate(self.dt_poly):
-            dt_dots = self.extract_poly_coordinates(dt)
+            dt_nodes = dt.node_list#self.extract_poly_coordinates(dt)
             if len(self.dt_and_gt_assignation) - 1 < idx:
                 continue
 
@@ -148,13 +167,13 @@ class InfluenceArea:
             if gt_idx == FP_ID:
                 continue
 
-            gt_dots = self.extract_poly_coordinates(self.gt_poly[gt_idx])
+            gt_nodes = self.gt_poly[gt_idx].node_list#.extract_poly_coordinates(self.gt_poly[gt_idx])
 
             for ray_direction_i in range(self.Nr):
-                dti_dot = self.get_dot_by_ray_direction_index(ray_direction_i, dt_dots)
-                gti_dot = self.get_dot_by_ray_direction_index(ray_direction_i, gt_dots)
-                radial_distance_dti = self.compute_radial_distance(dti_dot)
-                radial_distance_gti = self.compute_radial_distance(gti_dot)
+                dti_node = ch.get_node_from_list_by_angle(dt_nodes, ray_direction_i)#self.get_dot_by_ray_direction_index(ray_direction_i, dt_dots)
+                gti_node =ch.get_node_from_list_by_angle(gt_nodes, ray_direction_i)# self.get_dot_by_ray_direction_index(ray_direction_i, gt_dots)
+                radial_distance_dti = dti_node.radial_distance#self.compute_radial_distance(dti_dot)
+                radial_distance_gti = gti_node.radial_distance#self.compute_radial_distance(gti_dot)
                 radial_difference = radial_distance_dti - radial_distance_gti
 
                 self.color_map[gt_idx, int(ray_direction_i)] = radial_difference
@@ -272,9 +291,11 @@ class InfluenceArea:
             angle_dot_2 = self.get_dot_by_ray_direction_index(ray_direction_idx, pol2_dots)
             new_dot = self.mean_interpolation(angle_dot_1, angle_dot_2) if type_interpolation in 'mean' else \
                 self.mirror_interpolation(angle_dot_1, angle_dot_2)
-
-            dots_new_poly.append(new_dot)
-        return Polygon(dots_new_poly)
+            # dot is an array [x, y]. We neet to convert it to node object
+            new_node = ch.Node(x = int(new_dot[1]), y = int(new_dot[0]), angle=ray_direction_idx,
+                            radial_distance = self.compute_radial_distance(new_dot), chain_id = -1)
+            dots_new_poly.append(new_node)
+        return Polygon_node(dots_new_poly)
 
     def _build_influence_area(self, img, l_gt_poly):
         """
@@ -358,9 +379,10 @@ class InfluenceArea:
 
         for poly in l_dt_poly:
             # 1.0 extract detection poly coordinates
-            y, x = poly.exterior.coords.xy
-            x = np.array(x).astype(int)
-            y = np.array(y).astype(int)
+            x, y = self.get_x_and_y_coordinates(poly)
+            #y, x = poly.exterior.coords.xy
+            #x = np.array(x).astype(int)
+            #y = np.array(y).astype(int)
 
             # 2.0 extract influence matrix values for detection poly coordinates
             gts = influence_matrix[x, y].astype(int)
@@ -486,8 +508,8 @@ class InfluenceArea:
                 plt.scatter(x, y, s=1, color=next(colors))
 
         for poly in list_gt_poly:
-            y, x = poly.exterior.coords.xy
-            plt.plot(x, y, 'k')
+            y, x = self.get_x_and_y_coordinates(poly)#poly.exterior.coords.xy
+            plt.plot(y, x, 'k')
 
         plt.axis('off')
         plt.savefig(f'{self.output_dir}/influence_area.png')
@@ -529,7 +551,7 @@ def main(dt_file, gt_file, img_filename, output_dir, threshold, cx, cy):
     R = metrics.recall(TP, FP, TN, FN)
 
     RMSE = metrics.compute_rmse_global()
-    print(f"P={P:.2f} R={R:.2f} F={F:.2f} RMSE={RMSE:.2f}")
+    print(f"{Path(img_filename).name} P={P:.2f} R={R:.2f} F={F:.2f} RMSE={RMSE:.2f}")
 
     metrics.generate_radial_error_heat_map()
 

@@ -1,3 +1,12 @@
+"""
+Copyright (c) 2023 Author(s) Henry Marichal (hmarichal93@gmail.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
 import numpy as np
 import time
 from shapely.geometry import Point
@@ -188,7 +197,7 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
 
 def sampling_edges(l_ch_f, cy, cx, nr, min_chain_length, im_pre, debug=False):
     """
-    Devernay curves are sampled using the rays directions.
+    Devernay curves are sampled using the rays directions. Implements Algoritm 7 in the paper.
     @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate

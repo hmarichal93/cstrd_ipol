@@ -1,3 +1,12 @@
+"""
+Copyright (c) 2023 Author(s) Henry Marichal (hmarichal93@gmail.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
 import cv2
 from PIL import Image
 import numpy as np
@@ -20,7 +29,7 @@ def get_image_shape(im_in: np.array):
 
 def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     """
-    Resize image and keep the center of the image in the same position
+    Resize image and keep the center of the image in the same position. Implements Algorithm 3 in the paper.
     @param im_in: Gray image to resize.
     @param height_output: output image height_output. If None, the image is not resized
     @param width_output: output image width_output. If None, the image is not resized.
@@ -96,7 +105,7 @@ def equalize_image_using_clahe(img_eq):
 
 def equalize(im_g):
     """
-    Equalize image using CLAHE algorithm
+    Equalize image using CLAHE algorithm. Implements Algorithm 4 in the paper
     @param im_g: gray scale image
     @return: equalized image
     """
@@ -123,10 +132,11 @@ def rgb2gray(img_r):
 
 def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None):
     """
-    Image preprocessing steps. Following actions are realized
+    Image preprocessing steps. Following actions are made
     - image resize
     - image is converted to gray scale
     - gray scale image is equalized
+    Implements Algorithm 2 in the paper
     @param im_in: segmented image
     @param height_output: new image img_height
     @param width_output: new image widht
