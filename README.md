@@ -1,9 +1,15 @@
 # CS-TRD: a Cross Sections Tree Ring Detection method
-Repository for the IPOL paper "CS-TRD: a Cross Sections Tree Ring Detection method"
-[IPOL][link_ipol_paper].
+Repository for the IPOL paper "CS-TRD: a Cross Sections Tree Ring Detection method". Submitted on 13/05/2023. 
+
+IPOL Demo: [IPOL][link_ipol_paper].
+
+UruDendro ImageSet: [UruDendro][link_urudendro].
+
+ArXiv paper: [ArXiv][link_arxiv_paper].
 
 [link_ipol_paper]: https://ipolcore.ipol.im/demo/clientApp/demo.html?id=77777000390
-
+[link_urudendro]: https://iie.fing.edu.uy/proyectos/madera/
+[link_arxiv_paper]: https://doi.org/10.48550/arXiv.2305.10809
 Version 1.0
 Last update: 13/05/2023
 Authors: 
@@ -67,7 +73,16 @@ Detecting pith center automatically can be done using software from IPOL paper "
 [link_ipol_pith_paper]: https://www.ipol.im/pub/art/2022/338/?utm_source=doi
 
 ## Citation
-
+```
+@misc{marichal2023cstrd,
+      title={CS-TRD: a Cross Sections Tree Ring Detection method}, 
+      author={Henry Marichal and Diego Passarella and Gregory Randall},
+      year={2023},
+      eprint={2305.10809},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
 
 ## License
 License for th source code: [MIT](./LICENSE)
