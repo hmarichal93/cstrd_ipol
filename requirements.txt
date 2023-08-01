@@ -1,9 +1,10 @@
-numpy
-matplotlib
+numpy== 1.25.0
+matplotlib == 3.7.1
 opencv-contrib-python-headless==4.5.5.64
-pandas
-scikit-learn
-natsort
-glob2
-shapely==1.7
-imageio
+pandas == 2.0.2
+scikit-learn == 1.2.2
+natsort == 8.2.0
+glob2 == 0.7
+shapely == 1.7
+imageio == 2.22.4
+Pillow == 9.5.0
