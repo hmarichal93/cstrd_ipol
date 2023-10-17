@@ -104,7 +104,7 @@ def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
     for counter in range(parameters.iterations):
         iteration_params = parameters.get_iteration_parameters(counter)
 
-        l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, center=[cy, cx], nr=nr, debug_imgs=debug, im_pre=im_pre,
+        l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre=im_pre,
                                                          save=f"{output_dir}/output_{counter}_", **iteration_params)
 
         parameters.update_list_for_next_iteration(l_ch_c, l_nodes_c)
@@ -114,7 +114,7 @@ def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
 
 
 class SystemStatus:
-    def __init__(self, l_ch, l_nodes, M, center, Nr=360, th_radial_tolerance=0.1, th_distribution_size=2,
+    def __init__(self, l_ch, l_nodes, M, cy, cx, Nr=360, th_radial_tolerance=0.1, th_distribution_size=2,
                  th_regular_derivative=1.5, neighbourhood_size=45, derivative_from_center=False, debug=False, counter=0,
                  save=None, img=None):
         #initialization
@@ -129,7 +129,7 @@ class SystemStatus:
         self.debug = debug
         self.neighbourhood_size = neighbourhood_size
         self.M = M
-        self.center = center
+        self.center = [cy, cx]
         self.img = img
         self.height = img.shape[0]
         self.width = img.shape[1]
@@ -342,7 +342,7 @@ def debugging_chains(state, chains_to_debug, filename):
         state.counter += 1
 
 
-def connect_chains_main_logic(M, center, nr, l_ch_s, l_nodes_s, th_radial_tolerance=2, th_distribution_size=2,
+def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolerance=2, th_distribution_size=2,
                               th_regular_derivative=1.5, neighbourhood_size=22, derivative_from_center=False,
                               debug_imgs=False, im_pre=None, save=None):
     """
@@ -350,19 +350,20 @@ def connect_chains_main_logic(M, center, nr, l_ch_s, l_nodes_s, th_radial_tolera
     @param l_ch_s: list of chains
     @param l_nodes_s: list of nodes belonging to chains
     @param M: matrix of intersections between chains
-    @param center: disk center
+    @param cy: y coordinate of pith (disk center)
+    @param cx: x coordinate of pith (disk center)
     @param th_radial_tolerance: threshold for radial tolerance
     @param th_distribution_size: threshold for distribution size
     @param th_regular_derivative: threshold for regular derivative
     @param neighbourhood_size: size of neighbourhood in which we search for similar chains
-    @param derivative_from_center: if true, derivative is calculated from center, otherwise from support chain
+    @param derivative_from_center: if true, derivative is calculated from cy, otherwise from support chain
     @param im_pre: image for debug
     @param nr: number of rays
     @param debug_imgs: debug parameter
     @param save: image save locating. Debug only
     @return: nodes and chain list after connecting
     """
-    state = SystemStatus(l_ch_s, l_nodes_s, M, center, Nr=nr, th_radial_tolerance=th_radial_tolerance,
+    state = SystemStatus(l_ch_s, l_nodes_s, M, cy, cx, Nr=nr, th_radial_tolerance=th_radial_tolerance,
                          th_distribution_size=th_distribution_size, th_regular_derivative=th_regular_derivative,
                          neighbourhood_size=neighbourhood_size, derivative_from_center=derivative_from_center,
                          debug=debug_imgs, save=save, img=im_pre)
