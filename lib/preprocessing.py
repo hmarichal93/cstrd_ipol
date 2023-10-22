@@ -59,8 +59,8 @@ def resize_image_using_pil_lib(im_in: np.array, height_output: object, width_out
 
     pil_img = Image.fromarray(im_in)
     # Image.ANTIALIAS is deprecated, PIL recommends using Reampling.LANCZOS
-    flag = Image.ANTIALIAS
-    # flag = Image.Resampling.LANCZOS
+    #flag = Image.ANTIALIAS
+    flag = Image.Resampling.LANCZOS
     pil_img = pil_img.resize((height_output, width_output), flag)
     im_r = np.array(pil_img)
     return im_r
