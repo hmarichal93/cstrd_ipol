@@ -26,18 +26,21 @@ Default configuration files are in config/ folder.
     
 Algorithm 1 is implemented in the file **main.py**
 
-Algorithm 2 is implemented in the file **lib/preprocessing.py**
+Algorithm 2, 3 and 4 are implemented in the file **lib/preprocessing.py**
 
 Canny-Devernay implementation [[10](https://www.ipol.im/pub/art/2017/216/)] is in **externas/devernay_1.0**. Python
 wrapper is in **lib/canny_devernay_edge_detector.py**
 
-Algorithm 5 is implemented in the file **lib/filter_edges.py** 
+Algorithm 5 and 6 are implemented in the file **lib/filter_edges.py** 
 
 Algorithm 7 is implemented in the file **lib/sampling.py**
 
-Algorithm 8 is implemented in the file **lib/connect_chains.py**
+Algorithm 8, 9, 10, 11, 12, 14, 15, 16, 17 and 18 are implemented in the file **lib/connect_chains.py**
 
-Algorithm 19 is implemented in the file **lib/postprocessing.py**
+Algorithm 13 is implemented in the file **lib/basic_properties.py**
+
+Algorithm 19, 20, 21 and 22 are implemented in the file **lib/postprocessing.py**
+
 ## Installation
 ```bash
 apt-get update && apt-get install -y $(cat .ipol/packages.txt) &&
