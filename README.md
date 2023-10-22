@@ -43,12 +43,14 @@ Algorithm 19, 20, 21 and 22 are implemented in the file **lib/postprocessing.py*
 
 ## Installation
 ```bash
-apt-get update && apt-get install -y $(cat .ipol/packages.txt) &&
-  rm -rf /var/lib/apt/lists/* 
+conda create --name ipol
+conda activate ipol
+conda install -n ipol -c conda-forge geos
+conda install -n ipol -c anaconda cmake 
+conda install -n ipol pip
 ```
-
 ```bash
-pip3 install --no-cache-dir -r requirements.txt
+pip install --no-cache-dir -r requirements.txt
 ```
 ```bash
 cd ./externas/devernay_1.0 && make clean && make
