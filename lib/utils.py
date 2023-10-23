@@ -79,7 +79,7 @@ def saving_results( res, output_dir, save_imgs=True):
     return
 
 
-def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, cx, cy, img_orig, image_path,
+def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, cy, cx, img_orig, image_path,
                          exec_time):
     """
     Converting ch_i list object to labelme format. This format is used to store the coordinates of the rings at the image

@@ -99,6 +99,11 @@ def change_background_intensity_to_mean(im_in):
     return im_eq, mask
 
 def equalize_image_using_clahe(img_eq):
+    """
+    Equalize image using CLAHE algorithm
+    :param img_eq: image
+    :return: image equalized
+    """
     clahe = cv2.createCLAHE(clipLimit=10)
     img_eq = clahe.apply(img_eq)
     return img_eq
@@ -114,6 +119,7 @@ def equalize(im_g):
     im_pre = equalize_image_using_clahe(im_pre)
     im_pre = change_background_to_value(im_pre, mask, WHITE)
     return im_pre
+
 def change_background_to_value(im_in, mask, value=255):
     """
     Change background intensity to white.
@@ -139,7 +145,7 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     Implements Algorithm 2 in the paper
     @param im_in: segmented image
     @param height_output: new image img_height
-    @param width_output: new image widht
+    @param width_output: new image img_width
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @return:
@@ -147,13 +153,16 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    if NONE in [height_output, width_output] :
+    # Line 1 to 6
+    if NONE in [height_output, width_output]:
         im_r, cy_output, cx_output = ( im_in, cy, cx)
     else:
-        im_r, cy_output, cx_output = resize(im_in, height_output, width_output, cy, cx)
+        im_r, cy_output, cx_output = resize( im_in, height_output, width_output, cy, cx)
 
+    # Line 7
     im_g = rgb2gray(im_r)
 
+    # Line 8
     im_pre = equalize(im_g)
-
+    # Line 9
     return im_pre, cy_output, cx_output

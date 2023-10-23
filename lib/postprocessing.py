@@ -144,6 +144,10 @@ class DiskContext:
         return inward_ring, outward_ring
 
     def update(self):
+        """
+        Update the context. The context is updated when the algorithm is executed over a new region
+        :return: self.l_within_chains, self.inward_ring, self.outward_ring
+        """
         inward_poly_ring, outward_poly_ring = self.get_inward_outward_ring(self.idx)
         shapely_inward_chain_subset = search_shapely_inward_chain(self.uncompleted_chains_poly, outward_poly_ring,
                                                                   inward_poly_ring)
@@ -366,31 +370,47 @@ def split_intersecting_chains(direction, l_filtered_chains, ch_j):
     """
     l_search_chains = []
     for inter_chain in l_filtered_chains:
+        # Line 3
         split_node = inter_chain.get_node_by_angle(direction)
         if split_node is None:
-            continue
-        sub_ch1, sub_ch2 = split_chain(inter_chain, split_node)
-        # 1.0 Found what ch_i intersect the longest one
-        ch_k = select_no_intersection_chain_at_endpoint(sub_ch1, sub_ch2, ch_j, direction)
-        if ch_k is None:
+            # It is not possible to split the chain due to split_node is None. Continue to next chain
             continue
 
-        # 2.0 Longest ch_i intersect two times
+        # Line 4
+        sub_ch1, sub_ch2 = split_chain(inter_chain, split_node)
+
+        # Line 5 Found what ch_i intersect the longest one
+        ch_k = select_no_intersection_chain_at_endpoint(sub_ch1, sub_ch2, ch_j, direction)
+        if ch_k is None:
+            # There is not chain that does not intersect with ch_j at endpoint. Continue to next chain
+            continue
+
+        # Line 6 Longest ch_i intersect two times
         if intersection_between_chains(ch_k, ch_j):
+            # Line 7
             node_direction_2 = ch_j.extB.angle if split_node.angle == ch_j.extA.angle else ch_j.extA.angle
             split_node_2 = ch_k.get_node_by_angle(node_direction_2)
             if split_node_2 is None:
-                continue
-            sub_ch1, sub_ch2 = split_chain(ch_k, split_node_2)
-            ch_k = select_no_intersection_chain_at_endpoint(sub_ch1, sub_ch2, ch_j, node_direction_2)
-            if ch_k is None:
+                # It is not possible to split the chain due to split_node_2 is None. Continue to next chain
                 continue
 
+            # Line 8
+            sub_ch1, sub_ch2 = split_chain(ch_k, split_node_2)
+
+            # Line 9
+            ch_k = select_no_intersection_chain_at_endpoint(sub_ch1, sub_ch2, ch_j, node_direction_2)
+            if ch_k is None:
+                # There is not chain that does not intersect with ch_j at endpoint. Continue to next chain
+                continue
+
+        # Line 10
         ch_k.change_id(inter_chain.id)
         ch_k.label_id = inter_chain.label_id
 
+        # Line 11
         l_search_chains.append(ch_k)
 
+    # Line 12
     return l_search_chains
 
 
@@ -588,27 +608,27 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
     @return: candidate chain to connect, radial distance to ch_j and support chain.
     """
     img, iteration, debug = debug_params
-    # 1.1 Get angle domain for source ch_j
+    # Line 1 Get angle domain for source ch_j
     ch_j_angle_domain = ch.get_nodes_angles_from_list_nodes(ch_j.l_nodes)
 
-    # 1.2 Get endpoint node
+    # Line 2 Get endpoint node
     ch_j_node = ch_j.extA if endpoint == ch.EndPoints.A else ch_j.extB
 
-    # 2.0 Select ch_j  support chain over endpoint
+    # Line 3 Select ch_j  support chain over endpoint
     ch_i = select_support_chain(outward_ring, inward_ring, ch_j_node)
 
-    # 2.1 Select within nodes over endpoint ray
+    # Line 4 Select within nodes over endpoint ray
     l_nodes_ray = select_nodes_within_region_over_ray(ch_j, ch_j_node, l_within_nodes)
 
-    # 2.2 Select within chains id over endpoint ray
+    # Line 5 Select within chains id over endpoint ray
     l_chain_id_ray = extract_chains_ids_from_nodes(l_nodes_ray)
 
-    # 2.3 Select within chains over endpoint ray by chain id
+    # Line 6 Select within chains over endpoint ray by chain id
     l_endpoint_chains = get_chains_from_ids(l_within_chains, l_chain_id_ray)
 
 
 
-    # 3.1 filter chains that intersect with an overlapping threshold higher than 45 degrees. If overlapping threshold is
+    # Line 7 filter chains that intersect with an overlapping threshold higher than 45 degrees. If overlapping threshold is
     # so big, it is not a good candidate to connect
     l_filtered_chains = remove_chains_with_higher_overlapping_threshold(ch_j_angle_domain,
                                                                                   l_endpoint_chains,
@@ -622,7 +642,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
             f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_1_{endpoint}_{ch_i.label_id}.png')
         iteration[0] += 1
 
-    # 4.0 Split intersection chains by endpoint
+    # Line 8 Split intersection chains by endpoint. Algorithm 22
     l_candidates = split_intersecting_chains(ch_j_node.angle, l_filtered_chains, ch_j)
     if debug:
         ch.visualize_selected_ch_and_chains_over_image_(
@@ -631,12 +651,13 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
             f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_2_{endpoint}.png')
         iteration[0] += 1
 
-    # 5.0 Select chains that do not intersect to ch_j
+    # Line 9 Select chains that do not intersect to ch_j
     l_no_intersection_j = get_chains_that_no_intersect_src_chain(ch_j, ch_j_angle_domain, l_within_chains, l_endpoint_chains)
-
     if aux_chain is not None:
+        # If aux_chain is candidate to connect by the other endpoint, add it to the list of chains that do not intersect
         l_no_intersection_j += [aux_chain]
-    # 5.1 Add ch_i that intersect in other endpoint
+
+    # Line 10 Add ch_i that intersect in other endpoint
     add_chains_that_intersect_in_other_endpoint(l_within_chains, l_no_intersection_j, l_candidates, ch_j,
                                                 neighbourhood_size, endpoint)
     if debug:
@@ -645,7 +666,8 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
             , img,
             f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_3_{endpoint}.png')
         iteration[0] += 1
-    # 5.1 Split intersection chains by other endpoint
+
+    # Line 11 Split intersection chains by other endpoint
     l_candidates = split_intersecting_chain_in_other_endpoint(endpoint, ch_j, l_within_chains,
                                                               l_within_nodes,
                                                               l_candidates)
@@ -656,7 +678,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
             f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_4_{endpoint}.png')
         iteration[0] += 1
 
-    # 6.0 Filter no intersected chains that are far from endpoint
+    # Line 12 and 13 Filter no intersected chains that are far from endpoint
     l_candidates += filter_no_intersected_chain_far(l_no_intersection_j, ch_j, endpoint, neighbourhood_size)
     if debug:
         ch.visualize_selected_ch_and_chains_over_image_(
@@ -671,10 +693,11 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
     else:
         state = None
 
-    # 7.0 Get chains that satisfy similarity conditions
+    # Line 14 Get chains that satisfy similarity conditions
     l_ch_k_euclidean_distance, l_ch_k_radial_distance, l_ch_k = \
         get_chains_that_satisfy_similarity_conditions(state, ch_i, ch_j, l_candidates, endpoint)
-    # 7.1  Select ch_k candidate ch_i that satisfy similarity conditions
+
+    # Line 15  Select ch_k candidate ch_i that satisfy similarity conditions
     ch_k, diff = select_closest_candidate_chain(l_ch_k, l_ch_k_euclidean_distance, l_ch_k_radial_distance,
                                                 l_within_chains, aux_chain)
     if debug:
@@ -686,6 +709,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
                 f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_6_2_{endpoint}.png')
             iteration[0] += 1
 
+    # Line 16
     return ch_k, diff, ch_i
 
 
@@ -716,46 +740,52 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
     @return: boolean value indicating if a chain was completed over region
 
     """
-    # Initialization step
+    # Line 1 Initialization step
     l_within_chains.sort(key=lambda x: x.size, reverse=True)
     connected = False
     completed_chain = False
     ch_j = None
     debug_params = img, iteration, debug
 
-    # Get inward nodes
+    # Line 2 Get inward nodes
     l_inward_nodes = ch.get_nodes_from_chain_list(l_within_chains)
-    # Main loop to split chains that intersect over endpoints
+
+    # Line 3 Main loop to split chains that intersect over endpoints. Generator is defined to get next chain.
     generator = ChainsBag(l_within_chains)
     while True:
+        # Line 4
         if not connected:
             if ch_j is not None and ch_j.is_closed(threshold=0.75):
+                # Line 6
                 complete_chain_using_2_support_ring(inward_ring, outward_ring, ch_j)
                 completed_chain = True
                 debugging_postprocessing(debug, [ch_j], l_within_chains, img,
                                          f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}.png', iteration)
+                # Line 8
                 ch_j = None
 
             else:
+                # Line 10. Generator has pointers to l_within_chains list. It is used to get next chain
                 ch_j = generator.get_next_chain()
 
         if ch_j is None:
             break
         debugging_postprocessing(debug, [ch_j, inward_ring, outward_ring], l_within_chains, img,
                                  f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_init.png', iteration)
-        # 2.0 Split chains in endpoint A and get candidate ch_i
+
+        # Line 13 Split chains in endpoint A and get candidate ch_i. Algorithm 21
         endpoint = ch.EndPoints.A
         ch_k_a, diff_a, ch_i_a = split_and_connect_neighbouring_chains(l_inward_nodes, l_within_chains, ch_j,
                                                                        endpoint, outward_ring, inward_ring,
                                                                        neighbourhood_size, debug_params,
                                                                        save_path=save_path)
-        # 3.0 Split chains in endpoint B and get candidate ch_i
+        # Line 14 Split chains in endpoint B and get candidate ch_i
         endpoint = ch.EndPoints.B
         ch_k_b, diff_b, ch_i_b = split_and_connect_neighbouring_chains(l_inward_nodes, l_within_chains, ch_j,
                                                                        endpoint, outward_ring, inward_ring,
                                                                        neighbourhood_size, debug_params,
                                                                        save_path=save_path, aux_chain=ch_k_a)
-
+        # debug
         if debug:
             candidates_set = []
             if ch_k_b is not None:
@@ -768,6 +798,7 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
             debugging_postprocessing(debug, [ch_j] + candidates_set, l_within_chains, img,
                                      f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_candidate.png', iteration)
 
+        # Line 15
         connected, ch_i, endpoint = connect_radially_closest_chain(ch_j, ch_k_a, diff_a,
                                                                    ch_i_a, ch_k_b, diff_b,
                                                                    ch_i_b, l_ch_p,
@@ -777,6 +808,7 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
         debugging_postprocessing(debug, [ch_i, ch_j], l_within_chains, img,
                                  f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_end.png', iteration)
 
+    # Line 16
     return completed_chain
 
 
@@ -853,62 +885,65 @@ def connect_radially_closest_chain(src_chain, candidate_chain_a, diff_a, support
     return True, support_chain, endpoint
 
 
-def postprocessing(l_ch_c, l_nodes_c, cy, cx, debug, save_path, img_pre):
+def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
     """
     Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections. Implements Algorithm 19 from
     paper.
     @param l_ch_c: chain list
     @param l_nodes_c: node list
-    @param cy: pith y's coordinate
-    @param cx: pith x's coordinate
     @param debug: debug flag. Parameter after this one are for debugging.
     @param save_path: debug locations
-    @param img_pre: input image
+    @param debug_img_pre: input image
 
     @return:
     - l_ch_p: connected chains  list
     """
-    # initialization
+    # Line 1 initialization
     l_ch_p = [ch.copy_chain(chain) for chain in l_ch_c]
     chain_was_completed = False
     idx_start = None
     # debug parameter
     iteracion = [0]
     # end initialization
-
+    # Line 2 Main loop
     while True:
-        ctx = DiskContext(l_ch_p, idx_start, save_path=save_path, img=img_pre)
+        #Line 3
+        ctx = DiskContext(l_ch_p, idx_start, save_path=save_path, img=debug_img_pre)
+
+        # Line 4
         while len(ctx.completed_chains) > 0:
+            # Line 5 l_within_chains, inward_ring and outward_ring are attributes of ctx which are updated in next line
             ctx.update()
             if debug:
                 ctx.drawing(iteracion[0])
                 iteracion[0] += 1
 
-            ############################################################################################################
-            # First Postprocessing. Split all chains and connect them if it possible
+
+            # Line 6 First Postprocessing. Split all chains and connect them if it possible (Algorithm 20)
             chain_was_completed = split_and_connect_chains(ctx.l_within_chains, ctx.inward_ring, ctx.outward_ring,
                                                            l_ch_p, l_nodes_c, neighbourhood_size=ctx.neighbourhood_size,
-                                                           debug=debug, img=img_pre, save_path=save_path,
+                                                           debug=debug, img=debug_img_pre, save_path=save_path,
                                                            iteration=iteracion)
-            # If ch_i was completed, restart iteration
+            # Line 7 If ch_i was completed, restart iteration
             if chain_was_completed:
                 idx_start = ctx.idx
                 break
-            ############################################################################################################
-            # Second posproccessing
+
+            # Line 10 Second posproccessing
             connect_chains_if_there_is_enough_data(ctx, l_nodes_c, l_ch_p)
 
-            ############################################################################################################
-
+            # Line 11
             if ctx.exit():
                 break
 
+        # Line 13
         if not chain_was_completed:
             break
 
-    # Finale Step, fill ch_i
+    # Line 15 Finale Step, complete chains
     complete_chains_if_required(l_ch_p)
 
+    # Line 16
     return l_ch_p
 
 

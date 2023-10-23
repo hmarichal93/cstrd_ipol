@@ -158,18 +158,30 @@ def intersections_between_rays_and_devernay_curves(center, l_rays, l_curves, min
         chain.add_nodes_list(l_curve_nodes)
         l_chain.append(chain)
 
+    # Devernay border curve is the last element of the list l_curves.
     l_chain[-1].type = TypeChains.border
 
     return l_nodes, l_chain
 
 
-def generate_virtual_center_chain(cy, cx, nr, chains_list, dots_list, height, witdh):
+def generate_virtual_center_chain(cy, cx, nr, chains_list, nodes_list, height, width):
+    """
+    Generate virtual center chain. This chain is used to connect the other chains.
+    :param cy: y's center coordinate in pixel.
+    :param cx: x's center coordinate in pixel
+    :param nr: number of rays
+    :param chains_list: chain list
+    :param nodes_list: node list
+    :param height: image height
+    :param width: image width
+    :return: chain is added to the chain list and nodes are added to the nodes list
+    """
     chain_id = len(chains_list) - 1
     center_list = [Node(**{'x': cx, 'y': cy, 'angle': angle, 'radial_distance': 0,
                            'chain_id': chain_id}) for angle in np.arange(0, 360, 360 / nr)]
-    dots_list += center_list
+    nodes_list += center_list
 
-    chain = Chain(chain_id, nr, center=chains_list[0].center, img_height=height, img_width=witdh,
+    chain = Chain(chain_id, nr, center=chains_list[0].center, img_height=height, img_width=width,
                   type=TypeChains.center)
     chain.add_nodes_list(center_list)
 
@@ -195,27 +207,34 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
     cv2.imwrite(filename, img_draw)
 
 
-def sampling_edges(l_ch_f, cy, cx, nr, min_chain_length, im_pre, debug=False):
+def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
     """
     Devernay curves are sampled using the rays directions. Implements Algoritm 7 in the paper.
     @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
+    @param im_pre: input image
     @param nr: total ray number
     @param min_chain_length:  minumim chain length
-    @param im_pre: input image
     @param debug: debugging flag
     @return:
     - l_ch_s: sampled edges curves. List of chain objects
     - l_nodes_s: nodes list.
     """
+    # Line 1
     height, width = im_pre.shape
+    # Line 2
     l_rays = build_rays(nr, height, width, [cy, cx])
+    # Line 3
     l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_length, nr,
                                                                        height, width)
+    # Line 4
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
+
+    # Debug purposes, not illustrated in the paper
     if debug:
         img_draw = np.zeros((im_pre.shape[0], im_pre.shape[1], 3))
         draw_ray_curve_and_intersections(l_nodes_s, l_rays, l_ch_f, img_draw, './dots_curve_and_rays.png')
 
+    # Line 5
     return l_ch_s, l_nodes_s

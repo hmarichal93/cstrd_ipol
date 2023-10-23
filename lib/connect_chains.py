@@ -80,36 +80,41 @@ def copy_chains_and_nodes(ch_s):
         nodes_s += chain.l_nodes
 
     return  ch_s, nodes_s
-def connect_chains(l_ch_s, l_nodes_s, cy, cx, nr, debug, im_pre, output_dir):
+def connect_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction.
     Implements Algorithm 8 in the paper.
     @param l_ch_s: chain list
-    @param l_nodes_s: nodes list.
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param nr: total number of ray
-    @param im_pre: segmented gray image
+    @param debut_im_pre: segmented gray image
     @return:
     l_ch_s: connected chains
     l_nodes_s: list nodes
     """
     # Copy ch_i and nodes
     l_ch_s, l_nodes_s = copy_chains_and_nodes(l_ch_s)
-
+    # Paper Table 1 parameters initialization
     parameters = ConnectParameters(l_ch_s, l_nodes_s)
 
+    # Line 1
     M = compute_intersection_matrix(l_ch_s, l_nodes_s, Nr=nr)
 
-    for counter in range(parameters.iterations):
-        iteration_params = parameters.get_iteration_parameters(counter)
+    # Line 2. Iteration over the parameters, 9 iterations in total
+    for i in range(parameters.iterations):
+        # Line 3. Get parameters for iteration i
+        iteration_params = parameters.get_iteration_parameters(i)
 
-        l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre=im_pre,
-                                                         save=f"{output_dir}/output_{counter}_", **iteration_params)
+        # Line 4.
+        # debug_im_pre is a copy of the input image. It is used to visualize the results of the current iteration for debugging purposes.
+        l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre= debut_im_pre,
+                                                         save=f"{output_dir}/output_{i}_", **iteration_params)
 
+        # Line 5. Update chain list and chain node list for next iteration
         parameters.update_list_for_next_iteration(l_ch_c, l_nodes_c)
 
-
+    # Line 7
     return l_ch_c, l_nodes_c
 
 
@@ -176,31 +181,58 @@ class SystemStatus:
         interpolated_nodes_plus_endpoints = [ch_j_endpoint_node] + interpolated_nodes + [ch_k_endpoint_node]
 
         return ch_i, interpolated_nodes_plus_endpoints, ch_j_endpoint_type
+
     def fill_chain_if_there_is_no_overlapping(self, chain):
+        """
+        Algorithm 12 in the paper. Complete chain if there is no overlapping.
+        :param chain: chain to be completed if conditions are met
+        :return: if conditions are met, chain is completed. Otherwise, nothing is done. Complete means that new nodes
+        are added to the chain.
+        """
+        # Line 2
         if chain.size >= chain.Nr:
             return
 
+        # Line 5
         if not chain.is_closed(threshold=0.9):
             return
 
+        # Line 8
         ch_i, l_nodes, endpoint_type = \
             self.compute_all_elements_needed_to_check_if_exist_chain_overlapping(chain)
 
+        # Line 9. Algorithm 13 in the paper. Check if there is an overlapping chain.
         exist_chain = exist_chain_overlapping(self.l_ch_s, l_nodes, chain, chain, endpoint_type, ch_i)
+
+        # Line 10
         if exist_chain:
             return
 
+        # Line 13
         self.add_nodes_list_to_system(chain, l_nodes)
 
         return
 
     def continue_in_loop(self):
+        # If iteration_sin_last_chain is equal to the number of chains, the algorithm stops. This means that
+        # all chains have been iterated at least one time and no chains have been connected or interpolated.
         return self.iterations_since_last_change < len(self.l_ch_s)
 
     def get_next_chain(self):
+        """
+        Algorithm 11 in the paper. Get next chain to be processed.
+        :return: next supported chain
+        """
+        # Line 2
         ch_i = self.l_ch_s[self.next_chain_index]
+
+        # Line 3
         self.size_l_chain_init = len(self.l_ch_s)
+
+        # Line 4
         self.fill_chain_if_there_is_no_overlapping(ch_i)
+
+        # Line 5
         return ch_i
 
 
@@ -280,30 +312,48 @@ class SystemStatus:
 
     def update_system_status(self, ch_i, l_s_outward, l_s_inward):
         """
-        Update the system state after the iteration
+        Algorithm 10 in the paper. Update the system state after the iteration.
         @param ch_i: support chain in current iteration
         @param l_s_outward: outward list of chains
         @param l_s_inward: inward list of chains
         @return: self.next_chain_index: index of the next support chain to be processed
         """
-
-
+        # Line 1. self.l_ch_s is an attribute of the self object.
+        # Line 2
         if self._system_status_change():
+            # Line 3
             self.l_ch_s.sort(key=lambda x: x.size, reverse=True)
+            # Variable used to check if system status has changed in current iteration. If it has (variable is set to 0),
+            # the algorithm continues one more iteration. If it has not (variable is increased by 1). Variable is used as
+            # exit condition in the while loop (Algorithm 9, line 3, continue_in_loop method).
             self.iterations_since_last_change = 0
 
+            # Line 4
             l_current_iteration = [ch_i] + l_s_outward + l_s_inward
+
+            # Line 5
             l_current_iteration.sort(key=lambda x: x.size, reverse=True)
+
+            # Line 6
             longest_chain = l_current_iteration[0]
+
+            # Line 7 to 12
             if longest_chain.id == ch_i.id:
-                self.next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
+                next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
             else:
-                self.next_chain_index = self.l_ch_s.index(longest_chain)
+                next_chain_index = self.l_ch_s.index(longest_chain)
 
 
         else:
+            # Line 15
+            next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
+            # System status has not changed. Increase variable by 1.
             self.iterations_since_last_change += 1
-            self.next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
+
+        # Line 17
+        self.next_chain_index = next_chain_index
+
+        return 0
 
     def _chains_id_over_radial_direction(self, angle):
         chains_in_radial_direction = ch.get_chains_within_angle(angle, self.l_ch_s)
@@ -363,39 +413,64 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
     @param save: image save locating. Debug only
     @return: nodes and chain list after connecting
     """
+    # Line 1 and 2
     state = SystemStatus(l_ch_s, l_nodes_s, M, cy, cx, Nr=nr, th_radial_tolerance=th_radial_tolerance,
                          th_distribution_size=th_distribution_size, th_regular_derivative=th_regular_derivative,
                          neighbourhood_size=neighbourhood_size, derivative_from_center=derivative_from_center,
                          debug=debug_imgs, save=save, img=im_pre)
 
+    # Line 3. State.continue_in_loop() check if current state is equal to the previous one. If it is, the algorithm stops.
+    # If some chains have been connected in the current iteration, the algorithm continues one more iteration.
+    # Additionaly, if nodes have been added to some chain, the algorithm continues one more iteration.
     while state.continue_in_loop():
+        # Line 4. Get next chain to be processed. Algorithm 11 in the paper.
         ch_i = state.get_next_chain()
+
+        # Line 5. Get chains in ch_i neighbourhood
         l_s_outward, l_s_inward = get_chains_in_and_out_wards(state.l_ch_s, ch_i)
 
+        # Line 8 to 11 is implemented within the for loop statement.
         for location, l_candidates_chi in zip([ch.ChainLocation.inwards, ch.ChainLocation.outwards], [l_s_inward, l_s_outward]):
             j_pointer = 0
+            # Line 12
             while len(l_candidates_chi) > j_pointer:
+                # Line 13
                 debugging_chains(state, [ch_i] + l_candidates_chi, f'{state.path}/{state.counter}_0_{ch_i.label_id}_{location}.png')
                 ch_j = l_candidates_chi[j_pointer]
+
+                # Line 14
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_1.png')
                 l_no_intersection_j = get_non_intersection_chains(state.M, l_candidates_chi, ch_j)
+
+                # Line 15
                 ch_k_b = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.B)
                 debugging_chains(state, [ch_i, ch_j, ch_k_b], f'{state.path}/{state.counter}_2.png')
+
+                # Line 16
                 ch_k_a = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.A)
                 debugging_chains(state, [ch_i, ch_j, ch_k_a], f'{state.path}/{state.counter}_3.png')
+
+                # Line 17
                 ch_k, endpoint = select_closest_chain(ch_j, ch_k_a, ch_k_b)
                 debugging_chains(state, [ch_i, ch_j, ch_k], f'{state.path}/{state.counter}_4.png')
+
+                # Line 18
                 connect_two_chains(state, ch_j, ch_k, l_candidates_chi, endpoint, ch_i)
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
+
+                # Line 19
                 j_pointer = update_pointer(ch_j, ch_k, l_candidates_chi)
 
+        # Line 20. Implementing the logic of Algorithm 10
         state.update_system_status(ch_i, l_s_outward, l_s_inward)
 
+    # Line 21
     l_ch_c, l_nodes_c, intersection_matrix = iterate_over_chains_list_and_complete_them_if_met_conditions(state)
     debugging_chains(state, l_ch_c, f'{state.path}/{state.counter}.png')
 
+    # Line 22
     return l_ch_c, l_nodes_c, intersection_matrix
 
 
@@ -433,17 +508,20 @@ def get_the_closest_chain_by_radial_distance_that_does_not_intersect(state: Syst
     @param l_sorted_chains_in_neighbourhood: chains in Chj endpoint neighbourhood sorted by angular distance
     @return: closest chain to Chj that satisfies connectivity goodness conditions
     """
-    # 1.0 Get all the chains that intersect to candidate_chain
+    # Line 1 Get all the chains that intersect to candidate_chain
     l_intersections_candidate = intersection_chains(M, candidate_chain, l_sorted_chains_in_neighbourhood)
-    # 2.0 Get all the chains that intersect to candidate_chain and satisfy connectivity_goodness_condition with ch_j
+
+    # Line 2 Get all the chains that intersect to candidate_chain and satisfy connectivity_goodness_condition with ch_j
     l_intersections_candidate_set = get_all_chain_in_subset_that_satisfy_condition(state, ch_j, ch_i,
                                                                                  endpoint, candidate_chain_radial_distance,
                                                                                  candidate_chain, l_intersections_candidate)
-    # 3.0 Sort them by proximity to ch_j
+    # Line 3 Sort them by proximity to ch_j
     l_intersections_candidate_set.sort(key=lambda x: x.distance)
 
-    # Return ch_k ch_i
+    # Line 4 Return ch_k ch_i
     ch_k = l_intersections_candidate_set[0].cad
+
+    # Line 5
     return ch_k
 
 def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: List[ch.Chain], ch_i: ch.Chain,
@@ -461,23 +539,29 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
     @param M: intersection matrix
     @return: the closest chain to ch_j
     """
-    ch_k = None
-    # 1.0 sort chains by proximity
-    l_sorted_chains_in_neighbourhood = get_chains_in_neighbourhood(state.neighbourhood_size, l_no_intersection_j, ch_j,
+    # Line 1 and 2. Sort chains by proximity
+    neighbourhood_size = state.neighbourhood_size
+    l_sorted_chains_in_neighbourhood = get_chains_in_neighbourhood(neighbourhood_size, l_no_intersection_j, ch_j,
                                                                    ch_i, endpoint, location)
-    lenght_chains = len(l_sorted_chains_in_neighbourhood)
-    if lenght_chains == 0:
-        return ch_k
 
-    # 2.0 search for closest chain to ch_i
+    # Line 3 and 4
     next_id = 0
+    ch_k = None
+
+    # Line 5. Search for closest chain to ch_i
+    lenght_chains = len(l_sorted_chains_in_neighbourhood)
     while next_id < lenght_chains:
+        # Line 6
         candidate_chain = l_sorted_chains_in_neighbourhood[next_id].cad
+
+        # Line 7 Algorithm 18 from paper.
         pass_control, radial_distance = connectivity_goodness_condition(state, ch_j, candidate_chain, ch_i,
                                                                         endpoint)
+
+        # Line 8
         if pass_control:
-            # 3.0 Check that do not exist other chains that intersect next ch_i that is radially ch_k to ch_j
-            # Get chains that intersect next ch_i
+            # Line 9. Check that do not exist other chains that intersect next ch_i that is radially ch_k to ch_j
+            # Get chains that intersect next ch_i. Algorithm 17 from paper.
             ch_k = get_the_closest_chain_by_radial_distance_that_does_not_intersect(state, ch_j, ch_i,
                                                                                        endpoint, radial_distance,
                                                                                        candidate_chain, M,
@@ -485,8 +569,10 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
 
             break
 
+        # Line 12
         next_id += 1
 
+    # Line 14
     return ch_k
 
 
@@ -503,18 +589,28 @@ def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, 
     @param endpoint: Endpoint of ch_j that is going to be connected
     @return: closest chain, ch_k, to ch_j that met condition
     """
+    # Line 2
     ch_k = get_closest_chain(state, ch_j, l_no_intersection_j, ch_i, location, endpoint, state.M)
+
+    # Line 3
     if ch_k is None:
         return ch_k
+
+    # Line 6
     l_no_intersection_k = get_non_intersection_chains(state.M, l_candidates_chi, ch_k)
-    symmetric_chain = get_closest_chain(state, ch_k, l_no_intersection_k, ch_i, location,
-                                        ch.EndPoints.A if endpoint == ch.EndPoints.B else ch.EndPoints.B, state.M)
 
+    # Line 7 to 12
+    endpoint_k = ch.EndPoints.A if endpoint == ch.EndPoints.B else ch.EndPoints.B
+
+    # Line 13
+    symmetric_chain = get_closest_chain(state, ch_k, l_no_intersection_k, ch_i, location, endpoint_k, state.M)
+
+    # Line 14
     ch_k = None if symmetric_chain != ch_j else ch_k
-
     if ch_k is not None and (ch_k.size + ch_j.size) > ch_k.Nr:
         ch_k = None
 
+    # Line 17
     return ch_k
 
 def move_nodes_from_one_chain_to_another(ch_j, ch_k):
@@ -562,7 +658,7 @@ def update_chains_ids(state, ch_k):
     return
 def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoint, ch_i):
     """
-    Connect chains ch_j and ch_k updating all the information about the system.
+    Algorithm 14. Connect chains ch_j and ch_k updating all the information about the system.
     @param state: class object that contains all the information about the system.
     @param ch_j: chain j to connect
     @param ch_k: chain k to connect
@@ -571,23 +667,30 @@ def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoi
     @param ch_i: support chain
     @return:
     """
+    # Line 1
     if endpoint is None:
-        return None
+        return
 
+    # Line 4
     if ch_j == ch_k:
-        return None
+        return
 
-    # 1.0 Generate new dots
+    # Line 7 Generate new dots
     generate_new_nodes(state, ch_j, ch_k, endpoint, ch_i)
-    # 2.0 move node from one ch_i to another
+
+    # Line 8 move node from one ch_i to another
     updating_chain_nodes(state, ch_j, ch_k)
-    # 3.0 update chains
+
+    # Line 9 update chains
     update_chain_after_connect(state, ch_j, ch_k)
-    # 4.0 delete ch_k from  list l_candidate_chi  and state.l_ch_s
+
+    # Line 10 delete ch_k from  list l_candidate_chi  and state.l_ch_s
     delete_closest_chain(state, ch_k, l_candidates_chi)
-    # 5.0 update intersection matrix
+
+    # Line 11 update intersection matrix
     update_intersection_matrix(state, ch_j, ch_k)
-    # 6.0 update ch_i ids
+
+    # Line 12 update ch_i ids
     update_chains_ids(state, ch_k)
 
     return
@@ -783,21 +886,21 @@ def connectivity_goodness_condition(state: SystemStatus, ch_j: ch.Chain, candida
     @param endpoint: ch_j endpoint
     @return: True if the chain candidate_chain can be connected to the chain ch_j
     """
-    # 0. Size criterion
+    # Line 6. Size criterion
     if ch_j.size + candidate_chain.size > ch_j.Nr:
         return (False, -1)
 
-    # 1. Connect chains by correct endpoint
+    # Line 7. Connect chains by correct endpoint
     check_pass = check_endpoints(ch_i, ch_j, candidate_chain, endpoint)
     if not check_pass:
         return (False, -1)
 
-    # 2. Radial check
+    # Line 8. Radial check
     check_pass, distribution_distance = similarity_conditions(state, state.th_radial_tolerance,
                                                               state.th_distribution_size, state.th_regular_derivative,
                                                               state.derivative_from_center, ch_i, ch_j, candidate_chain,
                                                               endpoint)
-
+    # Line 9
     return (check_pass, distribution_distance)
 
 
