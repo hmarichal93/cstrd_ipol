@@ -131,11 +131,17 @@ def get_border_curve(img, l_ch_f):
     @return: border object border_curve
 
     """
+    # Line 1
     mask = mask_background(img)
+    # Line 2
     mask = blur(mask)
+    # Line 3
     mask = thresholding(mask)
+    # Line 4
     mask = padding_mask(mask)
+    # Line 5
     border_contour = find_border_contour(mask, img)
+    # Line 6
     border_curve = contour_to_curve(border_contour, len(l_ch_f))
     return border_curve
 
@@ -201,21 +207,22 @@ def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre):
     @return:
     - l_ch_f: filtered devernay curves
     """
-    # 1.0 change reference axis
+    # Line 1 change reference axis
     Xb = change_reference_axis(m_ch_e, cy, cx)
-    # 2.0 get normalized gradient at each edge
+    # Line 2 get normalized gradient at each edge
     G = get_gradient_vector_for_each_edge_pixel(m_ch_e, Gx, Gy)
-    # 3.0 Normalize gradient and rays
+    # Line 3 and 4 Normalize gradient and rays
     Xb_normalized = normalized_row_matrix(Xb.T)
     G_normalized = normalized_row_matrix(G)
-    # 4.0 Compute angle between gradient and edges
+    # Line 5 Compute angle between gradient and edges
     theta = compute_angle_between_gradient_and_edges(Xb_normalized, G_normalized)
-    # 5.0 filter pixels by threshold
+    # Line 6 filter pixels by threshold
     X_edges_filtered = filter_edges_by_threshold(m_ch_e, theta, alpha)
-    # 5.0 Convert masked pixel to object curve
+    # Line 7 Convert masked pixel to object curve
     l_ch_f = convert_masked_pixels_to_curves(X_edges_filtered)
-    # 6.0 Border disk is added as a curve
+    # Line 8  Border disk is added as a curve
     border_curve = get_border_curve(im_pre, l_ch_f)
+    # Line 9
     l_ch_f.append(border_curve)
 
     return l_ch_f
