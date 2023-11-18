@@ -201,7 +201,7 @@ class SystemStatus:
         # Line 7. Algorithm 13 in the paper. Check if there is an overlapping chain.
         exist_chain = exist_chain_overlapping(self.l_ch_s, l_nodes, chain, chain, endpoint_type, ch_i)
 
-        # Line 18
+        # Line 8
         if exist_chain:
             return
 
