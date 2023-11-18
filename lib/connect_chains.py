@@ -189,26 +189,23 @@ class SystemStatus:
         :return: if conditions are met, chain is completed. Otherwise, nothing is done. Complete means that new nodes
         are added to the chain.
         """
-        # Line 2
-        if chain.size >= chain.Nr:
+        # Line 2 to 5. Check if chain is too small or is full. If it is, return.
+        threshold = 0.9
+        if chain.size >= chain.Nr or chain.size < threshold * chain.Nr:
             return
 
-        # Line 5
-        if not chain.is_closed(threshold=0.9):
-            return
-
-        # Line 8
+        # Line 6
         ch_i, l_nodes, endpoint_type = \
             self.compute_all_elements_needed_to_check_if_exist_chain_overlapping(chain)
 
-        # Line 9. Algorithm 13 in the paper. Check if there is an overlapping chain.
+        # Line 7. Algorithm 13 in the paper. Check if there is an overlapping chain.
         exist_chain = exist_chain_overlapping(self.l_ch_s, l_nodes, chain, chain, endpoint_type, ch_i)
 
-        # Line 10
+        # Line 18
         if exist_chain:
             return
 
-        # Line 13
+        # Line 11
         self.add_nodes_list_to_system(chain, l_nodes)
 
         return
