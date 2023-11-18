@@ -37,14 +37,14 @@ def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     @param cx: x's center coordinate in pixel.
     @return: 
     """
-
+    # Line 1
     img_r = resize_image_using_pil_lib(im_in, height_output, width_output)
-
+    # Line 2
     height, width = get_image_shape(im_in)
-
+    # Line 3
     cy_output, cx_output = convert_center_coordinate_to_output_coordinate(cy, cx, height, width, height_output,
                                                                           width_output)
-
+    # Line 4
     return img_r, cy_output, cx_output
 
 
@@ -114,17 +114,20 @@ def equalize(im_g):
     @param im_g: gray scale image
     @return: equalized image
     """
-    # equalize image
+    # Line 1
     im_pre, mask = change_background_intensity_to_mean(im_g)
+    # Line 2
     im_pre = equalize_image_using_clahe(im_pre)
+    # Line 3
     im_pre = change_background_to_value(im_pre, mask, WHITE)
+    # Line 4
     return im_pre
 
 def change_background_to_value(im_in, mask, value=255):
     """
     Change background intensity to white.
-    @param im_in:
-    @param mask:
+    @param im_in: input image
+    @param mask: background mask
     @return:
     """
     im_in[mask > 0] = value
