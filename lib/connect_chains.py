@@ -226,7 +226,7 @@ class SystemStatus:
         # Line 3
         self.size_l_chain_init = len(self.l_ch_s)
 
-        # Line 4
+        # Line 4. Algorithm 12 in the paper
         self.fill_chain_if_there_is_no_overlapping(ch_i)
 
         # Line 5
@@ -410,64 +410,64 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
     @param save: image save locating. Debug only
     @return: nodes and chain list after connecting
     """
-    # Line 1 and 2
+    # Line 1. Initialization of the state object. It contains all the information needed to connect chains.
     state = SystemStatus(l_ch_s, l_nodes_s, M, cy, cx, Nr=nr, th_radial_tolerance=th_radial_tolerance,
                          th_distribution_size=th_distribution_size, th_regular_derivative=th_regular_derivative,
                          neighbourhood_size=neighbourhood_size, derivative_from_center=derivative_from_center,
                          debug=debug_imgs, save=save, img=im_pre)
 
-    # Line 3. State.continue_in_loop() check if current state is equal to the previous one. If it is, the algorithm stops.
+    # Line 2. State.continue_in_loop() check if current state is equal to the previous one. If it is, the algorithm stops.
     # If some chains have been connected in the current iteration, the algorithm continues one more iteration.
     # Additionaly, if nodes have been added to some chain, the algorithm continues one more iteration.
     while state.continue_in_loop():
-        # Line 4. Get next chain to be processed. Algorithm 11 in the paper.
+        # Line 3. Get next chain to be processed. Algorithm 11 in the paper.
         ch_i = state.get_next_chain()
 
-        # Line 5. Get chains in ch_i neighbourhood
+        # Line 4. Get chains in ch_i neighbourhood
         l_s_outward, l_s_inward = get_chains_in_and_out_wards(state.l_ch_s, ch_i)
 
-        # Line 8 to 11 is implemented within the for loop statement.
+        # Line 7 to 10 is implemented within the for loop statement.
         for location, l_candidates_chi in zip([ch.ChainLocation.inwards, ch.ChainLocation.outwards], [l_s_inward, l_s_outward]):
             j_pointer = 0
-            # Line 12
+            # Line 11
             while len(l_candidates_chi) > j_pointer:
-                # Line 13
+                # Line 12
                 debugging_chains(state, [ch_i] + l_candidates_chi, f'{state.path}/{state.counter}_0_{ch_i.label_id}_{location}.png')
                 ch_j = l_candidates_chi[j_pointer]
 
-                # Line 14
+                # Line 13
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_1.png')
                 l_no_intersection_j = get_non_intersection_chains(state.M, l_candidates_chi, ch_j)
 
-                # Line 15
+                # Line 14. Algorithm 15 in the paper
                 ch_k_b = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.B)
                 debugging_chains(state, [ch_i, ch_j, ch_k_b], f'{state.path}/{state.counter}_2.png')
 
-                # Line 16
+                # Line 15. Algorithm 15 in the paper
                 ch_k_a = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.A)
                 debugging_chains(state, [ch_i, ch_j, ch_k_a], f'{state.path}/{state.counter}_3.png')
 
-                # Line 17
+                # Line 16
                 ch_k, endpoint = select_closest_chain(ch_j, ch_k_a, ch_k_b)
                 debugging_chains(state, [ch_i, ch_j, ch_k], f'{state.path}/{state.counter}_4.png')
 
-                # Line 18
+                # Line 17. Algorithm 14 in the paper
                 connect_two_chains(state, ch_j, ch_k, l_candidates_chi, endpoint, ch_i)
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
 
-                # Line 19
+                # Line 18
                 j_pointer = update_pointer(ch_j, ch_k, l_candidates_chi)
 
-        # Line 20. Implementing the logic of Algorithm 10
+        # Line 19. Implementing the logic of Algorithm 10
         state.update_system_status(ch_i, l_s_outward, l_s_inward)
 
-    # Line 21
+    # Line 20
     l_ch_c, l_nodes_c, intersection_matrix = iterate_over_chains_list_and_complete_them_if_met_conditions(state)
     debugging_chains(state, l_ch_c, f'{state.path}/{state.counter}.png')
 
-    # Line 22
+    # Line 21
     return l_ch_c, l_nodes_c, intersection_matrix
 
 
@@ -662,7 +662,7 @@ def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoi
     @param l_candidates_chi: list of chains that have support chain ch_i
     @param endpoint: endpoint of ch_j that is going to be connected
     @param ch_i: support chain
-    @return:
+    @return: None
     """
     # Line 1
     if endpoint is None:
