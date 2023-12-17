@@ -22,7 +22,7 @@ from lib.postprocessing import postprocessing
 from lib.utils import chain_2_labelme_json, save_config, saving_results
 
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
-                      debug_image_input_path, debug_output_dir):
+                      debug_image_input_path, debug_output_dir, gt_ring_json=None):
     """
     Method for delineating tree ring over pine cross sections images. Implements Algorithm 1 from the paper.
     @param im_in: segmented input image. Background must be white (255,255,255).
@@ -55,9 +55,10 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
     m_ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
     # Line 3 Edge filtering module. Algorithm 5 in the paper.
+
     l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
     # Line 4 Sampling edges. Algorithm 7 in the paper
-    l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug)
+    l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug, gt_ring_json = gt_ring_json)
     # Line 5 Connect chains. Algorithm 8 in the paper. Im_pre is used for debug purposes
     l_ch_c,  l_nodes_c = connect_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
     # Line 6 Postprocessing chains. Algorithm 19 in the paper. Im_pre is used for debug purposes
@@ -77,7 +78,8 @@ def main(args):
     Path(args.output_dir).mkdir(exist_ok=True)
 
     res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
-                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
+                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir,
+                            args.gt_ring_json)
 
     saving_results(res, args.output_dir, args.save_imgs)
 
@@ -100,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--th_high", type=int, required=False, default=20)
     parser.add_argument("--th_low", type=int, required=False, default=5)
     parser.add_argument("--min_chain_length", type=int, required=False, default=2)
+    parser.add_argument("--gt_ring_json", type=str, required=False)
     parser.add_argument("--debug", type=int, required=False)
 
     args = parser.parse_args()

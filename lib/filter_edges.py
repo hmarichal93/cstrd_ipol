@@ -185,13 +185,17 @@ def compute_angle_between_gradient_and_edges(Xb_normed, gradient_normed):
     return theta
 
 
-def filter_edges_by_threshold(m_ch_e, theta, alpha):
+def filter_edges_by_threshold(m_ch_e, theta, alpha, early_wood=False, late_wood=True):
     X_edges_filtered = m_ch_e.copy()
-    X_edges_filtered[theta >= alpha] = -1
+    idx_late_wood = np.where(theta >= alpha, 0, 1 if late_wood else 0)
+    idx_early_wood = np.where(theta <= 180 - alpha, 0, 1 if early_wood else 0)
+    idx_not_rings = ~np.logical_or(idx_early_wood, idx_late_wood)
+    X_edges_filtered[idx_not_rings] = -1
+
     return X_edges_filtered
 
 
-def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre):
+def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre, early_wood=True, late_wood=False):
     """
     Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
     cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
@@ -217,7 +221,7 @@ def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre):
     # Line 5 Compute angle between gradient and edges
     theta = compute_angle_between_gradient_and_edges(Xb_normalized, G_normalized)
     # Line 6 filter pixels by threshold
-    X_edges_filtered = filter_edges_by_threshold(m_ch_e, theta, alpha)
+    X_edges_filtered = filter_edges_by_threshold(m_ch_e, theta, alpha, early_wood, late_wood)
     # Line 7 Convert masked pixel to object curve
     l_ch_f = convert_masked_pixels_to_curves(X_edges_filtered)
     # Line 8  Border disk is added as a curve

@@ -73,8 +73,9 @@ def saving_results( res, output_dir, save_imgs=True):
     ch.visualize_chains_over_image(chain_list=ch_c, img=im_seg, filename=f"{output_dir}/connect.png")
     ch.visualize_chains_over_image(chain_list=ch_p, img=im_seg, filename=f"{output_dir}/postprocessing.png")
     ch.visualize_chains_over_image(chain_list=[chain for chain in ch_p if chain.is_closed() and chain.type not in
-                                               [ ch.TypeChains.center, ch.TypeChains.border]], img=im_seg, filename=f"{output_dir}/output.png")
-
+                                               [ ch.TypeChains.center, ch.TypeChains.border, ch.TypeChains.gt_ring]], img=im_seg, filename=f"{output_dir}/output.png")
+    ch.visualize_chains_over_image(chain_list=[chain for chain in ch_p if chain.is_closed() and chain.type not in
+                                               [ ch.TypeChains.center, ch.TypeChains.border]], img=im_seg, filename=f"{output_dir}/output_and_gt.png")
 
     return
 
@@ -96,8 +97,9 @@ def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, 
     - labelme_json: json in labelme format. Ring coordinates are stored here.
     """
     init_height, init_width, _ = img_orig.shape
-    completed_chains = [chain for chain in chain_list if chain.is_closed() and chain.type not in [ch.TypeChains.center, ch.TypeChains.border]]
-
+    completed_chains = [chain for chain in chain_list if chain.is_closed() and chain.type not in [ch.TypeChains.center, ch.TypeChains.border, ch.TypeChains.gt_ring]]
+    #sort completed_chains by area in ascending order
+    completed_chains.sort(key=lambda x: x.get_area(), reverse=False)
 
 
     width_cte = init_width / image_width if image_width is not 0 else 1

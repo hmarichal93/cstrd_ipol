@@ -15,7 +15,7 @@ from lib.drawing import Drawing
 import cv2
 
 from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
-
+from lib.io import load_json
 
 class Ray(LineString):
     def __init__(self, direction, center, M, N):
@@ -206,8 +206,43 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
 
     cv2.imwrite(filename, img_draw)
 
+def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, cy, cx):
+    """
+    Add gt rings as a chain
+    @param chains_list: chain list
+    @param nodes_list: node list
+    @param gt_ring_json: gt rings json
+    @param height: image height
+    @param width: image width
+    @param cy: pith y's coordinate
+    @param cx: pith x's coordinate
+    @return:
+    """
+    if gt_ring_json is None:
+        return
 
-def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
+    #load json
+    gt_ring_labels = load_json(gt_ring_json)
+    chain_id = len(chains_list)
+    gt_rings = gt_ring_labels['shapes']
+    for idx, ring in enumerate(gt_rings):
+
+        nodes = [Node(**{'x': pix[0], 'y': pix[1], 'angle': idx, 'radial_distance': euclidean_distance([pix[1], pix[0]], [cy,cx]),
+                         'chain_id': chain_id}) for idx, pix in enumerate(ring['points'])]
+        #last node is the first node
+        nodes.pop(-1)
+        # add to list
+        nodes_list += nodes
+        chain = Chain(chain_id, chains_list[0].Nr, center=[cy, cx], img_height=height, img_width=width,
+                      type=TypeChains.gt_ring)
+
+        chain.add_nodes_list(nodes)
+        chains_list.append(chain)
+        chain_id += 1
+
+    return
+
+def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False, gt_ring_json = None):
     """
     Devernay curves are sampled using the rays directions. Implements Algoritm 7 in the paper.
     @param l_ch_f:  edges devernay curves
@@ -228,6 +263,10 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
     # Line 3
     l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_length, nr,
                                                                        height, width)
+
+    # Add gt rings as a chain
+    add_gt_rings_as_chain(l_ch_s, l_nodes_s, gt_ring_json, height, width, cy, cx)
+
     # Line 4
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
 

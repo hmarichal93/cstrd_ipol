@@ -10,6 +10,7 @@ You should have received a copy of the GNU Affero General Public License along w
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List
+from shapely.geometry import Polygon
 
 from lib.canny_devernay_edge_detector import write_curves_to_image
 from lib.filter_edges import write_filter_curves_to_image
@@ -75,6 +76,7 @@ class TypeChains:
     center = 0
     normal = 1
     border = 2
+    gt_ring = 3
 
 
 class ClockDirection:
@@ -122,6 +124,8 @@ class Chain:
         angle_k = self.extB.angle if direction == ClockDirection.clockwise else self.extA.angle
         while len(clock_wise_sorted_dots) < self.size:
             dot = self.get_node_by_angle(angle_k)
+            # if dot is None:
+            #     continue
             assert dot is not None
             assert dot.chain_id == self.id
             clock_wise_sorted_dots.append(dot)
@@ -204,6 +208,19 @@ class Chain:
         c1a = np.array([self.extA.x, self.extA.y], dtype=float)
         c1b = np.array([self.extB.x, self.extB.y], dtype=float)
         return nodes.astype(float), c1a, c1b
+
+    def get_area(self):
+        """
+        Compute chain area
+        @return: chain area
+        """
+        x, y = self.get_nodes_coordinates()
+        #using contour area
+        points = np.array([x, y]).T
+        #convert points to shapely polygon
+        polygon = Polygon(points)
+        #compute area
+        return polygon.area
 
 
 
@@ -369,6 +386,11 @@ def visualize_chains_over_image(chain_list=[], img=None, filename=None, devernay
                 plt.plot(x, y, 'b', linewidth=1)
             else:
                 plt.plot(x, y, 'r', linewidth=1)
+        elif chain.type == TypeChains.gt_ring:
+            x = x.tolist() + [x[0]]
+            y = y.tolist() + [y[0]]
+            plt.plot(x, y, 'g', linewidth=1)
+
         elif chain.type == TypeChains.border:
             plt.plot(x, y, 'k', linewidth=1)
 
