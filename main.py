@@ -24,8 +24,8 @@ from lib.utils import chain_2_labelme_json, save_config, saving_results
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
                       debug_image_input_path, debug_output_dir, gt_ring_json=None):
     """
-    Method for delineating tree ring over pine cross sections images. Implements Algorithm 1 from the paper.
-    @param im_in: segmented input image. Background must be white (255,255,255).
+    Method for delineating tree ring over pine cross sections ui. Implements Algorithm 1 from the paper.
+    @param im_in: segmented input_image image. Background must be white (255,255,255).
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param sigma: Canny edge detector gausssian kernel parameter
@@ -37,7 +37,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     @param nr: rays number
     @param mc: min ch_i length
     @param debug: boolean, debug parameter
-    @param debug_image_input_path: Debug parameter. Path to input image. Used to write labelme json.
+    @param debug_image_input_path: Debug parameter. Path to input_image image. Used to write labelme json.
     @param debug_output_dir: Debug parameter. Output directory. Debug results are saved here.
     @return:
      - l_rings: Final results. Json file with rings coordinates.
@@ -75,7 +75,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
 def main(args):
     save_config(args, args.root, args.output_dir)
     im_in = load_image(args.input)
-    Path(args.output_dir).mkdir(exist_ok=True)
+    Path(args.output_dir).mkdir(exist_ok=True, parents=True)
 
     res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
                             args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir,
@@ -88,7 +88,7 @@ def main(args):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, required=True)
+    parser.add_argument("--input_image", type=str, required=True)
     parser.add_argument("--cy", type=int, required=True)
     parser.add_argument("--cx", type=int, required=True)
     parser.add_argument("--root", type=str, required=True)
