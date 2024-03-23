@@ -10,7 +10,6 @@ ArXiv paper: [ArXiv][link_arxiv_paper].
 
 ![F03d_compare.jpg](assets%2FF03d_compare.jpg)
 
-![F02b_compare.jpg](assets%2FF02b_compare.jpg)
 
 
 Version 1.0
