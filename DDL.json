@@ -1,186 +1,159 @@
 {
-    "general": {
-        "demo_title": "Tree Ring Detection Over Wood Slices",
-        "description": "This work describes a Tree Ring Detection method for pine Cross Section. The method needs the pith location as input. It can be marked manually over the input image. In case it is not marked manually, automatic pith detection method proposed in https://doi.org/10.5201/ipol.2022.338",
-        "input_description": "",
-        "requirements": "docker"
-    },
-    "build": {
-            "url": "git@github.com:hmarichal93/dendrometria-ipol",
-            "rev": "origin/main",
-            "dockerfile": ".ipol/Dockerfile"
-    },
-    "inputs": [
-        {
-            "description": "input",
-            "max_pixels": "3000*3000",
-            "dtype": "x8i",
-            "ext": ".png",
-            "type": "image",
-            "control": "dots",
-            "max_dots": 1
-        }
-    ],
-    "params": [
-         {
-            "id": "sigma",
-            "label": "sigma",
-            "comments": "Noise standard deviation",
-            "type": "range",
-            "values": {
-                "default":3,
-                "max": 10,
-                "min": 1,
-                "step": 0.5
+   "general": {
+      "demo_title": "CS-TRD: a Tree Ring Detection method for tree cross sections",
+      "description": "This work describes a Tree Ring Delineation method for Wood Cross Section Images. It was developed and tested over images of the species Pinus Taeda. The method needs the pith location as input. It can be marked manually over the input image. In case it is not marked manually, automatic pith detection method proposed in https://doi.org/10.5201/ipol.2022.338 is used",
+      "input_description": "",
+      "requirements": "docker"
+   },
+   "build": {
+      "url": "git@github.com:hmarichal93/dendrometria-ipol",
+      "rev": "origin/main",
+      "dockerfile": ".ipol/Dockerfile"
+   },
+   "inputs": [
+      {
+         "description": "input",
+         "max_pixels": "3000*3000",
+         "dtype": "x8i",
+         "ext": ".png",
+         "type": "image",
+         "control": "dots",
+         "max_dots": 1
+      }
+   ],
+   "params": [
+      {
+         "id": "sigma",
+         "label": "Sigma",
+         "comments": "Standard deviation of the Gaussian distribution (Gaussian smoothing filter)",
+         "type": "range",
+         "values": {
+            "default": 3,
+            "max": 10,
+            "min": 1,
+            "step": 0.5
+         }
+      },
+      {
+         "label": "<b>Advanced parameters</b>",
+         "type": "label",
+         "visible": "params.options=='1'"
+      },
+      {
+         "id": "options",
+         "label": "Show advanced parameters",
+         "type": "checkbox",
+         "default_value": false
+      },
+      {
+         "id": "th_low",
+         "label": "Gradient threshold low",
+         "comments": "Edge detector parameter",
+         "type": "range",
+         "values": {
+            "default": 5,
+            "max": 50,
+            "min": 0,
+            "step": 0.1
+         },
+         "visible": "params.options=='1'"
+      },
+      {
+         "id": "th_high",
+         "label": "Gradient threshold high",
+         "comments": "Edge detector parameter",
+         "type": "range",
+         "values": {
+            "default": 20,
+            "max": 50,
+            "min": 0,
+            "step": 0.1
+         },
+         "visible": "params.options=='1'"
+      },
+      {
+         "id": "hsize",
+         "label": "Heigh size",
+         "comments": "Image height size. Set to 0 to use full res",
+         "type": "range",
+         "values": {
+            "default": 1500,
+            "max": 3000,
+            "min": 0,
+            "step": 1
+         },
+         "visible": "params.options=='1'"
+      },
+      {
+         "id": "wsize",
+         "label": "Width size",
+         "comments": "Image width size. Set to 0 to use full res",
+         "type": "range",
+         "values": {
+            "default": 1500,
+            "max": 3000,
+            "min": 0,
+            "step": 1
+         },
+         "visible": "params.options=='1'"
+      }
+   ],
+   "results": [
+      {
+         "contents": {
+            "Output": {
+               "img": "output.png"
+            },
+            "preprocessing": {
+               "img": "preprocessing.png"
+            },
+            "edges": {
+               "img": "edges.png"
+            },
+            "filter": {
+               "img": "filter.png"
+            },
+            "chains": {
+               "img": "chains.png"
+            },
+            "connect": {
+               "img": "connect.png"
+            },
+            "post processing": {
+               "img": "postprocessing.png"
             }
-        },
-        {
-            "label" : "<b>Advanced parameters</b>",
-            "type" : "label",
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "options",
-            "label": "Show advanced parameters",
-            "type": "checkbox",
-            "default_value": false
-        },
-        {
-            "id":"nr",
-            "label":"Nr",
-            "comments": "Define the radial sampling frecuency",
-            "type":"range",
-            "values":{
-                "default":360,
-                "max":720,
-                "min":2,
-                "step":10
-            },
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "th_low",
-            "label": "Gradient threshold low",
-            "comments": "Edge detector parameter",
-            "type": "range",
-            "values": {
-                "default": 5.0,
-                "max": 50,
-                "min": 0.0,
-                "step": 0.1
-            },
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "th_high",
-            "label": "Gradient threshold high",
-            "comments": "Edge detector parameter",
-            "type": "range",
-            "values": {
-                "default": 20.0,
-                "max": 50,
-                "min": 0.0,
-                "step": 0.1
-            },
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "output_zoom_factor",
-            "label": "ZOOM factor to render sub-pixel output",
-            "comments": "Edge detector parameter",
-            "type": "range",
-            "values": {
-                "default": 2,
-                "max": 10,
-                "min": 1,
-                "step": 1
-            },
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "hsize",
-            "label": "heigh size",
-            "comments": "image height size",
-            "type": "range",
-            "values": {
-                "default": 1500,
-                "max": 3000,
-                "min": 0,
-                "step": 1
-            },
-            "visible": "params.options=='1'"
-        },
-        {
-            "id": "wsize",
-            "label": "width size",
-            "comments": "image width size",
-            "type": "range",
-            "values": {
-                "default": 1500,
-                "max": 3000,
-                "min": 0,
-                "step": 1
-            },
-            "visible": "params.options=='1'"
-        }
-    ],
-    "results": [
-        {
-            "contents": {
-                "Output": {
-                    "img": "output.png"
-                },
-                "preprocessing": {
-                    "img": "preprocessing.png"
-                },
-                "edges": {
-                    "img": "edges.png"
-                },
-                "filter": {
-                    "img": "filter.png"
-                },
-                "chains": {
-                    "img": "chains.png"
-                },
-                "connect": {
-                    "img": "connect.png"
-                },
-                "post processing": {
-                    "img": "postprocessing.png"
-                }
-            },
-            "type": "gallery",
-            "label": "<b>Intermediary results</b>"
-        },
-        {
-            "contents": {
-                "json file": "labelme.json"
-            },
-            "label": "You can download the Json file containing rings positions (labelme format)",
-            "type": "file_download"
-        },
-        {
-            "contents": "stdout.txt",
-            "label": "<p>Output</p>",
-            "type": "text_file"
-        }
-    ],
-    "archive": {
-        "enable_reconstruct": true,
-        "files": {
-            "input_0.png": "Input",
-            "output.png": "Output",
-            "preprocessing.png": "preprocessing",
-            "edges.png": "edges",
-            "filter.png": "filter",
-            "chains.png": "chains",
-            "connect.png": "grouping_chains",
-            "postprocessing.png": "post processing"
-
-        },
-        "info": {
-            "run_time": "run time"
-        }
-    },
-    "run": "$bin/.ipol/run.sh $input_0 $sigma $nr $th_low $th_high $hsize $wsize $bin $HOME"
+         },
+         "type": "gallery",
+         "label": "<b>Intermediary results</b>"
+      },
+      {
+         "contents": {
+            "json file": "labelme.json"
+         },
+         "label": "You can download the Json file containing rings positions (labelme format)",
+         "type": "file_download"
+      },
+      {
+         "contents": "stdout.txt",
+         "label": "<p>Output</p>",
+         "type": "text_file"
+      }
+   ],
+   "archive": {
+      "enable_reconstruct": true,
+      "files": {
+         "input_0.png": "Input",
+         "output.png": "Output",
+         "preprocessing.png": "preprocessing",
+         "edges.png": "edges",
+         "filter.png": "filter",
+         "chains.png": "chains",
+         "connect.png": "grouping_chains",
+         "postprocessing.png": "post processing"
+      },
+      "info": {
+         "run_time": "run time"
+      }
+   },
+   "run": "$bin/.ipol/run.sh $input_0 $sigma $nr $th_low $th_high $hsize $wsize $bin $HOME"
 }
