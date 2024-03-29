@@ -73,7 +73,7 @@
       },
       {
          "id": "hsize",
-         "label": "Heigh size",
+         "label": "Height size",
          "comments": "Image height size. Set to 0 to use full res",
          "type": "range",
          "values": {
