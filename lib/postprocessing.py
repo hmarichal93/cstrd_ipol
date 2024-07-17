@@ -416,7 +416,7 @@ def split_intersecting_chains(direction, l_filtered_chains, ch_j):
 
 def split_intersecting_chain_in_other_endpoint(endpoint, src_chain, within_chain_set, within_nodes, chain_search_set):
     """
-    Split intersecting chain in other endpoint.
+    Split intersecting chain in other endpoint
     @param endpoint:
     @param src_chain: source chain
     @param within_chain_set: chains within the region
