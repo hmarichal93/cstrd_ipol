@@ -209,7 +209,7 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
 
 def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
     """
-    Devernay curves are sampled using the rays directions. Implements Algoritm 7 in the paper.
+    Devernay curves are sampled using the rays directions. Implements Algoritm 6 in the supplementary material
     @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate

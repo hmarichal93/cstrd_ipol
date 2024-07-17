@@ -503,7 +503,7 @@ def exist_chain_in_band_logic(chain_list:List[ch.Chain], band_info:InfoVirtualBa
 
 def exist_chain_overlapping(l_ch_s, l_nodes, ch_j, ch_k, endpoint_type, ch_i):
     """
-    Algorithm 13. Check if there is a chain in the area within the band
+    Algorithm 11 in the supplementary material. Check if there is a chain in the area within the band
     @param l_ch_s: full chains list
     @param l_nodes: both endpoints and virtual nodes
     @param ch_j: chain j

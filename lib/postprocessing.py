@@ -362,7 +362,7 @@ def select_no_intersection_chain_at_endpoint(ch1_sub: ch.Chain, ch2_sub: ch.Chai
 
 def split_intersecting_chains(direction, l_filtered_chains, ch_j):
     """
-    Split intersecting chains. Implements Algorithm 22 from the paper
+    Split intersecting chains. Implements Algorithm 18 in the supplementary material.
     @param direction: endpoint direction for split chains
     @param l_filtered_chains: list of chains to be split
     @param ch_j: source chain
@@ -416,7 +416,7 @@ def split_intersecting_chains(direction, l_filtered_chains, ch_j):
 
 def split_intersecting_chain_in_other_endpoint(endpoint, src_chain, within_chain_set, within_nodes, chain_search_set):
     """
-    Split intersecting chain in other endpoint
+    Split intersecting chain in other endpoint.
     @param endpoint:
     @param src_chain: source chain
     @param within_chain_set: chains within the region
@@ -593,7 +593,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
                                           endpoint: int, outward_ring, inward_ring, neighbourhood_size,
                                           debug_params, save_path, aux_chain=None):
     """
-    Logic for split and connect chains within region. Implements Algorithm 21 from paper.
+    Logic for split and connect chains within region. Implements Algorithm 17 in the supplementary material.
     @param l_within_nodes: nodes within region
     @param l_within_chains: chains within region
     @param ch_j: source chain. The one that is being to connect if condition are met.
@@ -642,7 +642,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
             f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_2_1_{endpoint}_{ch_i.label_id}.png')
         iteration[0] += 1
 
-    # Line 8 Split intersection chains by endpoint. Algorithm 22
+    # Line 8 Split intersection chains by endpoint. Algorithm 18 in the supplementary material
     l_candidates = split_intersecting_chains(ch_j_node.angle, l_filtered_chains, ch_j)
     if debug:
         ch.visualize_selected_ch_and_chains_over_image_(
@@ -726,7 +726,7 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
                              debug=False, img=None, save_path=None, iteration=None):
     """
     Split chains that intersect in other endpoint and connect them if connectivity goodness conditions are met.
-    Implements Algorithm 20 from paper.
+    Implements Algorithm 16 in the supplementary material.
     @param l_within_chains: uncompleted chains delimitated by inward_ring and outward_ring
     @param inward_ring: inward ring of the region.
     @param outward_ring: outward ring of the region.
@@ -773,7 +773,7 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
         debugging_postprocessing(debug, [ch_j, inward_ring, outward_ring], l_within_chains, img,
                                  f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_init.png', iteration)
 
-        # Line 13 Split chains in endpoint A and get candidate ch_i. Algorithm 21
+        # Line 13 Split chains in endpoint A and get candidate ch_i. Algorithm 17 in the supplementary material.
         endpoint = ch.EndPoints.A
         ch_k_a, diff_a, ch_i_a = split_and_connect_neighbouring_chains(l_inward_nodes, l_within_chains, ch_j,
                                                                        endpoint, outward_ring, inward_ring,
@@ -887,8 +887,8 @@ def connect_radially_closest_chain(src_chain, candidate_chain_a, diff_a, support
 
 def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
     """
-    Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections. Implements Algorithm 19 from
-    paper.
+    Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections. Implements Algorithm 15
+    in the supplementary material.
     @param l_ch_c: chain list
     @param l_nodes_c: node list
     @param debug: debug flag. Parameter after this one are for debugging.
@@ -919,7 +919,7 @@ def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
                 iteracion[0] += 1
 
 
-            # Line 6 First Postprocessing. Split all chains and connect them if it possible (Algorithm 20)
+            # Line 6 First Postprocessing. Split all chains and connect them if it possible (Algorithm 16 in the supplementary material)
             chain_was_completed = split_and_connect_chains(ctx.l_within_chains, ctx.inward_ring, ctx.outward_ring,
                                                            l_ch_p, l_nodes_c, neighbourhood_size=ctx.neighbourhood_size,
                                                            debug=debug, img=debug_img_pre, save_path=save_path,
