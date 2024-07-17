@@ -125,7 +125,7 @@ def contour_to_curve(contour, name):
 
 def get_border_curve(img, l_ch_f):
     """
-    Get disk border border_curve of the image. Implements Algorithm 6 in the paper.
+    Get disk border border_curve of the image.
     @param img: segmented gray image
     @param l_ch_f: list of curves
     @return: border object border_curve
@@ -195,8 +195,7 @@ def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre):
     """
     Edge detector find three types of edges: early wood transitions, latewood transitions and radial edges produced by
     cracks and fungi. Only early wood edges are the ones that forms the rings. In other to filter the other ones
-    collineary with the ray direction is computed and filter depending on threshold (alpha).  Implements Algorithm 5 in the
-    paper.
+    collineary with the ray direction is computed and filter depending on threshold (alpha).
     @param m_ch_e: devernay curves in matrix format
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate

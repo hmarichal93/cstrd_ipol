@@ -362,7 +362,7 @@ def select_no_intersection_chain_at_endpoint(ch1_sub: ch.Chain, ch2_sub: ch.Chai
 
 def split_intersecting_chains(direction, l_filtered_chains, ch_j):
     """
-    Split intersecting chains. Implements Algorithm 22 from the paper
+    Split intersecting chains.
     @param direction: endpoint direction for split chains
     @param l_filtered_chains: list of chains to be split
     @param ch_j: source chain
@@ -593,7 +593,7 @@ def split_and_connect_neighbouring_chains(l_within_nodes: List[ch.Node], l_withi
                                           endpoint: int, outward_ring, inward_ring, neighbourhood_size,
                                           debug_params, save_path, aux_chain=None):
     """
-    Logic for split and connect chains within region. Implements Algorithm 21 from paper.
+    Logic for split and connect chains within region.
     @param l_within_nodes: nodes within region
     @param l_within_chains: chains within region
     @param ch_j: source chain. The one that is being to connect if condition are met.
@@ -726,7 +726,6 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
                              debug=False, img=None, save_path=None, iteration=None):
     """
     Split chains that intersect in other endpoint and connect them if connectivity goodness conditions are met.
-    Implements Algorithm 20 from paper.
     @param l_within_chains: uncompleted chains delimitated by inward_ring and outward_ring
     @param inward_ring: inward ring of the region.
     @param outward_ring: outward ring of the region.
@@ -887,8 +886,7 @@ def connect_radially_closest_chain(src_chain, candidate_chain_a, diff_a, support
 
 def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
     """
-    Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections. Implements Algorithm 19 from
-    paper.
+    Posprocessing chain list. Conditions are relaxed in order to re-fine chain connections.
     @param l_ch_c: chain list
     @param l_nodes_c: node list
     @param debug: debug flag. Parameter after this one are for debugging.

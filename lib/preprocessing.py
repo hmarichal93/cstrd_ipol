@@ -29,7 +29,7 @@ def get_image_shape(im_in: np.array):
 
 def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     """
-    Resize image and keep the center of the image in the same position. Implements Algorithm 3 in the paper.
+    Resize image and keep the center of the image in the same position.
     @param im_in: Gray image to resize.
     @param height_output: output image height_output. If None, the image is not resized
     @param width_output: output image width_output. If None, the image is not resized.
@@ -110,7 +110,7 @@ def equalize_image_using_clahe(img_eq):
 
 def equalize(im_g):
     """
-    Equalize image using CLAHE algorithm. Implements Algorithm 4 in the paper
+    Equalize image using CLAHE algorithm.
     @param im_g: gray scale image
     @return: equalized image
     """
@@ -145,7 +145,6 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - image resize
     - image is converted to gray scale
     - gray scale image is equalized
-    Implements Algorithm 2 in the paper
     @param im_in: segmented image
     @param height_output: new image img_height
     @param width_output: new image img_width
