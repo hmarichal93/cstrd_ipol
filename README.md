@@ -85,6 +85,7 @@ Detecting pith center automatically can be done using software from IPOL paper "
 [link_ipol_pith_paper]: https://www.ipol.im/pub/art/2022/338/?utm_source=doi
 
 ## Docker Container
+You can run the algorithm in a docker container.
 
 ### Pull the image
 ```bash
