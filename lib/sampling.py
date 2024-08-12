@@ -206,7 +206,7 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
 
     cv2.imwrite(filename, img_draw)
 
-def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, cy, cx):
+def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, cy, cx, include_them_in_output=False):
     """
     Add gt rings as a chain
     @param chains_list: chain list
@@ -216,6 +216,7 @@ def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, 
     @param width: image width
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
+    @param include_them_in_output: boolean, include them in the output json file
     @return:
     """
     if gt_ring_json is None:
@@ -234,7 +235,7 @@ def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, 
         # add to list
         nodes_list += nodes
         chain = Chain(chain_id, chains_list[0].Nr, center=[cy, cx], img_height=height, img_width=width,
-                      type=TypeChains.gt_ring)
+                      type=TypeChains.gt_ring if not include_them_in_output else TypeChains.normal)
 
         chain.add_nodes_list(nodes)
         chains_list.append(chain)
@@ -242,7 +243,8 @@ def add_gt_rings_as_chain(chains_list, nodes_list, gt_ring_json, height, width, 
 
     return
 
-def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False, gt_ring_json = None):
+def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False, gt_ring_json = None,
+                   include_gt_rings_in_output=False):
     """
     Devernay curves are sampled using the rays directions. Implements Algoritm 7 in the paper.
     @param l_ch_f:  edges devernay curves
@@ -265,7 +267,8 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False, gt
                                                                        height, width)
 
     # Add gt rings as a chain
-    add_gt_rings_as_chain(l_ch_s, l_nodes_s, gt_ring_json, height, width, cy, cx)
+    add_gt_rings_as_chain(l_ch_s, l_nodes_s, gt_ring_json, height, width, cy, cx,
+                          include_them_in_output=include_gt_rings_in_output)
 
     # Line 4
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)

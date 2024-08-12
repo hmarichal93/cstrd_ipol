@@ -22,7 +22,7 @@ from lib.postprocessing import postprocessing
 from lib.utils import chain_2_labelme_json, save_config, saving_results
 
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
-                      debug_image_input_path, debug_output_dir, gt_ring_json=None):
+                      debug_image_input_path, debug_output_dir, gt_ring_json=None, include_gt_rings_in_output=False):
     """
     Method for delineating tree ring over pine cross sections ui. Implements Algorithm 1 from the paper.
     @param im_in: segmented input_image image. Background must be white (255,255,255).
@@ -55,12 +55,13 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
     m_ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
     # Line 3 Edge filtering module. Algorithm 5 in the paper.
-
-    l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
+    ealry_wood = gt_ring_json is not None
+    l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre, early_wood=ealry_wood, late_wood=not ealry_wood)
     # Line 4 Sampling edges. Algorithm 7 in the paper
-    l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug, gt_ring_json = gt_ring_json)
+    l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug, gt_ring_json=gt_ring_json,
+                                       include_gt_rings_in_output=include_gt_rings_in_output)
     # Line 5 Connect chains. Algorithm 8 in the paper. Im_pre is used for debug purposes
-    l_ch_c,  l_nodes_c = connect_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
+    l_ch_c, l_nodes_c = connect_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
     # Line 6 Postprocessing chains. Algorithm 19 in the paper. Im_pre is used for debug purposes
     l_ch_p = postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
     # Line 7
