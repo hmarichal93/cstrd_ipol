@@ -19,6 +19,7 @@ def load_image(image_name):
 
 def load_config(default=True):
     dir_path = os.path.dirname(os.path.realpath(__file__))
+    print(dir_path)
     return load_json(f"{dir_path}/../config/default.json") if default else load_json(f"{dir_path}/../config/general.json")
 
 
@@ -57,5 +58,13 @@ def get_path(*args):
     assert all([arg in paths[hostname].keys() for arg in args]), "Args must be in {}".format(paths[hostname].keys())
     paths = tuple([Path(paths[hostname][arg]) for arg in args])
     return paths[0] if len(paths) == 1 else paths
+
+def write_image(image_name, image):
+    #using PIL
+    from PIL import Image
+    print(f"Image: {image_name}")
+    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(image)
+    img.save(str(image_name))
 
 

@@ -15,9 +15,9 @@ from pathlib import Path
 import logging 
 from typing import List
 
-from lib.io import write_json, load_config
-import lib.chain as ch
-from lib.preprocessing import resize
+from ..lib.io import write_json, load_config
+from  ..lib import chain as ch
+from ..lib.preprocessing import resize
 
 
 
@@ -29,9 +29,8 @@ def save_config(args, root_path, output_dir):
     if args.nr:
         config['nr'] = args.nr
 
-    if args.hsize and args.wsize:
-        if args.hsize>0 and args.wsize>0:
-            config['resize'] = [args.hsize, args.wsize]
+    if args.resize:
+        config['resize'] = args.resize
 
     if args.min_chain_length:
         config["min_chain_length"] = args.min_chain_length

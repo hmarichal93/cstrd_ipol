@@ -11,11 +11,11 @@ import numpy as np
 import time
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
-from lib.drawing import Drawing
+from ..lib.drawing import Drawing
 import cv2
 
-from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
-from lib.io import load_json
+from ..lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
+from ..lib.io import load_json
 
 class Ray(LineString):
     def __init__(self, direction, center, M, N):

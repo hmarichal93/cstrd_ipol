@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from lib.io import load_config
+from lib.io import load_config, write_image
 from lib.drawing import Drawing
 
 def load_curves(output_txt):
@@ -24,7 +24,8 @@ def load_curves(output_txt):
 def convert_image_to_pgm(im_pre):
     config = load_config(default=False)
     image_path = Path(config.get("result_path")) / f"test.pgm"
-    cv2.imwrite(str(image_path), im_pre)
+    print(f"ImagePath: {image_path}\n\n\n")
+    write_image(image_path, im_pre)
     return config, image_path
 def write_curves_to_image(curves_list, img):
     img_aux = np.zeros(( img.shape[0], img.shape[1])) + 255
@@ -34,8 +35,13 @@ def write_curves_to_image(curves_list, img):
         img_aux = Drawing.circle(img_aux, (int(pix[0]),int(pix[1])))
     return img_aux
 def delete_files(files):
-    for file in files:
-        os.system(f"rm {file}")
+    import platform
+    if platform.system() == "Windows":
+        for file in files:
+            os.system(f"del \"{file}\"")
+    else:
+        for file in files:
+            os.system(f"rm \"{file}\"")
 
 def gradient_load( img, gx_path, gy_path):
     Gx = np.zeros_like(img).astype(float)
@@ -46,12 +52,23 @@ def gradient_load( img, gx_path, gy_path):
 
 def execute_command(config, image_path, sigma, low, high):
     root_path = Path(config.get("devernay_path"))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    root_path = Path(dir_path) / f"../{root_path}"
     results_path = Path(config.get("result_path"))
     output_txt = results_path / f"output.txt"
     gx_path = results_path / f"gx.txt"
     gy_path = results_path / f"gy.txt"
-    command = f"{str(root_path)}/devernay  {image_path} -s {sigma} -l {low} -h {high} -t {output_txt} " \
-              f" -x {gx_path} -y {gy_path}"
+
+    import platform
+    if platform.system() == "Windows":
+        executable_path = f"{str(root_path)}\devernay"
+    else:
+        executable_path = f"{str(root_path)}/devernay"
+
+    command = f"{executable_path}  \"{image_path}\" -s {sigma} -l {low} -h {high} -t \"{output_txt}\" " \
+              f" -x \"{gx_path}\" -y \"{gy_path}\""
+
+    print(command)
     os.system(command)
 
     return gx_path, gy_path, output_txt

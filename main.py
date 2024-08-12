@@ -12,14 +12,14 @@ You should have received a copy of the GNU Affero General Public License along w
 from pathlib import Path
 import time
 
-from lib.io import load_image
-from lib.preprocessing import preprocessing
-from lib.canny_devernay_edge_detector import canny_deverney_edge_detector
-from lib.filter_edges import filter_edges
-from lib.sampling import sampling_edges
-from lib.connect_chains import connect_chains
-from lib.postprocessing import postprocessing
-from lib.utils import chain_2_labelme_json, save_config, saving_results
+from .lib.io import load_image
+from .lib.preprocessing import preprocessing
+from .lib.canny_devernay_edge_detector import canny_deverney_edge_detector
+from .lib.filter_edges import filter_edges
+from .lib.sampling import sampling_edges
+from .lib.connect_chains import connect_chains
+from .lib.postprocessing import postprocessing
+from .lib.utils import chain_2_labelme_json, save_config, saving_results
 
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
                       debug_image_input_path, debug_output_dir, gt_ring_json=None, include_gt_rings_in_output=False):
