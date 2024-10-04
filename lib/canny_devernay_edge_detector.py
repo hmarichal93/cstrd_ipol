@@ -52,8 +52,9 @@ def gradient_load( img, gx_path, gy_path):
 
 def execute_command(config, image_path, sigma, low, high):
     root_path = Path(config.get("devernay_path"))
+    print(root_path)
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    root_path = Path(dir_path) / f"../{root_path}"
+    #root_path = Path(dir_path) / f"../{root_path}"
     results_path = Path(config.get("result_path"))
     output_txt = results_path / f"output.txt"
     gx_path = results_path / f"gx.txt"

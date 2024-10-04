@@ -15,9 +15,9 @@ from pathlib import Path
 import logging 
 from typing import List
 
-from ..lib.io import write_json, load_config
-from  ..lib import chain as ch
-from ..lib.preprocessing import resize
+from lib.io import write_json, load_config
+from lib import chain as ch
+from lib.preprocessing import resize
 
 
 
@@ -28,9 +28,9 @@ def save_config(args, root_path, output_dir):
 
     if args.nr:
         config['nr'] = args.nr
-
-    if args.resize:
-        config['resize'] = args.resize
+    print(args)
+    if args.hsize:
+        config['resize'] = [args.hsize, args.wsize]
 
     if args.min_chain_length:
         config["min_chain_length"] = args.min_chain_length
@@ -50,8 +50,9 @@ def save_config(args, root_path, output_dir):
     if args.debug:
         config['debug'] = True
 
+    print(root_path)
     config['devernay_path'] = str(Path(root_path) / "externas/devernay_1.0")
-
+    print(config['devernay_path'] )
     write_json(config, Path(root_path) / 'config/general.json')
 
     return 0
