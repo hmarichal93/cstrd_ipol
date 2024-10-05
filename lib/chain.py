@@ -124,10 +124,8 @@ class Chain:
         angle_k = self.extB.angle if direction == ClockDirection.clockwise else self.extA.angle
         while len(clock_wise_sorted_dots) < self.size:
             dot = self.get_node_by_angle(angle_k)
-            # if dot is None:
-            #     continue
-            assert dot is not None
-            assert dot.chain_id == self.id
+            if dot is None:
+                continue
             clock_wise_sorted_dots.append(dot)
             angle_k = (angle_k - step) % 360 if direction == ClockDirection.clockwise else (angle_k + step) % 360
 

@@ -12,14 +12,14 @@ You should have received a copy of the GNU Affero General Public License along w
 from pathlib import Path
 import time
 
-from .lib.io import load_image
-from .lib.preprocessing import preprocessing
-from .lib.canny_devernay_edge_detector import canny_deverney_edge_detector
-from .lib.filter_edges import filter_edges
-from .lib.sampling import sampling_edges
-from .lib.connect_chains import connect_chains
-from .lib.postprocessing import postprocessing
-from .lib.utils import chain_2_labelme_json, save_config, saving_results
+from lib.io import load_image
+from lib.preprocessing import preprocessing
+from lib.canny_devernay_edge_detector import canny_deverney_edge_detector
+from lib.filter_edges import filter_edges
+from lib.sampling import sampling_edges
+from lib.connect_chains import connect_chains
+from lib.postprocessing import postprocessing
+from lib.utils import chain_2_labelme_json, save_config, saving_results
 
 def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
                       debug_image_input_path, debug_output_dir, gt_ring_json=None, include_gt_rings_in_output=False):
@@ -75,12 +75,12 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
 
 def main(args):
     save_config(args, args.root, args.output_dir)
-    im_in = load_image(args.input)
+    im_in = load_image(args.input_image)
     Path(args.output_dir).mkdir(exist_ok=True, parents=True)
 
     res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
-                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir,
-                            args.gt_ring_json)
+                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input_image, args.output_dir,
+                            args.gt_ring_json, args.include_gt_rings_in_output)
 
     saving_results(res, args.output_dir, args.save_imgs)
 
@@ -104,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument("--th_low", type=int, required=False, default=5)
     parser.add_argument("--min_chain_length", type=int, required=False, default=2)
     parser.add_argument("--gt_ring_json", type=str, required=False)
+    parser.add_argument("--include_gt_rings_in_output", type=bool, required=False, default=False)
     parser.add_argument("--debug", type=int, required=False)
 
     args = parser.parse_args()
