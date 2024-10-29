@@ -9,3 +9,6 @@ glob2==0.7
 shapely == 1.7
 imageio==2.31.5
 Pillow==10.1.0
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==2.4.1
+torchvision==0.19.1
