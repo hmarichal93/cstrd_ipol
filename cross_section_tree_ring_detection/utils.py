@@ -15,9 +15,9 @@ from pathlib import Path
 import logging 
 from typing import List
 
-from lib.io import write_json, load_config
-import lib.chain as ch
-from lib.preprocessing import resize
+from cross_section_tree_ring_detection.io import write_json, load_config
+import cross_section_tree_ring_detection.chain as ch
+from cross_section_tree_ring_detection.preprocessing import resize
 
 
 

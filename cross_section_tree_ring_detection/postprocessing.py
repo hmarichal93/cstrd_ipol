@@ -13,12 +13,12 @@ from shapely.geometry import LineString, Point, Polygon
 import cv2
 from typing import List
 
-import lib.chain as ch
-from lib.drawing import Drawing
-from lib.interpolation_nodes import complete_chain_using_2_support_ring, connect_2_chain_via_inward_and_outward_ring, \
+import cross_section_tree_ring_detection.chain as ch
+from cross_section_tree_ring_detection.drawing import Drawing
+from cross_section_tree_ring_detection.interpolation_nodes import complete_chain_using_2_support_ring, connect_2_chain_via_inward_and_outward_ring, \
     complete_chain_using_support_ring
-from lib.basic_properties import similarity_conditions
-from lib.connect_chains import intersection_between_chains, get_inward_and_outward_visible_chains, SystemStatus, debugging_chains
+from cross_section_tree_ring_detection.basic_properties import similarity_conditions
+from cross_section_tree_ring_detection.connect_chains import intersection_between_chains, get_inward_and_outward_visible_chains, SystemStatus, debugging_chains
 
 
 def build_boundary_poly(outward_ring, inward_ring):

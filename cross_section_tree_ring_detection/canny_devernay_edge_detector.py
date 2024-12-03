@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from lib.io import load_config
-from lib.drawing import Drawing
+from cross_section_tree_ring_detection.io import load_config
+from cross_section_tree_ring_detection.drawing import Drawing
 
 def load_curves(output_txt):
     curves_list = pd.read_csv(output_txt, delimiter=" ", header=None).values

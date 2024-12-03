@@ -11,8 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List
 
-from lib.canny_devernay_edge_detector import write_curves_to_image
-from lib.filter_edges import write_filter_curves_to_image
+from cross_section_tree_ring_detection.canny_devernay_edge_detector import write_curves_to_image
+from cross_section_tree_ring_detection.filter_edges import write_filter_curves_to_image
 
 
 def euclidean_distance(pix1, pix2):

@@ -10,7 +10,7 @@ You should have received a copy of the GNU Affero General Public License along w
 import numpy as np
 from typing import List
 
-import lib.chain as ch
+import cross_section_tree_ring_detection.chain as ch
 
 
 def compute_interpolation_domain(endpoint: str, endpoint_cad1: ch.Node, endpoint_cad2: ch.Node, Nr):
