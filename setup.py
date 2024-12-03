@@ -36,7 +36,7 @@ setup(
         'glob2==0.7',
         'shapely == 1.7',
         'imageio==2.33',
-        'Pillow==10.1.0',
+        'Pillow==10.3.0',
                       ],
 
     classifiers=[
