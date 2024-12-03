@@ -14,10 +14,10 @@ from pathlib import Path
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-from lib.io import load_image, load_json
-from lib.sampling import build_rays, compute_intersection, draw_ray_curve_and_intersections
-import lib.chain as ch
-import lib.drawing as dr
+from cross_section_tree_ring_detection.io import load_image, load_json
+from cross_section_tree_ring_detection.sampling import build_rays, compute_intersection, draw_ray_curve_and_intersections
+import cross_section_tree_ring_detection.chain as ch
+import cross_section_tree_ring_detection.drawing as dr
 
 FP_ID = -1
 

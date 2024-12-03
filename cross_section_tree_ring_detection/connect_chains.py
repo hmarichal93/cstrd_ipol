@@ -13,10 +13,10 @@ import numpy as np
 from pathlib import Path
 from typing import List, Tuple
 
-import lib.chain as ch
-from lib.interpolation_nodes import compute_interpolation_domain, \
+import cross_section_tree_ring_detection.chain as ch
+from cross_section_tree_ring_detection.interpolation_nodes import compute_interpolation_domain, \
     domain_interpolation
-from lib.basic_properties import similarity_conditions, \
+from cross_section_tree_ring_detection.basic_properties import similarity_conditions, \
     exist_chain_overlapping, InfoVirtualBand
 
 

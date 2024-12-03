@@ -11,10 +11,10 @@ import numpy as np
 import time
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
-from lib.drawing import Drawing
+from cross_section_tree_ring_detection.drawing import Drawing
 import cv2
 
-from lib.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
+from cross_section_tree_ring_detection.chain import Node, euclidean_distance, get_node_from_list_by_angle, Chain, TypeChains
 
 
 class Ray(LineString):

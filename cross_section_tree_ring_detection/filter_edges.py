@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from shapely.geometry.linestring import LineString
 
-from lib.drawing import Color
+from cross_section_tree_ring_detection.drawing import Color
 
 DELIMITE_CURVE_ROW = np.array([-1, -1])
 
