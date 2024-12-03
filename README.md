@@ -23,19 +23,12 @@ Authors:
 ## Installation
 ### Conda
 ```bash
-conda create --name ipol
+conda create --name ipol python==3.11
 conda activate ipol
 conda install -n ipol -c conda-forge geos
 conda install -n ipol -c anaconda cmake 
 conda install -n ipol pip
 ```
-```bash
-pip install --no-cache-dir -r requirements.txt
-```
-```bash
-cd ./externas/devernay_1.0 && make clean && make
-```
-### Pip 
 ```bash
 pip install .
 ```
