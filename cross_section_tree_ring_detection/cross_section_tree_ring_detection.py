@@ -8,8 +8,8 @@ from cross_section_tree_ring_detection.connect_chains import connect_chains
 from cross_section_tree_ring_detection.postprocessing import postprocessing
 from cross_section_tree_ring_detection.utils import chain_2_labelme_json, save_config, saving_results
 
-def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc, debug,
-                      debug_image_input_path, debug_output_dir):
+def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alpha, nr, mc,
+                      debug= False, debug_image_input_path=None, debug_output_dir=None):
     """
     Method for delineating tree ring over pine cross sections images. Implements Algorithm 1 from the paper.
     @param im_in: segmented input image. Background must be white (255,255,255).

@@ -37,15 +37,16 @@ pip install .
 ### Import the module
 ```python
 from cross_section_tree_ring_detection.cross_section_tree_ring_detection import TreeRingDetection
+from cross_section_tree_ring_detection.io import load_image
 
-im_in = #IMAGE
-args = dict(cy: 1264, cx: 1204, sigma: 1.0, th_low: 0.1, th_high: 0.2,
-        hsize: 3, wsize: 3, edge_th: 0.1, nr: 1, 
-        min_chain_length: 10, debug: 0, input: 'input/F02c.png',
-        output_dir: './output', save_imgs: 0)
-    
-res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
-                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
+args =  dict(cy=1264, cx=1204, sigma=3, th_low=5, th_high=20,
+        height=1500, width=1500, alpha=30, nr=360,
+        mc=2)
+
+im_in = load_image('input/F02c.png')
+res = TreeRingDetection(im_in, **args)
+
+rings_point = res["shapes"]
 
 ```
 ### CLI
