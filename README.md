@@ -13,42 +13,15 @@ ArXiv paper: [ArXiv][link_arxiv_paper].
 
 
 Version 1.0
-Last update: 13/05/2023
+Last update: 03/12/2024
 Authors: 
 -	Henry Marichal, henry.marichal@fing.edu.uy
 -   Diego Passarella, diego.passarella@cut.edu.uy
 -   Gregory Randall, randall@fing.edu.uy
 
-## Get started
-
-#### 1. Folders
-All the python source files are in lib/ folder. Dependencies are in externas/ folder. 
-Default configuration files are in config/ folder. 
-
-
-#### Paper    
-Algorithm 1 is implemented in the file **main.py**
-
-Canny-Devernay implementation [[10](https://www.ipol.im/pub/art/2017/216/)] is in **externas/devernay_1.0**. Python
-wrapper is in **lib/canny_devernay_edge_detector.py**
-
-Algorithm 2, 3 and 4 are implemented in the file **lib/connect_chains.py**
-
-#### Supplementary Material
-
-Algorithm 1, 2 and 3 are implemented in the file **lib/preprocessing.py**
-
-Algorithm 4 and 5 are implemented in the file **lib/filter_edges.py** 
-
-Algorithm 6 is implemented in the file **lib/sampling.py**
-
-Algorithm 7, 8, 9, 10,  12, 13, 14 are implemented in the file **lib/connect_chains.py**
-
-Algorithm 11 is implemented in the file **lib/basic_properties.py**
-
-Algorithm 15, 16, 17 and 18 are implemented in the file **lib/postprocessing.py**
 
 ## Installation
+### Conda
 ```bash
 conda create --name ipol
 conda activate ipol
@@ -62,14 +35,27 @@ pip install --no-cache-dir -r requirements.txt
 ```bash
 cd ./externas/devernay_1.0 && make clean && make
 ```
+### Pip 
+```bash
+pip install .
+```
 
 ## Examples of usage
+### Import the module
+```python
+from cross_section_tree_ring_detection.cross_section_tree_ring_detection import TreeRingDetection
 
-Here some examples of usage:
-```bash
-python main.py --input IMAGE_PATH --cx CX --cy CY 
-  --outpu_dir OUTPUT_DIR --root REPO_ROOT_DIR
+im_in = #IMAGE
+args = dict(cy: 1264, cx: 1204, sigma: 1.0, th_low: 0.1, th_high: 0.2,
+        hsize: 3, wsize: 3, edge_th: 0.1, nr: 1, 
+        min_chain_length: 10, debug: 0, input: 'input/F02c.png',
+        output_dir: './output', save_imgs: 0)
+    
+res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
+                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
+
 ```
+### CLI
 ```bash
 python main.py --input input/F02c.png --cy 1264 --cx 1204  --output_dir ./output --root ./
 ```
