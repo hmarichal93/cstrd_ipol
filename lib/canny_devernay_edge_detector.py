@@ -55,7 +55,7 @@ def execute_command(config, image_path, sigma, low, high):
     os.system(command)
 
     return gx_path, gy_path, output_txt
-def canny_deverney_edge_detector(im_pre, sigma, low, high):
+def canny_devernay_edge_detector(im_pre, sigma, low, high):
     """
     Canny edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
     source code downloaded from https://doi.org/10.5201/ipol.2017.216

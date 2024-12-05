@@ -14,7 +14,7 @@ import time
 
 from lib.io import load_image
 from lib.preprocessing import preprocessing
-from lib.canny_devernay_edge_detector import canny_deverney_edge_detector
+from lib.canny_devernay_edge_detector import canny_devernay_edge_detector
 from lib.filter_edges import filter_edges
 from lib.sampling import sampling_edges
 from lib.connect_chains import connect_chains
@@ -54,7 +54,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # scale and equalized
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
-    m_ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
+    m_ch_e, gx, gy = canny_devernay_edge_detector(im_pre, sigma, th_low, th_high)
     # Line 3 Edge filtering module. Algorithm 4 in the supplementary material.
     l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
     # Line 4 Sampling edges. Algorithm 6 in the supplementary material.
@@ -75,12 +75,18 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
 def main(args):
     save_config(args, args.root, args.output_dir)
     im_in = load_image(args.input)
-    Path(args.output_dir).mkdir(exist_ok=True)
+    Path(args.output_dir).mkdir(exist_ok=True, parent=True)
 
-    res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
-                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
 
-    saving_results(res, args.output_dir, args.save_imgs)
+    try:
+        res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
+                                args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
+        saving_results(res, args.output_dir, args.save_imgs)
+
+    except Exception as e:
+        #write to file
+        with open("demo_failure.txt", "w") as f:
+            f.write(str(e))
 
     return 0
 
