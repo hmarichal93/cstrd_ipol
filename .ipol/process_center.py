@@ -24,7 +24,12 @@ if __name__=="__main__":
     if args.type == 0:
         y,x = mannually(args.input)
     else:
-        y,x = automatic(args.input)
+        try:
+            y,x = automatic(args.input)
+        except:
+            #write to file
+            with open("demo_failure.txt", "w") as f:
+                f.write("Automatic Pith detector failed")
 
     print(f"{int(y)}")
     print(f"{int(x)}")
