@@ -75,18 +75,12 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
 def main(args):
     save_config(args, args.root, args.output_dir)
     im_in = load_image(args.input)
-    Path(args.output_dir).mkdir(exist_ok=True, parent=True)
+    Path(args.output_dir).mkdir(exist_ok=True, parents=True)
 
+    res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
+                            args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
+    saving_results(res, args.output_dir, args.save_imgs)
 
-    try:
-        res = TreeRingDetection(im_in, args.cy, args.cx, args.sigma, args.th_low, args.th_high, args.hsize, args.wsize,
-                                args.edge_th, args.nr, args.min_chain_length, args.debug, args.input, args.output_dir)
-        saving_results(res, args.output_dir, args.save_imgs)
-
-    except Exception as e:
-        #write to file
-        with open("demo_failure.txt", "w") as f:
-            f.write(str(e))
 
     return 0
 
@@ -110,7 +104,14 @@ if __name__ == "__main__":
     parser.add_argument("--debug", type=int, required=False)
 
     args = parser.parse_args()
-    main(args)
+    try:
+        main(args)
+
+    except Exception as e:
+        #write to file
+        with open("demo_failure.txt", "w") as f:
+            f.write(str(e))
+
 
 
 
