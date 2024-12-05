@@ -30,6 +30,6 @@ if __name__=="__main__":
             #write to file
             with open("demo_failure.txt", "w") as f:
                 f.write("Automatic Pith detector failed")
-
+            y,x = 0,0
     print(f"{int(y)}")
     print(f"{int(x)}")
