@@ -387,27 +387,28 @@ def split_intersecting_chains(direction, l_filtered_chains, ch_j):
 
         # Line 6 Longest ch_i intersect two times
         if intersection_between_chains(ch_k, ch_j):
-            # Line 7
+            # Line 7. get_ch_j_opposite_endpoint_angle(split_node)
             node_direction_2 = ch_j.extB.angle if split_node.angle == ch_j.extA.angle else ch_j.extA.angle
+            # Line 8
             split_node_2 = ch_k.get_node_by_angle(node_direction_2)
             if split_node_2 is None:
                 # It is not possible to split the chain due to split_node_2 is None. Continue to next chain
                 continue
 
-            # Line 8
+            # Line 9
             sub_ch1, sub_ch2 = split_chain(ch_k, split_node_2)
 
-            # Line 9
+            # Line 10
             ch_k = select_no_intersection_chain_at_endpoint(sub_ch1, sub_ch2, ch_j, node_direction_2)
             if ch_k is None:
                 # There is not chain that does not intersect with ch_j at endpoint. Continue to next chain
                 continue
 
-        # Line 10
+        # Line 11
         ch_k.change_id(inter_chain.id)
         ch_k.label_id = inter_chain.label_id
 
-        # Line 11
+        # Line 12
         l_search_chains.append(ch_k)
 
     # Line 12
