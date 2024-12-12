@@ -75,7 +75,9 @@ def build_rays(Nr, M, N, center):
     @param center: (y,x)
     @return: list_position rays
     """
+    # Line 1
     angles_range = np.arange(0, 360, 360 / Nr)
+    #Line 2 generate_rays_list
     radii_list = [Ray(direction, center, M, N) for direction in angles_range]
     return radii_list
 
