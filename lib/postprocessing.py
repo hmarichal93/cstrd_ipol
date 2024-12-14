@@ -50,7 +50,7 @@ def build_boundary_poly(outward_ring, inward_ring):
     return poly
 
 
-def search_shapely_inward_chain(shapley_incomplete_chain, outward_ring, inward_ring):
+def search_for_polygons_within_region(shapley_incomplete_chain, outward_ring, inward_ring):
     """
     Search for shapely polygon inside region delimitad for outward and inward rings
     @param shapley_incomplete_chain: shapely polygon chains not closed. Not nr nodes
@@ -130,7 +130,7 @@ class DiskContext:
             self.completed_chains)
 
         self.uncompleted_chains = [cad for cad in l_ch_c if cad.size < cad.Nr]
-        self.uncompleted_chains_poly = self._from_uncompleted_chains_to_poly(self.uncompleted_chains)
+        self.uncompleted_polygons = self._from_uncompleted_chains_to_poly(self.uncompleted_chains)
         self.idx = 1 if idx_start is None else idx_start
 
     def get_inward_outward_ring(self, idx):
@@ -148,16 +148,25 @@ class DiskContext:
         Update the context. The context is updated when the algorithm is executed over a new region
         :return: self.l_within_chains, self.inward_ring, self.outward_ring
         """
-        inward_poly_ring, outward_poly_ring = self.get_inward_outward_ring(self.idx)
-        shapely_inward_chain_subset = search_shapely_inward_chain(self.uncompleted_chains_poly, outward_poly_ring,
-                                                                  inward_poly_ring)
-        self.l_within_chains = from_shapely_to_chain(self.uncompleted_chains_poly,
+        #Line 1
+        # self.idx indicates the region to be processed at this iteration
+        inward_polygon, outward_polygon = self.get_inward_outward_ring(self.idx)
+
+        # Line 2 Search for chains within region. self.uncompleted_polygons are the l_ch_p chains coded
+        # as shapely polygons
+        l_uncomplete_polygons_within_region = search_for_polygons_within_region(self.uncompleted_polygons, outward_polygon,
+                                                                              inward_polygon)
+
+        # Line 3 Convert shapely polygons to chain objects
+        self.l_within_chains = from_shapely_to_chain(self.uncompleted_polygons,
                                                      self.uncompleted_chains,
-                                                     shapely_inward_chain_subset)
+                                                     l_uncomplete_polygons_within_region)
 
-        self.inward_ring, self.outward_ring = self._from_shapely_ring_to_chain(inward_poly_ring,
-                                                                               outward_poly_ring)
+        self.inward_ring, self.outward_ring = self._from_shapely_ring_to_chain(inward_polygon,
+                                                                               outward_polygon)
 
+        # output: self.l_within_chains, self.inward_ring, self.outward_ring
+        return
     def exit(self):
         self.idx += 1
         if self.idx >= len(self.completed_chains):
@@ -930,7 +939,7 @@ def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
                 idx_start = ctx.idx
                 break
 
-            # Line 10 Second posproccessing
+            # Line 10 Second postproccessing
             connect_chains_if_there_is_enough_data(ctx, l_nodes_c, l_ch_p)
 
             # Line 11
