@@ -133,7 +133,7 @@ def compute_intersection(l_rays, curve, chain_id, center):
     return l_curve_nodes
 
 
-def intersections_between_rays_and_devernay_curves(center, l_rays, l_curves, min_chain_length, nr, height, width):
+def intersections_between_rays_and_devernay_curves(center, l_rays, l_curves, mc, nr, height, width):
     """
     Compute chains sampling devernay curves.  Sampling is made finding the intersection
     between rays and devernay curves. A chain is a list of nodes. A node is a point in the image with the following
@@ -141,7 +141,7 @@ def intersections_between_rays_and_devernay_curves(center, l_rays, l_curves, min
     @param center: pith center
     @param l_rays: ray list
     @param l_curves: devernay curves list
-    @param min_chain_length: minimum length of chain
+    @param mc: minimum length of chain
     @param nr: number of rays
     @param height: image height
     @param width: image widht
@@ -152,7 +152,7 @@ def intersections_between_rays_and_devernay_curves(center, l_rays, l_curves, min
         chain_id = len(l_chain)
         l_curve_nodes = compute_intersection(l_rays, curve, chain_id, center)
 
-        if len(l_curve_nodes) < min_chain_length:
+        if len(l_curve_nodes) < mc:
             continue
 
         l_nodes += l_curve_nodes
@@ -209,7 +209,7 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
     cv2.imwrite(filename, img_draw)
 
 
-def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
+def sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=False):
     """
     Devernay curves are sampled using the rays directions. Implements Algoritm 6 in the supplementary material
     @param l_ch_f:  edges devernay curves
@@ -217,7 +217,7 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
     @param cx: pith x's coordinate
     @param im_pre: input image
     @param nr: total ray number
-    @param min_chain_length:  minumim chain length
+    @param mc:  minumim chain length
     @param debug: debugging flag
     @return:
     - l_ch_s: sampled edges curves. List of chain objects
@@ -228,7 +228,7 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, min_chain_length, nr, debug=False):
     # Line 2
     l_rays = build_rays(nr, height, width, [cy, cx])
     # Line 3
-    l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, min_chain_length, nr,
+    l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, mc, nr,
                                                                        height, width)
     # Line 4
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
