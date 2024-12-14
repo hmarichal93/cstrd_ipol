@@ -92,7 +92,7 @@ def find_border_contour(mask, img):
 
     # 1.0 Perimeter of the image. Used to discard contours that are similar in size to the image perimeter.
     perimeter_image = 2 * img.shape[0] + 2 * img.shape[1]
-    # 1.1 Error threshold. Used to discard contours that are similar in size to the image perimeter.For us, similar
+    # 1.1 Error threshold. Used to discard contours that are similar in size to the image perimeter. For us, similar
     # is lower than 10% of the perimeter of the image.
     error_threshold = 0.1 * perimeter_image
 
