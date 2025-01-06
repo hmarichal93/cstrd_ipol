@@ -50,18 +50,18 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     """
     to = time.time()
 
-    # Line 1 Preprocessing image. Algorithm 1 in the supplementary material. Image is  resized, converted to gray
+    # Line 1 Preprocessing image. Algorithm 7 in the paper. Image is  resized, converted to gray
     # scale and equalized
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
     m_ch_e, gx, gy = canny_devernay_edge_detector(im_pre, sigma, th_low, th_high)
-    # Line 3 Edge filtering module. Algorithm 4 in the supplementary material.
+    # Line 3 Edge filtering module.
     l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
-    # Line 4 Sampling edges. Algorithm 6 in the supplementary material.
+    # Line 4 Sampling edges. Algorithm 2 in the paper.
     l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug)
-    # Line 5 Connect chains. Algorithm 7 in the supplementary material. Im_pre is used for debug purposes
+    # Line 5 Connect chains. Algorithm 3 in the paper. Im_pre is used for debug purposes
     l_ch_c,  l_nodes_c = connect_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
-    # Line 6 Postprocessing chains. Algorithm 19 in the paper. Im_pre is used for debug purposes
+    # Line 6 Postprocessing chains. Algorithm 16 in the paper. Im_pre is used for debug purposes
     l_ch_p = postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
     # Line 7
     debug_execution_time = time.time() - to
