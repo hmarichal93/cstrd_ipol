@@ -68,7 +68,7 @@ class Ray(LineString):
 
 def build_rays(Nr, M, N, center):
     """
-
+    Algorithm 11 in the paper
     @param Nr: total rays
     @param N: widht image
     @param M: height_output image
@@ -79,6 +79,7 @@ def build_rays(Nr, M, N, center):
     angles_range = np.arange(0, 360, 360 / Nr)
     #Line 2 generate_rays_list
     radii_list = [Ray(direction, center, M, N) for direction in angles_range]
+    # Line 3
     return radii_list
 
 
@@ -211,7 +212,8 @@ def draw_ray_curve_and_intersections(dots_lists, rays_list, curves_list, img_dra
 
 def sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=False):
     """
-    Devernay curves are sampled using the rays directions. Implements Algoritm 6 in the supplementary material
+    Devernay curves are sampled using the rays directions.
+    Implements Algoritm 2 in the paper
     @param l_ch_f:  edges devernay curves
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate

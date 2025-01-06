@@ -83,7 +83,7 @@ def copy_chains_and_nodes(ch_s):
 def connect_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction.
-    Implements Algorithm 7 in the supplementary material
+    Implements Algorithm 3 in the paper
     @param l_ch_s: chain list
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
@@ -108,7 +108,7 @@ def connect_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
 
         # Line 4.
         # debug_im_pre is a copy of the input image. It is used to visualize the results of the current iteration for debugging purposes.
-        # Algorithm 2 in the paper
+        # Algorithm 4 in the paper
         l_ch_c, l_nodes_c, M = connect_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre= debut_im_pre,
                                                          save=f"{output_dir}/output_{i}_", **iteration_params)
 
@@ -218,7 +218,7 @@ class SystemStatus:
 
     def get_next_chain(self):
         """
-        Algorithm 9 in the supplementary material. Get next chain to be processed.
+        Algorithm 13 in the paper. Get next chain to be processed.
         :return: next supported chain
         """
         # Line 2
@@ -310,7 +310,7 @@ class SystemStatus:
 
     def update_system_status(self, ch_i, l_s_outward, l_s_inward):
         """
-        Algorithm 8 in the supplementary material. Update the system state after the iteration.
+        Algorithm 12 in the paper. Update the system state after the iteration.
         @param ch_i: support chain in current iteration
         @param l_s_outward: outward list of chains
         @param l_s_inward: inward list of chains
@@ -394,7 +394,7 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
                               th_regular_derivative=1.5, neighbourhood_size=22, derivative_from_center=False,
                               debug_imgs=False, im_pre=None, save=None):
     """
-    Logic for connecting chains based on similarity conditions. Implements Algorithm 2 from the paper.
+    Logic for connecting chains based on similarity conditions. Implements Algorithm 4 from the paper.
     @param l_ch_s: list of chains
     @param l_nodes_s: list of nodes belonging to chains
     @param M: matrix of intersections between chains
@@ -421,7 +421,7 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
     # If some chains have been connected in the current iteration, the algorithm continues one more iteration.
     # Additionaly, if nodes have been added to some chain, the algorithm continues one more iteration.
     while state.continue_in_loop():
-        # Line 3. Get next chain to be processed. Algorithm 11 in the paper.
+        # Line 3. Get next chain to be processed. Algorithm 13 in the paper.
         ch_i = state.get_next_chain()
 
         # Line 4. Get chains in ch_i neighbourhood
@@ -440,12 +440,12 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_1.png')
                 l_no_intersection_j = get_non_intersection_chains(state.M, l_candidates_chi, ch_j)
 
-                # Line 14. Algorithm 13 in the supplementary material
+                # Line 14. Algorithm 14 in the paper
                 ch_k_b = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.B)
                 debugging_chains(state, [ch_i, ch_j, ch_k_b], f'{state.path}/{state.counter}_2.png')
 
-                # Line 15. Algorithm 13 in the supplementary material
+                # Line 15. Algorithm 14 in the paper
                 ch_k_a = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.A)
                 debugging_chains(state, [ch_i, ch_j, ch_k_a], f'{state.path}/{state.counter}_3.png')
@@ -454,14 +454,14 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
                 ch_k, endpoint = select_closest_chain(ch_j, ch_k_a, ch_k_b)
                 debugging_chains(state, [ch_i, ch_j, ch_k], f'{state.path}/{state.counter}_4.png')
 
-                # Line 17. Algorithm 14 in the paper
+                # Line 17. Algorithm 5 in the paper
                 connect_two_chains(state, ch_j, ch_k, l_candidates_chi, endpoint, ch_i)
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
 
                 # Line 18
                 j_pointer = update_pointer(ch_j, ch_k, l_candidates_chi)
 
-        # Line 19. Implementing the logic of Algorithm 10
+        # Line 19. Implementing the logic of Algorithm 12
         state.update_system_status(ch_i, l_s_outward, l_s_inward)
 
     # Line 20
@@ -526,7 +526,7 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
                       location: int, endpoint: int, M):
     """
     Search for the closest chain to ch_j that does not intersect with ch_j and met conditions.
-    Implements Algorithm 3 from the paper
+    Implements Algorithm 14 from the paper
     @param state: SystemStatus
     @param ch_j: source chain
     @param l_no_intersection_j: list of chains that do not intersect with ch_j. Set of candidate chains to connect with
@@ -547,19 +547,19 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
     ch_k = None
 
     # Line 5. Search for closest chain to ch_i
-    lenght_chains = len(l_sorted_chains_in_neighbourhood)
-    while next_id < lenght_chains:
+    length_chains = len(l_sorted_chains_in_neighbourhood)
+    while next_id < length_chains:
         # Line 6
         candidate_chain = l_sorted_chains_in_neighbourhood[next_id].cad
 
-        # Line 7 Algorithm 4 from paper.
+        # Line 7 Algorithm 15 from paper.
         pass_control, radial_distance = connectivity_goodness_condition(state, ch_j, candidate_chain, ch_i,
                                                                         endpoint)
 
         # Line 8
         if pass_control:
             # Line 9. Check that do not exist other chains that intersect next ch_i that is radially ch_k to ch_j
-            # Get chains that intersect next ch_i. Algorithm 14 in the supplementary material.
+            # Get chains that intersect next ch_i.
             ch_k = get_the_closest_chain_by_radial_distance_that_does_not_intersect(state, ch_j, ch_i,
                                                                                        endpoint, radial_distance,
                                                                                        candidate_chain, M,
@@ -577,7 +577,6 @@ def get_closest_chain(state: SystemStatus, ch_j: ch.Chain, l_no_intersection_j: 
 def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location, endpoint):
     """
     Get the ch_k chain tha met condition  if it is symmetric. If it is not symmetric return None.
-    Implements Algorithm 13 in the supplementary material.
     @param state: System status instance. It contains all the information about the system.
     @param l_candidates_chi: List of chains that can be candidates to be connected to ch_j
     @param ch_j: Chain that is going to be connected to another chain
@@ -587,7 +586,7 @@ def get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, 
     @param endpoint: Endpoint of ch_j that is going to be connected
     @return: closest chain, ch_k, to ch_j that met condition
     """
-    # Line 2. Algorithm 3 in the paper
+    # Line 2. Algorithm 14 in the paper
     ch_k = get_closest_chain(state, ch_j, l_no_intersection_j, ch_i, location, endpoint, state.M)
 
     # Line 3
@@ -656,7 +655,7 @@ def update_chains_ids(state, ch_k):
     return
 def connect_two_chains(state: SystemStatus, ch_j, ch_k, l_candidates_chi, endpoint, ch_i):
     """
-    Algorithm 12 in the supplementary material. Connect chains ch_j and ch_k updating all the information about the system.
+    Algorithm 5 in the paper. Connect chains ch_j and ch_k updating all the information about the system.
     @param state: class object that contains all the information about the system.
     @param ch_j: chain j to connect
     @param ch_k: chain k to connect
@@ -876,7 +875,7 @@ def connectivity_goodness_condition(state: SystemStatus, ch_j: ch.Chain, candida
                                     endpoint: int) -> Tuple[bool, float]:
     """
     Check if the chain candidate_chain can be connected to the chain ch_j.
-    Implements Algorithm 4 of the paper
+    Implements Algorithm 15 of the paper
     @param state: system status
     @param ch_j: chain j
     @param candidate_chain: candidate chain

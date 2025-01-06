@@ -125,7 +125,7 @@ def contour_to_curve(contour, name):
 
 def get_border_curve(img, l_ch_f):
     """
-    Get disk border border_curve of the image. Implements Algorithm 5 in the supplementary material
+    Get disk border border_curve of the image. Implements Algorithm 10 in the paper
     @param img: segmented gray image
     @param l_ch_f: list of curves
     @return: border object border_curve
