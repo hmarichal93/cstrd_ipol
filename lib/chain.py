@@ -130,6 +130,9 @@ class Chain:
         return clock_wise_sorted_dots
 
     def __repr__(self):
+        return (f'(id_l:{self.label_id},id:{self.id}, size {self.size}) ')
+
+    def __str__(self):
         return (f'(id_l:{self.label_id},id:{self.id}, size {self.size}')
 
     def __find_endpoints(self):
@@ -160,6 +163,13 @@ class Chain:
         return change_border
 
     def add_nodes_list(self, l_nodes):
+        angular_domain_new = [node.angle for node in l_nodes]
+        angular_domain_old = [node.angle for node in self.l_nodes]
+        #check if elements are not repeated
+        if len(set(angular_domain_new).intersection(set(angular_domain_old))) > 0:
+            raise Exception(f'It already exists a node with the same angle in the chain '
+                            f'{set(angular_domain_new).intersection(set(angular_domain_old))}')
+
         self.l_nodes += l_nodes
         change_border = self.update()
         return change_border
