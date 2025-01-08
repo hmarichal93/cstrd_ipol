@@ -10,10 +10,9 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
 from pathlib import Path
-import logging 
 from typing import List
+import pickle
 
 from lib.io import write_json, load_config
 import lib.chain as ch
@@ -114,10 +113,24 @@ def chain_2_labelme_json(chain_list: List[ch.Chain], image_height, image_width, 
 
     return labelme_json
 
+def load_pickle(file_path):
+    """
+    Load pickle file
+    @param file_path: pickle file path
+    @return: object stored in the pickle file
+    """
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
 
 
-
-
+def write_pickle(file_path, obj):
+    """
+    Write object to pickle file
+    @param file_path: pickle file path
+    @param obj: object to store
+    """
+    with open(file_path, 'wb') as f:
+        pickle.dump(obj, f)
 
 
 
