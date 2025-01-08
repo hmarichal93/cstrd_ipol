@@ -853,16 +853,6 @@ def split_and_connect_chains(l_within_chains: List[ch.Chain], inward_ring: ch.Ch
                                  filename = f'{save_path}/{iteration[0]}_split_chains_{ch_j.label_id}_within_chains_init.png',
                                  iteration = [iteration[0]-1])
 
-        # if iteration[0] >= 170:
-        #     debug_params = (img, iteration, debug)
-        #     object_dict = {'l_within_chains': l_within_chains, 'inward_ring': inward_ring, 'outward_ring': outward_ring,
-        #                     'l_ch_p': l_ch_p, 'l_nodes_c': l_nodes_c, 'neighbourhood_size': neighbourhood_size,
-        #                     'debug': debug, 'img': img, 'save_path': save_path, 'iteration': iteration,
-        #                    'debug_params': debug_params}
-        #     from lib.utils import write_pickle
-        #     write_pickle(f'{save_path}/object_dict_{iteration[0]}.pkl', object_dict )
-        #     raise
-
 
         # Line 13 Split chains in endpoint A and get candidate ch_i. Algorithm 19 in the paper.
         endpoint = ch.EndPoints.A
