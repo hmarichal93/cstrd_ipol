@@ -265,9 +265,14 @@ class SystemStatus:
             if chain.id != new_dot.chain_id:
                 raise
 
-            processed_node_list.append(new_dot)
             if new_dot in self.l_nodes_s:
+                exist_at_least_one_endpoint_in_the_list = any([new_dot == chain.extA, new_dot == chain.extB])
+                if not exist_at_least_one_endpoint_in_the_list:
+                    raise Exception(f"Node {new_dot} is already in the list and it is not an endpoint of the chain")
                 continue
+
+            processed_node_list.append(new_dot)
+
 
             self.l_nodes_s.append(new_dot)
             # 1.0 Update ch_i list intersection
