@@ -50,7 +50,7 @@ Algorithm 15, 16, 17 and 18 are implemented in the file **lib/postprocessing.py*
 
 ## Installation
 ```bash
-conda create --name ipol
+conda create --name ipol python=3.11
 conda activate ipol
 conda install -n ipol -c conda-forge geos
 conda install -n ipol -c anaconda cmake 
