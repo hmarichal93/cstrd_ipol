@@ -1,13 +1,13 @@
 """
 In order to run metric please visit: https://github.com/hmarichal93/uruDendro and install urudendro package
 """
-from urudendro.metric_influence_area import main as metric
-from urudendro.labelme import resize_annotations,  AL_LateWood_EarlyWood
-
 from pathlib import Path
-from shapely.geometry import Polygon
 
 import pandas as pd
+from shapely.geometry import Polygon
+from urudendro.labelme import AL_LateWood_EarlyWood
+from urudendro.metric_influence_area import main as metric
+
 
 def get_center_pixel(annotation_path):
     al = AL_LateWood_EarlyWood(annotation_path, None)
@@ -19,7 +19,7 @@ def get_center_pixel(annotation_path):
 
 
 
-def main_automatic(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_0"):
+def main_automatic(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_1"):
     metadata_filename = Path(root_database) / 'dataset_ipol.csv'
     images_dir = Path(root_database) / "images/segmented"
     gt_dir = Path(root_database) / "annotations/mean_gt"
@@ -29,7 +29,7 @@ def main_automatic(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTae
     metadata = pd.read_csv(metadata_filename)
 
     df = pd.DataFrame(columns=["Sample", "Precision", "Recall", "F1", "RMSE", "TP", "FP", "TN", "FN"])
-
+    return f"{results_path}/results.csv"
     for idx in range(metadata.shape[0]):
         row = metadata.iloc[idx]
         sample = row.Imagen
@@ -53,11 +53,11 @@ def main_automatic(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTae
 def compute_statics(results_path):
 
     df = pd.read_csv(results_path)
-    df_stats = pd.DataFrame(columns=["Model", "F1", "RMSE", "TP", "FP",  "FN"])
-    stats =df[["F1", "RMSE", "TP", "FP", "FN"]].mean()
-    df_aux = pd.DataFrame({"F1": [stats["F1"]], "RMSE": [stats["RMSE"]], "TP": [stats["TP"]], "FP": [stats["FP"]],
+    #df_stats = pd.DataFrame(columns=["Model",  "Precision", "Recall", "F1", "RMSE", "TP", "FP",  "FN"])
+    stats =df[["Precision", "Recall","F1", "RMSE", "TP", "FP", "FN"]].mean()
+    df_stats = pd.DataFrame({"P": [stats["Precision"]], "R": [stats["Recall"]],"F1": [stats["F1"]], "RMSE": [stats["RMSE"]], "TP": [stats["TP"]], "FP": [stats["FP"]],
                            "FN": [stats["FN"]]})
-    df_stats = pd.concat([df_stats, df_aux ])
+    #df_stats = pd.concat([df_stats, df_aux ])
 
     df_stats.to_csv(Path(results_path).parent / "results_stats.csv", index=False)
 

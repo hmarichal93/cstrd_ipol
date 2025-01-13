@@ -25,7 +25,7 @@ def generate_pdf(path):
             fig_path += sub_path + "/"
 
         # fig2 = fig_path + "preprocessing_output.png"
-        # fig3 = fig_path + "chains.png"
+        fig3 = fig_path + "chains.png"
         #fig4 = fig_path + "connect.png"
         #fig5 = fig_path + "postprocessing.png"
         fig6 = fig_path + "output.png"
@@ -41,7 +41,7 @@ def generate_pdf(path):
 
     pdf.output(f"{path}/summary_ipol.pdf", 'F')
 
-def main(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_0"):
+def main(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_1_no_artificial_chains"):
 
     metadata_filename = Path(root_database) / 'dataset_ipol.csv'
     images_dir = Path(root_database) / "images/segmented"
