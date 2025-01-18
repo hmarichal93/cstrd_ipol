@@ -41,7 +41,7 @@ def generate_pdf(path):
 
     pdf.output(f"{path}/summary_ipol.pdf", 'F')
 
-def main(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_1_no_artificial_chains"):
+def main(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  results_path="/data/maestria/resultados/cstrd_round_3_1_table_9_2"):
 
     metadata_filename = Path(root_database) / 'dataset_ipol.csv'
     images_dir = Path(root_database) / "images/segmented"
@@ -69,11 +69,13 @@ def main(root_database = "/data/maestria/datasets/Pinus_Taeda/PinusTaedaV1",  re
 
         command = f"python main.py --input {img_filename} --sigma {sigma} --cy {cx} --cx {cy}  --root ./ --output_dir" \
                   f" {img_res_dir} --hsize 1500 --wsize 1500 --save_imgs 1"
+        command = f"python main.py --input {img_filename} --sigma {sigma} --cy {cx} --cx {cy}  --root ./ --output_dir" \
+                  f" {img_res_dir} --hsize 1500 --wsize 1500"
 
         print(command)
         os.system(command)
 
-    generate_pdf(results_path)
+    #generate_pdf(results_path)
 
 
 
