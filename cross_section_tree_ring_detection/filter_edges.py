@@ -72,8 +72,9 @@ def blur(img, blur_size=11):
 
 
 def thresholding(mask, threshold=0):
-    mask = np.where(mask > threshold, Color.gray_white, 0).astype(np.uint8)
-    return mask
+    #mask = np.where(mask > threshold, Color.gray_white, 0).astype(np.uint8)
+    ret, img_th = cv2.threshold(mask, threshold, 255, 0)
+    return img_th
 
 
 def padding_mask(mask, pad = 3):
@@ -81,18 +82,20 @@ def padding_mask(mask, pad = 3):
     return mask
 
 
-def find_border_contour(mask, img):
+def find_border_contour(img):
     """
     Find the contour of the border of the disk.
-    @param mask: background mask
     @param img: disk image
-    @return: border contour
+    @return: disk border contour
     """
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #draw contour over image
+    img_debug = img.copy()
+    cv2.drawContours(img_debug, contours, -1, (0, 255, 0), 3)
+    cv2.imwrite('contours.png', img_debug)
     # 1.0 Perimeter of the image. Used to discard contours that are similar in size to the image perimeter.
     perimeter_image = 2 * img.shape[0] + 2 * img.shape[1]
-    # 1.1 Error threshold. Used to discard contours that are similar in size to the image perimeter.For us, similar
+    # 1.1 Error threshold. Used to discard contours that are similar in size to the image perimeter. For us, similar
     # is lower than 10% of the perimeter of the image.
     error_threshold = 0.1 * perimeter_image
 
@@ -122,10 +125,16 @@ def contour_to_curve(contour, name):
     curve = Curve(contour, name)
     return curve
 
+def convex_hull(contour):
+    from shapely.geometry import Polygon
+    border_contour_poly = Polygon(contour)
+    #convert to convex hull
+    border_contour = np.array(border_contour_poly.convex_hull.exterior.coords)
+    return border_contour
 
 def get_border_curve(img, l_ch_f):
     """
-    Get disk border border_curve of the image. Implements Algorithm 5 in the supplementary material
+    Get disk border border_curve of the image. Implements Algorithm 10 in the paper
     @param img: segmented gray image
     @param l_ch_f: list of curves
     @return: border object border_curve
@@ -136,12 +145,14 @@ def get_border_curve(img, l_ch_f):
     # Line 2
     mask = blur(mask)
     # Line 3
-    mask = thresholding(mask)
+    mask = thresholding(mask, 127)
     # Line 4
     mask = padding_mask(mask)
     # Line 5
-    border_contour = find_border_contour(mask, img)
+    border_contour = find_border_contour(mask)
     # Line 6
+    border_contour = convex_hull(border_contour)
+    # Line 7
     border_curve = contour_to_curve(border_contour, len(l_ch_f))
     return border_curve
 

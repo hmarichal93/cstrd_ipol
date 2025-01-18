@@ -51,7 +51,14 @@ if __name__ == "__main__":
     parser.add_argument("--debug", type=int, required=False)
 
     args = parser.parse_args()
-    main(args)
+    try:
+        main(args)
+
+    except Exception as e:
+        #write to file
+        with open("demo_failure.txt", "w") as f:
+            f.write(str(e))
+
 
 
 
