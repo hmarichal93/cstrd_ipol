@@ -235,33 +235,34 @@ def complete_chain_using_support_ring(support_chain, ch1):
     return change_border
 
 
-def connect_2_chain_via_inward_and_outward_ring(outward_chain, inward_chain, chain1, chain2, node_list, endpoint):
+def connect_2_chain_via_inward_and_outward_ring(outward_ring, inward_ring, ch_j, candidate_chain, l_nodes_c, endpoint):
     """
     Connect 2 ch_i via inward and outward ring
-    @param outward_chain: outward ch_i
-    @param inward_chain: inward ch_i
-    @param chain1: chain1 to connect
-    @param chain2: chain2 to connect
-    @param node_list: full node list
+    @param outward_ring: outward ch_i
+    @param inward_ring: inward ch_i
+    @param ch_j: chain1 to connect
+    @param candidate_chain: chain2 to connect
+    @param l_nodes_c: full node list
     @param endpoint: endpoint to connect
     @param add: add generated node list to ch_i 1
     @return: generated node list and boolean value indicating if border has changed
     """
-    ch1_endpoint = chain1.extA if endpoint == ch.EndPoints.A else chain1.extB
-    ch2_endpoint = chain2.extB if endpoint == ch.EndPoints.A else chain2.extA
+    ch1_endpoint = ch_j.extA if endpoint == ch.EndPoints.A else ch_j.extB
+    ch2_endpoint = candidate_chain.extB if endpoint == ch.EndPoints.A else candidate_chain.extA
 
     # 1.0
     generated_node_list = []
-    interpolate_in_angular_domain_via_2_chains(inward_chain, outward_chain, ch1_endpoint, ch2_endpoint, endpoint,
-                                               chain1, generated_node_list)
-    node_list += generated_node_list
+    interpolate_in_angular_domain_via_2_chains(inward_ring, outward_ring, ch1_endpoint, ch2_endpoint, endpoint,
+                                               ch_j, generated_node_list)
+    l_nodes_c += generated_node_list
 
     # 2.0
     chain_2_nodes = []
-    chain_2_nodes += chain2.l_nodes
+    chain_2_nodes += candidate_chain.l_nodes
     for node in chain_2_nodes:
-        node.chain_id = chain1.id
+        node.chain_id = ch_j.id
 
-    change_border = chain1.add_nodes_list(chain_2_nodes + generated_node_list)
+    change_border = ch_j.add_nodes_list(chain_2_nodes + generated_node_list)
+
 
     return generated_node_list, change_border

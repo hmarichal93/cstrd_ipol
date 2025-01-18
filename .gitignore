@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+cross_section_tree_ring_detection/
 lib64/
 parts/
 sdist/

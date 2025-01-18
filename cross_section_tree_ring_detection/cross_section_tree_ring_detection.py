@@ -1,7 +1,7 @@
 import time
 
 from cross_section_tree_ring_detection.preprocessing import preprocessing
-from cross_section_tree_ring_detection.canny_devernay_edge_detector import canny_deverney_edge_detector
+from cross_section_tree_ring_detection.canny_devernay_edge_detector import canny_devernay_edge_detector
 from cross_section_tree_ring_detection.filter_edges import filter_edges
 from cross_section_tree_ring_detection.sampling import sampling_edges
 from cross_section_tree_ring_detection.connect_chains import connect_chains
@@ -41,7 +41,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # scale and equalized
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
-    m_ch_e, gx, gy = canny_deverney_edge_detector(im_pre, sigma, th_low, th_high)
+    m_ch_e, gx, gy = canny_devernay_edge_detector(im_pre, sigma, th_low, th_high)
     # Line 3 Edge filtering module. Algorithm 4 in the supplementary material.
     l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
     # Line 4 Sampling edges. Algorithm 6 in the supplementary material.
