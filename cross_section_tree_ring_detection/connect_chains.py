@@ -731,8 +731,12 @@ def get_non_intersection_chains(M, l_candidates_chi, ch_j):
     @param ch_j: chain j
     @return:return the list of chains that not intersect with ch_j
     """
-    id_inter = np.where(M[ch_j.id] == 1)[0]
-    candidates_chi_non_chj_intersection = [cad for cad in l_candidates_chi if cad.id not in id_inter]
+    try:
+        id_inter = np.where(M[ch_j.id] == 1)[0]
+        candidates_chi_non_chj_intersection = [cad for cad in l_candidates_chi if cad.id not in id_inter]
+    except IndexError:
+        candidates_chi_non_chj_intersection = []
+        print(IndexError)
     return candidates_chi_non_chj_intersection
 
 def get_intersection_chains(M, l_candidates_chi, ch_j):
