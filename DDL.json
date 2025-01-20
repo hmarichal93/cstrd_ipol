@@ -95,6 +95,19 @@
             "step": 1
          },
          "visible": "params.options=='1'"
+      },
+      {
+         "id": "alpha",
+         "label": "&#945;",
+         "comments": "Edge filtering parameter. Collinearity threshold",
+         "type": "range",
+         "values": {
+            "default": 30,
+            "max": 90,
+            "min": 0,
+            "step": 5
+         },
+         "visible": "params.options=='1'"
       }
    ],
    "results": [
@@ -154,5 +167,5 @@
          "run_time": "run time"
       }
    },
-   "run": "$bin/.ipol/run.sh $input_0 $sigma $nr $th_low $th_high $hsize $wsize $bin $HOME"
+   "run": "$bin/.ipol/run.sh $input_0 $sigma $nr $th_low $th_high $hsize $wsize $bin $HOME $alpha"
 }
