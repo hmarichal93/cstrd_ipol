@@ -445,12 +445,12 @@ def connect_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_tolera
                 debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_1.png')
                 l_no_intersection_j = get_non_intersection_chains(state.M, l_candidates_chi, ch_j)
 
-                # Line 14. Algorithm 14 in the paper
+                # Line 14. Calls Algorithm 14 in the paper
                 ch_k_b = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.B)
                 debugging_chains(state, [ch_i, ch_j, ch_k_b], f'{state.path}/{state.counter}_2.png')
 
-                # Line 15. Algorithm 14 in the paper
+                # Line 15. Calls Algorithm 14 in the paper
                 ch_k_a = get_closest_chain_logic(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location,
                                                  ch.EndPoints.A)
                 debugging_chains(state, [ch_i, ch_j, ch_k_a], f'{state.path}/{state.counter}_3.png')

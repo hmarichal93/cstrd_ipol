@@ -160,12 +160,13 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     if NONE in [height_output, width_output]:
         im_r, cy_output, cx_output = ( im_in, cy, cx)
     else:
+        # Algorithm 8
         im_r, cy_output, cx_output = resize( im_in, height_output, width_output, cy, cx)
 
     # Line 7
     im_g = rgb2gray(im_r)
 
-    # Line 8
+    # Line 8. Algorithm 9
     im_pre = equalize(im_g)
     # Line 9
     return im_pre, cy_output, cx_output

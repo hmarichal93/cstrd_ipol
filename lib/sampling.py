@@ -227,7 +227,7 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=False):
     """
     # Line 1
     height, width = im_pre.shape
-    # Line 2
+    # Line 2. Algorithm 11 in the paper
     l_rays = build_rays(nr, height, width, [cy, cx])
     # Line 3
     l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, mc, nr,

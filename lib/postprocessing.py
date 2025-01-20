@@ -1006,14 +1006,15 @@ def postprocessing(l_ch_c, l_nodes_c, debug, save_path, debug_img_pre):
 
         # Line 4
         while len(ctx.completed_chains) > 0:
-            # Line 5 l_within_chains, inward_ring and outward_ring are attributes of ctx which are updated in next line
+            # Line 5 l_within_chains, inward_ring and outward_ring are attributes of ctx which are updated in next line.
+            # Algorithm 17 in the paper
             ctx.update()
             if debug:
                 ctx.drawing(iteracion[0])
                 iteracion[0] += 1
 
 
-            # Line 6 First Postprocessing. Split all chains and connect them if it possible (Algorithm 17 in the paper)
+            # Line 6 First Postprocessing. Split all chains and connect them if it possible (Algorithm 18 in the paper)
             chain_was_completed = split_and_connect_chains(ctx.l_within_chains, ctx.inward_ring, ctx.outward_ring,
                                                            l_ch_p, l_nodes_c, neighbourhood_size=ctx.neighbourhood_size,
                                                            debug=debug, img=debug_img_pre, save_path=save_path,

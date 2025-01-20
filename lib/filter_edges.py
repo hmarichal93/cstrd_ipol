@@ -231,7 +231,7 @@ def filter_edges(m_ch_e, cy, cx, Gx, Gy, alpha, im_pre):
     X_edges_filtered = filter_edges_by_threshold(m_ch_e, theta, alpha)
     # Line 7 Convert masked pixel to object curve
     l_ch_f = convert_masked_pixels_to_curves(X_edges_filtered)
-    # Line 8  Border disk is added as a curve
+    # Line 8  Border disk is added as a curve. Implements Algorithm 10 in the paper
     border_curve = get_border_curve(im_pre, l_ch_f)
     # Line 9
     l_ch_f.append(border_curve)
