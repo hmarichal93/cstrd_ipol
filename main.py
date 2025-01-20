@@ -48,8 +48,6 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
      - l_ch_s: Debug Output. Intermediate results. Chain lists after connect stage.
      - l_ch_p: Debug Output. Intermediate results. Chain lists after posprocessing stage.
     """
-    to = time.time()
-
     # Line 1 Preprocessing image. Algorithm 7 in the paper. Image is  resized, converted to gray
     # scale and equalized
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
@@ -64,8 +62,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 6 Postprocessing chains. Algorithm 16 in the paper. Im_pre is used for debug purposes
     l_ch_p = postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
     # Line 7
-    debug_execution_time = time.time() - to
-    l_rings = chain_2_labelme_json(l_ch_p, height, width, cy, cx, im_in, debug_image_input_path, debug_execution_time)
+    l_rings = chain_2_labelme_json(l_ch_p, height, width, cy, cx, im_in, debug_image_input_path, -1)
 
     # Line 8
     return im_in, im_pre, m_ch_e, l_ch_f, l_ch_s, l_ch_c, l_ch_p, l_rings
