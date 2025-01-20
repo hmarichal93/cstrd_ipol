@@ -35,8 +35,8 @@ def save_config(args, root_path, output_dir):
     if args.min_chain_length:
         config["min_chain_length"] = args.min_chain_length
 
-    if args.edge_th:
-        config["edge_th"] = args.edge_th
+    if args.alpha:
+        config["alpha"] = args.alpha
 
     if args.sigma:
         config['sigma'] = args.sigma

@@ -11,6 +11,8 @@ hsize=$5
 wsize=$6
 BIN=$7
 HOME=$8
+alpha=$9
+
 
 # Extract center from mask
 if [ -s inpainting_data_0.txt ]; then
@@ -28,5 +30,5 @@ Cx=$(echo $stdout | awk '{print $1}')
 Cy=$(echo $stdout | awk '{print $2}')
 
 # Execute algorithm
-python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./  --th_high $th_high --th_low $th_low --hsize $hsize --wsize $wsize --sigma $sigma --save_imgs 1
+python $BIN/main.py --input $input --cx $Cx --cy $Cy --root $BIN --output_dir ./  --th_high $th_high --th_low $th_low --alpha $alpha --hsize $hsize --wsize $wsize --sigma $sigma --save_imgs 1
 
