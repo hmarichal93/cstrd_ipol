@@ -93,7 +93,7 @@ Detecting pith center automatically can be done using software from IPOL paper "
 [link_ipol_pith_paper]: https://www.ipol.im/pub/art/2022/338/?utm_source=doi
 
 ## Automatic background removal
-Install repository [uruDendro](https://github.com/hmarichal93/uruDendro]). Then,
+Install repository [uruDendro](https://github.com/hmarichal93/uruDendro). Then,
 ```python
 from urudendro.remove_salient_object import remove_salient_object
 IMAGE_PATH = 'input/F02c.jpg'
