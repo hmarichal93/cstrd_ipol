@@ -920,7 +920,7 @@ def connect_2_chain_via_support_chain(outward_ring, inward_ring, ch_j, candidate
     # Remove ch_i from ch_i lists. Candidate ch_i must be removed from inner_chain_list(region) and chain_list(global)
     inner_candidate_chain = ch.get_chain_from_list_by_id(l_within_chains, candidate_chain.id)
     assert inner_candidate_chain is not None
-    if inner_candidate_chain is not None:
+    if inner_candidate_chain is not None and inner_candidate_chain.type != ch.TypeChains.border:
         cadena_ref_lista_original = inner_candidate_chain
         l_within_chains.remove(cadena_ref_lista_original)
         l_ch_p.remove(cadena_ref_lista_original)
@@ -932,8 +932,8 @@ def connect_2_chain_via_support_chain(outward_ring, inward_ring, ch_j, candidate
 
     global_candidate_chain = ch.get_chain_from_list_by_id(l_ch_p, candidate_chain.id)
     assert global_candidate_chain is None
-    # if global_candidate_chain is not None:
-    #     l_ch_p.remove(global_candidate_chain)
+    if global_candidate_chain is not None and global_candidate_chain.type != ch.TypeChains.border:
+         l_ch_p.remove(global_candidate_chain)
 
     return
 
