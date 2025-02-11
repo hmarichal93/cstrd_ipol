@@ -49,7 +49,8 @@ Algorithm 11 is implemented in the file **lib/basic_properties.py**
 Algorithm 15, 16, 17 and 18 are implemented in the file **lib/postprocessing.py**
 
 ## Installation
-### Conda
+### Setup environment
+#### Conda
 ```bash
 conda create --name ipol python==3.11
 conda activate ipol
@@ -57,8 +58,14 @@ conda install -n ipol -c conda-forge geos
 conda install -n ipol -c anaconda cmake 
 conda install -n ipol pip
 ```
+#### Pip 
+```bash 
+sudo apt-get update && sudo apt-get install -y libgeos-dev=3.8.0-1build1 cmake=3.16.3-1ubuntu1.20.04.1
+```
+### Install the package
 ```bash
 python setup.py install
+pip install -r requirements.txt
 ```
 
 ## Examples of usage
