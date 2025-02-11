@@ -58,7 +58,7 @@ conda install -n ipol -c anaconda cmake
 conda install -n ipol pip
 ```
 ```bash
-pip install .
+python setup.py install
 ```
 
 ## Examples of usage
