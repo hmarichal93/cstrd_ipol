@@ -1,17 +1,28 @@
 # CS-TRD: a Cross Sections Tree Ring Detection method
-Repository for the  "CS-TRD: a Cross Sections Tree Ring Detection method". Submitted on 13/05/2023. Last Revision on 21/01/2025. 
-[Demo][link_ipol_paper].
+
+Repository for the paper "CS-TRD: a Cross Sections Tree Ring Detection method". 
+
+
+Submitted on 13/05/2023. Last Revision on 21/01/2025. 
+Demo: [DEMO][link_ipol_paper].
+
 UruDendro ImageSet: [UruDendro][link_urudendro].
 ArXiv paper: [ArXiv][link_arxiv_paper].
+
+***
+![Python Version](https://img.shields.io/badge/python-3.11-blue)
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=581191784&skip_quickstart=true&machine=basicLinux32gb&geo=UsEast)
+
 
 [link_ipol_paper]: https://ipolcore.ipol.im/demo/clientApp/demo.html?id=77777000390
 [link_urudendro]: https://iie.fing.edu.uy/proyectos/madera/
 [link_arxiv_paper]: https://doi.org/10.48550/arXiv.2305.10809
-
+***
 ![F03d_compare.jpg](assets%2FF03d_compare.jpg)
 
 
-
+***
 Version 1.0
 Last update: 03/12/2024
 Authors: 
@@ -49,7 +60,8 @@ Algorithm 11 is implemented in the file **lib/basic_properties.py**
 Algorithm 15, 16, 17 and 18 are implemented in the file **lib/postprocessing.py**
 
 ## Installation
-### Conda
+### Setup environment
+#### Conda
 ```bash
 conda create --name ipol python==3.11
 conda activate ipol
@@ -57,8 +69,14 @@ conda install -n ipol -c conda-forge geos
 conda install -n ipol -c anaconda cmake 
 conda install -n ipol pip
 ```
+#### APT 
+```bash 
+sudo apt-get update && sudo apt-get install -y libgeos-dev=3.8.0-1build1 cmake=3.16.3-1ubuntu1.20.04.1
+```
+### Install the package
 ```bash
-pip install .
+python setup.py install
+pip install -r requirements.txt
 ```
 
 ## Examples of usage
