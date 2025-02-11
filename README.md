@@ -1,9 +1,11 @@
 # CS-TRD: a Cross Sections Tree Ring Detection method
+
 Repository for the paper "CS-TRD: a Cross Sections Tree Ring Detection method". 
 
 
 Submitted on 13/05/2023. Last Revision on 21/01/2025. 
 Demo: [DEMO][link_ipol_paper].
+
 UruDendro ImageSet: [UruDendro][link_urudendro].
 ArXiv paper: [ArXiv][link_arxiv_paper].
 
