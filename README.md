@@ -1,17 +1,26 @@
 # CS-TRD: a Cross Sections Tree Ring Detection method
-Repository for the IPOL paper "CS-TRD: a Cross Sections Tree Ring Detection method". Submitted on 13/05/2023. Last Revision on 19/11/2023. 
-IPOL Demo: [IPOL][link_ipol_paper].
+Repository for the paper "CS-TRD: a Cross Sections Tree Ring Detection method". 
+
+
+Submitted on 13/05/2023. Last Revision on 21/01/2025. 
+Demo: [DEMO][link_ipol_paper].
 UruDendro ImageSet: [UruDendro][link_urudendro].
 ArXiv paper: [ArXiv][link_arxiv_paper].
+
+***
+![Python Version](https://img.shields.io/badge/python-3.11-blue)
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=581191784&skip_quickstart=true&machine=basicLinux32gb&geo=UsEast)
+
 
 [link_ipol_paper]: https://ipolcore.ipol.im/demo/clientApp/demo.html?id=77777000390
 [link_urudendro]: https://iie.fing.edu.uy/proyectos/madera/
 [link_arxiv_paper]: https://doi.org/10.48550/arXiv.2305.10809
-
+***
 ![F03d_compare.jpg](assets%2FF03d_compare.jpg)
 
 
-
+***
 Version 1.0
 Last update: 03/12/2024
 Authors: 

@@ -1,0 +1,15 @@
+{
+  "name": "CS-TRD",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11.1"
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libgeos-dev=3.8.0-1build1 cmake=3.16.3-1ubuntu1.20.04.1 && python setup.py install && pip install -r requirements.txt && git clone https://github.com/hmarichal93/uruDendro.git && cd uruDendro && python setup.py install",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  },
+}
