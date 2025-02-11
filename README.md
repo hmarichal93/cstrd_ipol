@@ -67,7 +67,7 @@ conda install -n ipol -c conda-forge geos
 conda install -n ipol -c anaconda cmake 
 conda install -n ipol pip
 ```
-#### Pip 
+#### APT 
 ```bash 
 sudo apt-get update && sudo apt-get install -y libgeos-dev=3.8.0-1build1 cmake=3.16.3-1ubuntu1.20.04.1
 ```
