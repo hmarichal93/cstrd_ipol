@@ -34,8 +34,12 @@ def extract_border_chain_from_list(ch_s: List[ch.Chain], nodes_s: List[ch.Node])
     @return:
     """
     ch_s_without_border = [chain for chain in ch_s if chain.type != ch.TypeChains.border]
-    border_chain = next(chain for chain in ch_s if (chain.type == ch.TypeChains.border))
-    nodes_s_without_border = [node for node in nodes_s if node.chain_id != border_chain.id]
+    try:
+        border_chain = next(chain for chain in ch_s if (chain.type == ch.TypeChains.border))
+    except StopIteration:
+        border_chain = None
+    nodes_s_without_border = [node for node in nodes_s if node.chain_id != border_chain.id] if border_chain is not None \
+        else []
     return border_chain, ch_s_without_border, nodes_s_without_border
 
 
