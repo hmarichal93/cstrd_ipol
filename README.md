@@ -119,6 +119,28 @@ OUTPUT_PATH = 'input/F02c_segmented.jpg'
 remove_salient_object(IMAGE_PATH, OUTPUT_PATH)
 ```
 
+## Metric Computation
+Install repository [uruDendro](https://github.com/hmarichal93/uruDendro). Then,
+Tree ring Detection evaluation metrics used by UruDendro. The evaluation code provided here can be used to obtain results on the publicly available UruDendro dataset. It computes multiple metrics described below.
+```python 
+from urudendro.metric_influence_area import main as metric
+    
+DETECTION_FILENAME = 'path/to/detection/file'
+GROUND_TRUTH_FILENAME = 'path/to/ground/truth/file'
+IMAGE_FILENAME = 'path/to/image/file'
+CX = 0
+CY = 0
+THRESHOLD = 0.5
+OUTPUT_DIR = 'path/to/output/directory'
+
+P, R, F, RMSE, TP, FP, TN, FN = metric(DETECTION_FILENAME, GROUND_TRUTH_FILENAME, IMAGE_FILENAME, CX, CY, THRESHOLD, OUTPUT_DIR)
+
+```
+where DETECTION_FILENAME is the path to the detection file, GROUND_TRUTH_FILENAME is the path to the ground truth file,
+IMAGE_FILENAME is the path to the image file, CX is the x pith coordinate in pixels, CY is the y pith coordinate in pixel, 
+THRESHOLD is the threshold to consider a detection as valid (between 0 and 1) and OUTPUT_DIR is the path to the 
+results output directory.
+
 ## Docker Container
 You can run the algorithm in a docker container.
 
