@@ -17,7 +17,7 @@ from lib.preprocessing import preprocessing
 from lib.canny_devernay_edge_detector import canny_devernay_edge_detector
 from lib.filter_edges import filter_edges
 from lib.sampling import sampling_edges
-from lib.connect_chains import connect_chains
+from lib.connect_chains import merge_chains
 from lib.postprocessing import postprocessing
 from lib.utils import chain_2_labelme_json, save_config, saving_results
 
@@ -58,7 +58,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 4 Sampling edges. Algorithm 2 in the paper.
     l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug)
     # Line 5 Connect chains. Algorithm 3 in the paper. Im_pre is used for debug purposes
-    l_ch_c,  l_nodes_c = connect_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
+    l_ch_c,  l_nodes_c = merge_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
     # Line 6 Postprocessing chains. Algorithm 16 in the paper. Im_pre is used for debug purposes
     l_ch_p = postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
     # Line 7
