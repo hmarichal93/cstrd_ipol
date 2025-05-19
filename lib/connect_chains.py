@@ -82,7 +82,7 @@ def copy_chains_and_nodes(ch_s):
         nodes_s += chain.l_nodes
 
     return  ch_s, nodes_s
-def merge_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
+def merge_chains(l_ch_s, cy, cx, nr, debug, debug_im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction.
     Implements Algorithm 3 in the paper
@@ -90,7 +90,7 @@ def merge_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
     @param cy: pith y's coordinate
     @param cx: pith x's coordinate
     @param nr: total number of ray
-    @param debut_im_pre: segmented gray image
+    @param debug_im_pre: segmented gray image
     @return:
     l_ch_s: connected chains
     l_nodes_s: list nodes
@@ -104,11 +104,9 @@ def merge_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
     # Line 1
     for i in range(parameters.iterations):
         ## Parameter from column i in Table 1.
-        if i == parameters.iterations -1:
-            continue
         iteration_params = parameters.get_iteration_parameters(i)
         ## Line 2 to 13
-        l_ch_c, l_nodes_c, M = merge_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre= debut_im_pre,
+        l_ch_c, l_nodes_c, M = merge_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre= debug_im_pre,
                                                        save=f"{output_dir}/output_{i}_", **iteration_params)
 
         parameters.update_list_for_next_iteration(l_ch_c, l_nodes_c)
@@ -186,20 +184,44 @@ class SystemStatus:
         # all chains have been iterated at least one time and no chains have been connected or interpolated.
         return self.iterations_since_last_change < len(self.l_ch_s)
 
-    def find_support_chain(self):
+    def find_support_chain(self, ch_i = None, l_s_outward = None, l_s_inward = None):
         """
         Get next chain to be processed.
         :return: next supported chain
         """
-        if not self.continue_in_loop():
-            return False
+        if len(self.l_ch_s) == 0:
+            return None
+
+        if ch_i == None:
+            # First iteration
+            self.next_chain_index = 0
+
+        else:
+            self.chain_size_at_the_end_of_iteration = len(self.l_ch_s)
+            chains_were_merged_during_iteration = self.size_l_chain_init > self.chain_size_at_the_end_of_iteration
+            if chains_were_merged_during_iteration:
+                self.iterations_since_last_change = 0
+                self.l_ch_s.sort(key=lambda x: x.size, reverse=True)
+                l_current_iteration = [ch_i] + l_s_outward + l_s_inward
+                l_current_iteration.sort(key=lambda x: x.size, reverse=True)
+                longest_chain = l_current_iteration[0]
+                if longest_chain.id == ch_i.id:
+                    self.next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
+                else:
+                    self.next_chain_index = self.l_ch_s.index(longest_chain)
+            else:
+                self.next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
+                self.iterations_since_last_change += 1
+
+        if self.iterations_since_last_change >= len(self.l_ch_s):
+            return None
 
         ch_i = self.l_ch_s[self.next_chain_index]
 
         self.size_l_chain_init = len(self.l_ch_s)
 
-        support1 = self.get_common_chain_to_both_borders(ch_i)
-        close_chain(self, ch_i, support1=support1)
+        # support1 = self.get_common_chain_to_both_borders(ch_i)
+        # close_chain(self, ch_i, support1=support1)
 
         return ch_i
 
@@ -231,7 +253,7 @@ class SystemStatus:
 
     @staticmethod
     def get_next_chain_index_in_list(chains_list, support_chain):
-        return (chains_list.index(support_chain) + 1) % len(chains_list) if support_chain is not None else 0
+        return (chains_list.index(support_chain) + 1) % len(chains_list)
 
     def update_system_status(self, ch_i, l_s_outward, l_s_inward):
         """
@@ -299,21 +321,25 @@ def update_pointer(ch_j, closest, l_candidates_chi):
     return j_pointer
 
 
+def interpolate_nodes_given_chains(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, support2=None):
+    interpolated = []
+    if support2:
+        interpolate_nodes_two_chains(ch_i, support2, ch_j_endpoint, ch_k_endpoint, endpoint,
+                                     ch_j, interpolated)
 
-def close_chain(state, chain, support1, support2=None):
+    else:
+        interpolate_nodes(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, interpolated)
+
+    return interpolated
+
+def close_chain(state, chain, ch_i, support2=None):
     ch_j_endpoint_node = chain.extB
     ch_k_endpoint_node = chain.extA
     ch_j_endpoint_type = ch.EndPoints.B
-    interpolated_nodes = []
     chain_copy = ch.copy_chain(chain)
 
-    if support1 and support2:
-        pass
-    else:
-
-        interpolate_nodes(support1, ch_j_endpoint_node, ch_k_endpoint_node, ch_j_endpoint_type, chain_copy,
-                          interpolated_nodes)
-        ch_i = support1
+    interpolated_nodes = interpolate_nodes_given_chains(ch_i, ch_j_endpoint_node, ch_k_endpoint_node,
+                                                        ch_j_endpoint_type, chain_copy, support2=support2)
 
     interpolated_nodes_plus_endpoints = [ch_j_endpoint_node] + interpolated_nodes + [ch_k_endpoint_node]
 
@@ -398,7 +424,8 @@ def merge_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_toleranc
         # Line 4.
         l_s_outward, l_s_inward = find_visible_chains(state.l_ch_s, ch_i)
         # Line 5 to 11 is implemented within the for loop statement.
-        for location, candidates_chi in zip([ch.ChainLocation.inwards, ch.ChainLocation.outwards], [l_s_inward, l_s_outward]):
+        for location, candidates_chi in zip([ch.ChainLocation.inwards, ch.ChainLocation.outwards],
+                                            [l_s_inward, l_s_outward]):
             # Line 6 to 11 is implemented within the for loop statement.
             j_pointer = 0
             while len(candidates_chi) > j_pointer:
@@ -422,15 +449,15 @@ def merge_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_toleranc
                     debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
                 j_pointer = update_pointer(ch_j, ch_k, candidates_chi)
 
-        # Line 12
-        state.update_system_status(ch_i, l_s_outward, l_s_inward)
-        ch_i = state.find_support_chain()
+        ch_i = state.find_support_chain(ch_i=ch_i, l_s_inward=l_s_inward, l_s_outward=l_s_outward)
 
     # Line 13
     l_ch_c, l_nodes_c, intersection_matrix = iterate_over_chains_list_and_complete_them_if_met_conditions(state)
     debugging_chains(state, l_ch_c, f'{state.path}/{state.counter}.png')
 
     return l_ch_c, l_nodes_c, intersection_matrix
+
+from lib.utils import write_pickle
 
 
 def intersection_chains(M, candidate_chain: ch.Chain, l_sorted_chains_in_neighbourhood):
@@ -637,14 +664,7 @@ def merge_two_chains(ch_j:ch.Chain, ch_k:ch.Chain, endpoint:ch.TypeChains, ch_i:
     ch_j_endpoint = ch_j.extA if endpoint == ch.EndPoints.A else ch_j.extB
     ch_k_endpoint = ch_k.extB if endpoint == ch.EndPoints.A else ch_k.extA
 
-    if support2:
-        interpolated = []
-        interpolate_nodes_two_chains(ch_i, support2, ch_j_endpoint, ch_k_endpoint, endpoint,
-                                     ch_j, interpolated)
-
-    else:
-        interpolated = []
-        interpolate_nodes(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, interpolated)
+    interpolated = interpolate_nodes_given_chains(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, support2=support2)
 
     # merged = ch_j \cup interpolated \cup ch_k
     ## ch_j = ch_j \cup interpolated.
@@ -655,6 +675,10 @@ def merge_two_chains(ch_j:ch.Chain, ch_k:ch.Chain, endpoint:ch.TypeChains, ch_i:
 
 
 def update_chain_list(state, ch_j, ch_k, l_candidates_chi, interpolated):
+    # Ch_j
+    ## Line 4 update chain j. Add new nodes to ch_j
+    add_interpolated_nodes_to_system(state, ch_j, interpolated)
+
     #  Ch_k
     ## Line 1 update chains. Points all the chain from ch_k to ch_j (visibility pointers)
     update_chain_after_connect(state, ch_j, ch_k)
@@ -665,10 +689,6 @@ def update_chain_list(state, ch_j, ch_k, l_candidates_chi, interpolated):
     ## Line 3 delete ch_k from  list l_candidate_chi  and state.l_ch_s
     delete_closest_chain(state, ch_k, l_candidates_chi)
 
-    # Ch_j
-    ## Line 4 update chain j. Add new nodes to ch_j
-    add_interpolated_nodes_to_system(state, ch_j, interpolated)
-
     # Update ch_i ids
     update_chains_ids(state, ch_k)
 
@@ -678,8 +698,11 @@ def update_chain_list(state, ch_j, ch_k, l_candidates_chi, interpolated):
 def update_intersection_matrix_in_radial_direction(state: SystemStatus, ch_j: ch.Chain, new_node: ch.Node):
     chain_id_intersecting, chains_over_radial_direction = state._chains_id_over_radial_direction(
         new_node.angle)
-    state.M[ch_j.id, chain_id_intersecting] = 1
-    state.M[chain_id_intersecting, ch_j.id] = 1
+    try:
+        state.M[ch_j.id, chain_id_intersecting] = 1
+        state.M[chain_id_intersecting, ch_j.id] = 1
+    except IndexError:
+        raise IndexError(f"Chain {ch_j.id} not in the intersection matrix")
 
     return chains_over_radial_direction
 
@@ -845,7 +868,7 @@ def get_chains_in_neighbourhood(neighbourhood_size: float, l_no_intersection_j: 
     l_chains_in_neighbourhood = []
     for cand_chain in l_no_intersection_j:
         angular_distance = ch.angular_distance_between_chains(ch_j, cand_chain, endpoint)
-        if angular_distance < neighbourhood_size and cand_chain.id != ch_j.id:
+        if angular_distance <= neighbourhood_size and cand_chain.id != ch_j.id:
             l_chains_in_neighbourhood.append(Set(angular_distance, cand_chain))
 
     if endpoint == ch.EndPoints.A and location == ch.ChainLocation.inwards:

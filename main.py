@@ -60,7 +60,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 5 Connect chains. Algorithm 3 in the paper. Im_pre is used for debug purposes
     l_ch_c,  l_nodes_c = merge_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
     # Line 6 Postprocessing chains. Algorithm 16 in the paper. Im_pre is used for debug purposes
-    l_ch_p = postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
+    l_ch_p = l_ch_c#postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
     # Line 7
     l_rings = chain_2_labelme_json(l_ch_p, height, width, cy, cx, im_in, debug_image_input_path, -1)
 
