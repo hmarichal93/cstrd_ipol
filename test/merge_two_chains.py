@@ -99,6 +99,13 @@ def test_merge_two_chains_case_2():
     assert len([node for node in interpolated if node.chain_id != ch_j.label_id]) == 0
     assert ch_j.extB == ch_k.extB
 
+    ch_j, ch_k, ch_i, endpoint, image, ch_i_upper = set_up_case_2()
+    interpolated = merge_two_chains(ch_j, ch_k, endpoint, ch_i_upper)
+    print("interpolated", interpolated)
+    ch.visualize_selected_ch_and_chains_over_image_([ch_j, ch_k, ch_i_upper],
+                                                    [ch_i,ch_j, ch_k, ch_i_upper],
+                                                    img=image, filename="test/merge_two_chain_case3_end.png")
+
 if __name__ == "__main__":
     test_merge_two_chains_case_1()
     test_merge_two_chains_case_2()
