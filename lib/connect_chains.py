@@ -59,8 +59,10 @@ class ConnectParameters:
                             'neighbourhood_size': self.params['neighbourhood_size'][counter],
                             'th_regular_derivative': self.params['th_regular_derivative'][counter],
                             'derivative_from_center': self.params['derivative_from_center'][counter],
-                            'l_ch_s': self.ch_s_without_border if counter < self.iterations - 1 else self.ch_s_without_border + [self.border_chain],
-                            'l_nodes_s': self.nodes_s_without_border if counter < self.iterations - 1 else self.nodes_s_without_border + self.border_chain.l_nodes
+                            'l_ch_s': self.ch_s_without_border if counter < self.iterations - 1 else
+                                    self.ch_s_without_border + [self.border_chain],
+                            'l_nodes_s': self.nodes_s_without_border if counter < self.iterations - 1
+                                else self.nodes_s_without_border + self.border_chain.l_nodes
                             }
 
         if counter == self.iterations - 1:
@@ -102,6 +104,8 @@ def merge_chains(l_ch_s, cy, cx, nr, debug, debut_im_pre, output_dir):
     # Line 1
     for i in range(parameters.iterations):
         ## Parameter from column i in Table 1.
+        if i == parameters.iterations -1:
+            continue
         iteration_params = parameters.get_iteration_parameters(i)
         ## Line 2 to 13
         l_ch_c, l_nodes_c, M = merge_chains_main_logic(M=M, cy=cy, cx = cx, nr=nr, debug_imgs=debug, im_pre= debut_im_pre,
@@ -177,34 +181,6 @@ class SystemStatus:
 
         return ch_i, interpolated_nodes_plus_endpoints, ch_j_endpoint_type
 
-    def close_chain(self, chain):
-        """
-        Algorithm 10 in the supplementary material. Complete chain if there is no overlapping.
-        :param chain: chain to be completed if conditions are met
-        :return: if conditions are met, chain is completed. Otherwise, nothing is done. Complete means that new nodes
-        are added to the chain.
-        """
-        # Line 2 to 5. Check if chain is too small or is full. If it is, return.
-        threshold = 0.9
-        if chain.size >= chain.Nr or chain.size < threshold * chain.Nr:
-            return
-
-        # Line 6
-        ch_i, l_nodes, endpoint_type = \
-            self.compute_all_elements_needed_to_check_if_exist_chain_overlapping(chain)
-
-        # Line 7. Algorithm 13 in the paper. Check if there is an overlapping chain.
-        exist_chain = exist_chain_overlapping(self.l_ch_s, l_nodes, chain, chain, endpoint_type, ch_i)
-
-        # Line 8
-        if exist_chain:
-            return
-
-        # Line 11
-        self.add_nodes_list_to_chain(chain, l_nodes)
-
-        return
-
     def continue_in_loop(self):
         # If iteration_sin_last_chain is equal to the number of chains, the algorithm stops. This means that
         # all chains have been iterated at least one time and no chains have been connected or interpolated.
@@ -222,7 +198,8 @@ class SystemStatus:
 
         self.size_l_chain_init = len(self.l_ch_s)
 
-        self.close_chain(ch_i)
+        support1 = self.get_common_chain_to_both_borders(ch_i)
+        close_chain(self, ch_i, support1=support1)
 
         return ch_i
 
@@ -252,59 +229,9 @@ class SystemStatus:
         return
 
 
-    def add_nodes_list_to_chain(self, chain, l_nodes: List[ch.Node]):
-        processed_node_list = []
-        for new_dot in l_nodes:
-            if chain.id != new_dot.chain_id:
-                raise
-
-            if new_dot in self.l_nodes_s:
-                exist_at_least_one_endpoint_in_the_list = any([new_dot == chain.extA, new_dot == chain.extB])
-                if not exist_at_least_one_endpoint_in_the_list:
-                    raise Exception(f"Node {new_dot} is already in the list and it is not an endpoint of the chain")
-                continue
-
-            processed_node_list.append(new_dot)
-
-
-            self.l_nodes_s.append(new_dot)
-            # 1.0 Update ch_i list intersection
-            chain_id_intersecting, chains_over_radial_direction = self._chains_id_over_radial_direction(
-                new_dot.angle)
-            self.M[chain.id, chain_id_intersecting] = 1
-            self.M[chain_id_intersecting, chain.id] = 1
-
-            # 2.0 Update boundary chains above and below.
-            dots_over_direction = [dot for chain in chains_over_radial_direction for dot in chain.l_nodes if
-                                   dot.angle == new_dot.angle]
-            dots_over_direction.append(new_dot)
-            dots_over_direction.sort(key=lambda x: x.radial_distance)
-            idx_new_dot = dots_over_direction.index(new_dot)
-
-            up_dot = dots_over_direction[idx_new_dot + 1] if idx_new_dot < len(dots_over_direction) - 1 else None
-            if up_dot is not None:
-                up_chain = ch.get_chain_from_list_by_id( chain_list= chains_over_radial_direction, chain_id = up_dot.chain_id)
-                if up_dot == up_chain.extA:
-                    up_chain.A_inward = chain
-                elif up_dot == up_chain.extB:
-                    up_chain.B_inward = chain
-
-            down_dot = dots_over_direction[idx_new_dot - 1] if idx_new_dot > 0 else None
-            if down_dot is not None:
-                down_chain = ch.get_chain_from_list_by_id(chain_list=chains_over_radial_direction,
-                                                        chain_id=down_dot.chain_id)
-                if down_dot == down_chain.extA:
-                    down_chain.A_outward = chain
-                elif down_dot == down_chain.extB:
-                    down_chain.B_outward = chain
-
-
-        change_border = chain.add_nodes_list(processed_node_list)
-        self.update_chain_neighbourhood([chain])
-
     @staticmethod
     def get_next_chain_index_in_list(chains_list, support_chain):
-        return (chains_list.index(support_chain) + 1) % len(chains_list)
+        return (chains_list.index(support_chain) + 1) % len(chains_list) if support_chain is not None else 0
 
     def update_system_status(self, ch_i, l_s_outward, l_s_inward):
         """
@@ -397,7 +324,8 @@ def close_chain(state, chain, support1, support2=None):
     if exist_chain:
         return
 
-    state.add_nodes_list_to_chain(chain, interpolated_nodes)
+    #state.add_nodes_list_to_chain(chain, interpolated_nodes)
+    add_interpolated_nodes_to_system(state, chain, interpolated_nodes)
 
     return
 
@@ -491,7 +419,7 @@ def merge_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_toleranc
                     # Line 11
                     update_chain_list(state, ch_j, ch_k, candidates_chi, new_nodes)
 
-                debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
+                    debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
                 j_pointer = update_pointer(ch_j, ch_k, candidates_chi)
 
         # Line 12
@@ -662,13 +590,16 @@ def updating_chain_nodes(state, ch_j, ch_k):
     if change_border:
         state.update_chain_neighbourhood([ch_j])
 
-    return
+
+
 def delete_closest_chain(state, ch_k, l_candidates_chi):
     cad_2_index = state.l_ch_s.index(ch_k)
     del state.l_ch_s[cad_2_index]
     id_connected_chain = l_candidates_chi.index(ch_k)
     del l_candidates_chi[id_connected_chain]
-    return
+
+
+
 
 def update_intersection_matrix(state, ch_j, ch_k):
     inter_cad_1 = state.M[ch_j.id]
@@ -678,13 +609,14 @@ def update_intersection_matrix(state, ch_j, ch_k):
     state.M[:, ch_j.id] = or_inter_cad1_cad2
     state.M = np.delete(state.M, ch_k.id, 1)
     state.M = np.delete(state.M, ch_k.id, 0)
-    return
+
+
 def update_chains_ids(state, ch_k):
     for ch_old in state.l_ch_s:
         if ch_old.id > ch_k.id:
             new_id = ch_old.id - 1
             ch_old.change_id(new_id)
-    return
+
 
 from lib.interpolation_nodes import interpolate_nodes_two_chains
 
@@ -721,6 +653,7 @@ def merge_two_chains(ch_j:ch.Chain, ch_k:ch.Chain, endpoint:ch.TypeChains, ch_i:
 
     return interpolated
 
+
 def update_chain_list(state, ch_j, ch_k, l_candidates_chi, interpolated):
     #  Ch_k
     ## Line 1 update chains. Points all the chain from ch_k to ch_j (visibility pointers)
@@ -740,7 +673,7 @@ def update_chain_list(state, ch_j, ch_k, l_candidates_chi, interpolated):
     update_chains_ids(state, ch_k)
 
 
-    return
+
 
 def update_intersection_matrix_in_radial_direction(state: SystemStatus, ch_j: ch.Chain, new_node: ch.Node):
     chain_id_intersecting, chains_over_radial_direction = state._chains_id_over_radial_direction(
@@ -773,7 +706,7 @@ def update_visibility_chain_pointers_in_radial_direction(chains_over_radial_dire
             down_chain.A_outward = ch_j
         elif down_dot == down_chain.extB:
             down_chain.B_outward = ch_j
-    return
+
 
 def add_interpolated_nodes_to_system(state:SystemStatus, ch_j: ch.Chain, interpolated: List[ch.Node]):
     for new_node in interpolated:
@@ -788,7 +721,7 @@ def add_interpolated_nodes_to_system(state:SystemStatus, ch_j: ch.Chain, interpo
     state.update_chain_neighbourhood([ch_j])
 
 
-    return
+
 
 def get_inward_and_outward_list_chains_via_pointers(l_ch_s:List[ch.Chain], support_chain: ch.Chain):
     """
@@ -826,6 +759,7 @@ def find_non_intersection(M, l_candidates_chi, ch_j):
     id_inter = np.where(M[ch_j.id] == 1)[0]
     candidates_chi_non_chj_intersection = [cad for cad in l_candidates_chi if cad.id not in id_inter]
     return candidates_chi_non_chj_intersection
+
 
 def get_intersection_chains(M, l_candidates_chi, ch_j):
     """
@@ -1070,6 +1004,7 @@ def update_chain_after_connect(state, ch_j, ch_k):
 def intersection_between_chains(chain1: ch.Chain, chain2: ch.Chain):
     angle_intersection = [node.angle for node in chain1.l_nodes if chain2.get_node_by_angle(node.angle)]
     return True if len(angle_intersection) > 0 else False
+
 
 def compute_intersection_matrix(chains_list: List[ch.Chain], nodes_list: List[ch.Node], Nr: int):
     """
