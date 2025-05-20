@@ -332,6 +332,7 @@ def interpolate_nodes_given_chains(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint,
 
     return interpolated
 
+
 def close_chain(state, chain, ch_i, support2=None):
     ch_j_endpoint_node = chain.extB
     ch_k_endpoint_node = chain.extA
@@ -343,22 +344,20 @@ def close_chain(state, chain, ch_i, support2=None):
 
     interpolated_nodes_plus_endpoints = [ch_j_endpoint_node] + interpolated_nodes + [ch_k_endpoint_node]
 
-    # Line 7. Algorithm 13 in the paper. Check if there is an overlapping chain.
     exist_chain = exist_chain_overlapping(state.l_ch_s, interpolated_nodes_plus_endpoints, chain, chain,
                                           ch_j_endpoint_type, ch_i)
 
     if exist_chain:
         return
 
-    #state.add_nodes_list_to_chain(chain, interpolated_nodes)
+    _ = chain.add_nodes_list(interpolated_nodes)
     add_interpolated_nodes_to_system(state, chain, interpolated_nodes)
 
-    return
+
 
 
 def iterate_over_chains_list_and_complete_them_if_met_conditions(state, threshold = 0.9):
     for chain in state.l_ch_s:
-        #state.close_chain(chain)
         if chain.size >= chain.Nr or chain.size < threshold * chain.Nr:
             continue
         support1 = state.get_common_chain_to_both_borders(chain)
@@ -447,6 +446,8 @@ def merge_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_toleranc
                     update_chain_list(state, ch_j, ch_k, candidates_chi, new_nodes)
 
                     debugging_chains(state, [ch_i, ch_j], f'{state.path}/{state.counter}_5.png')
+
+                #update chain pointer to the next chain
                 j_pointer = update_pointer(ch_j, ch_k, candidates_chi)
 
         ch_i = state.find_support_chain(ch_i=ch_i, l_s_inward=l_s_inward, l_s_outward=l_s_outward)
@@ -457,7 +458,6 @@ def merge_chains_main_logic(M, cy, cx, nr, l_ch_s, l_nodes_s, th_radial_toleranc
 
     return l_ch_c, l_nodes_c, intersection_matrix
 
-from lib.utils import write_pickle
 
 
 def intersection_chains(M, candidate_chain: ch.Chain, l_sorted_chains_in_neighbourhood):
@@ -629,11 +629,20 @@ def delete_closest_chain(state, ch_k, l_candidates_chi):
 
 
 def update_intersection_matrix(state, ch_j, ch_k):
-    inter_cad_1 = state.M[ch_j.id]
-    inter_cad_2 = state.M[ch_k.id]
+    try:
+        inter_cad_1 = state.M[ch_j.id]
+    except IndexError:
+        raise IndexError(f"Chain {ch_j.id} not in the intersection matrix")
+
+    try:
+        inter_cad_2 = state.M[ch_k.id]
+    except IndexError:
+        raise IndexError(f"Chain {ch_k.id} not in the intersection matrix")
+
     or_inter_cad1_cad2 = np.logical_or(inter_cad_1, inter_cad_2)
     state.M[ch_j.id] = or_inter_cad1_cad2
     state.M[:, ch_j.id] = or_inter_cad1_cad2
+
     state.M = np.delete(state.M, ch_k.id, 1)
     state.M = np.delete(state.M, ch_k.id, 0)
 
