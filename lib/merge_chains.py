@@ -15,16 +15,14 @@ from typing import List, Tuple
 
 import lib.chain as ch
 from lib.interpolation_nodes import compute_interpolation_domain, \
-    interpolate_nodes
+    interpolate_nodes_given_chains
 from lib.basic_properties import similarity_conditions, \
-    exist_chain_overlapping, InfoVirtualBand
+    exist_chain_overlapping
 
 
 DEBUG = False
 
-NOT_REPETING_CHAIN = -1
-MODULE_NAME = 'connect_chains'
-
+NOT_REPEATING_CHAIN = -1
 
 def extract_border_chain_from_list(ch_s: List[ch.Chain], nodes_s: List[ch.Node]):
     """
@@ -82,6 +80,7 @@ def copy_chains_and_nodes(ch_s):
         nodes_s += chain.l_nodes
 
     return  ch_s, nodes_s
+
 def merge_chains(l_ch_s, cy, cx, nr, debug, debug_im_pre, output_dir):
     """
     Logic to connect chains. Same logic to connect chains is applied several times, smoothing restriction.
@@ -165,24 +164,7 @@ class SystemStatus:
         return ch.get_chain_from_list_by_id(self.l_ch_s, id_closest)
 
 
-    def compute_all_elements_needed_to_check_if_exist_chain_overlapping(self, chain):
-        ch_i = self.get_common_chain_to_both_borders(chain)
-        ch_j_endpoint_node = chain.extB
-        ch_k_endpoint_node = chain.extA
-        ch_j_endpoint_type = ch.EndPoints.B
 
-        interpolated_nodes = [] #domain interpolation function output
-        chain_copy = ch.copy_chain(chain)
-        interpolate_nodes(ch_i, ch_j_endpoint_node, ch_k_endpoint_node, ch_j_endpoint_type, chain_copy,
-                          interpolated_nodes)
-        interpolated_nodes_plus_endpoints = [ch_j_endpoint_node] + interpolated_nodes + [ch_k_endpoint_node]
-
-        return ch_i, interpolated_nodes_plus_endpoints, ch_j_endpoint_type
-
-    def continue_in_loop(self):
-        # If iteration_sin_last_chain is equal to the number of chains, the algorithm stops. This means that
-        # all chains have been iterated at least one time and no chains have been connected or interpolated.
-        return self.iterations_since_last_change < len(self.l_ch_s)
 
     def find_support_chain(self, ch_i = None, l_s_outward = None, l_s_inward = None):
         """
@@ -227,14 +209,6 @@ class SystemStatus:
 
 
 
-    def is_new_dot_valid(self, new_dot):
-        if new_dot in self.l_nodes_s:
-            return False
-        if new_dot.x >= self.height or new_dot.y >= self.width or new_dot.x < 0 or new_dot.y < 0:
-            return False
-
-        return True
-
     def update_chain_neighbourhood(self, l_chains_to_update_neighborhood):
         dummy_chain = None
         for chain_p in l_chains_to_update_neighborhood:
@@ -255,50 +229,7 @@ class SystemStatus:
     def get_next_chain_index_in_list(chains_list, support_chain):
         return (chains_list.index(support_chain) + 1) % len(chains_list)
 
-    def update_system_status(self, ch_i, l_s_outward, l_s_inward):
-        """
-        Algorithm 12 in the paper. Update the system state after the iteration.
-        @param ch_i: support chain in current iteration
-        @param l_s_outward: outward list of chains
-        @param l_s_inward: inward list of chains
-        @return: self.next_chain_index: index of the next support chain to be processed
-        """
-        # Line 1. self.l_ch_s is an attribute of the self object.
-        # Line 2
-        if self._system_status_change():
-            # Line 3
-            self.l_ch_s.sort(key=lambda x: x.size, reverse=True)
-            # Variable used to check if system status has changed in current iteration. If it has (variable is set to 0),
-            # the algorithm continues one more iteration. If it has not (variable is increased by 1). Variable is used as
-            # exit condition in the while loop (Algorithm 2, line 3, continue_in_loop method).
-            self.iterations_since_last_change = 0
 
-            # Line 4
-            l_current_iteration = [ch_i] + l_s_outward + l_s_inward
-
-            # Line 5
-            l_current_iteration.sort(key=lambda x: x.size, reverse=True)
-
-            # Line 6
-            longest_chain = l_current_iteration[0]
-
-            # Line 7 to 12
-            if longest_chain.id == ch_i.id:
-                next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
-            else:
-                next_chain_index = self.l_ch_s.index(longest_chain)
-
-
-        else:
-            # Line 15
-            next_chain_index = self.get_next_chain_index_in_list(self.l_ch_s, ch_i)
-            # System status has not changed. Increase variable by 1.
-            self.iterations_since_last_change += 1
-
-        # Line 17
-        self.next_chain_index = next_chain_index
-
-        return 0
 
     def _chains_id_over_radial_direction(self, angle):
         chains_in_radial_direction = ch.get_chains_within_angle(angle, self.l_ch_s)
@@ -310,9 +241,6 @@ class SystemStatus:
         self.l_ch_s = sorted(self.l_ch_s, key=lambda x: x.size, reverse=True)
         self.update_chain_neighbourhood(self.l_ch_s)
 
-    def _system_status_change(self):
-        self.chain_size_at_the_end_of_iteration = len(self.l_ch_s)
-        return self.size_l_chain_init > self.chain_size_at_the_end_of_iteration
 
 
 def update_pointer(ch_j, closest, l_candidates_chi):
@@ -320,17 +248,6 @@ def update_pointer(ch_j, closest, l_candidates_chi):
     j_pointer = ch_j_index if closest is not None else ch_j_index + 1
     return j_pointer
 
-
-def interpolate_nodes_given_chains(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, support2=None):
-    interpolated = []
-    if support2:
-        interpolate_nodes_two_chains(ch_i, support2, ch_j_endpoint, ch_k_endpoint, endpoint,
-                                     ch_j, interpolated)
-
-    else:
-        interpolate_nodes(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, interpolated)
-
-    return interpolated
 
 
 def close_chain(state, chain, ch_i, support2=None):
@@ -366,12 +283,6 @@ def iterate_over_chains_list_and_complete_them_if_met_conditions(state, threshol
     return state.l_ch_s, state.l_nodes_s, state.M
 
 
-def debugging_chains(state, chains_to_debug, filename):
-    if state.debug:
-
-        ch.visualize_selected_ch_and_chains_over_image_([ch for ch in chains_to_debug if ch is not None], state.l_ch_s,
-                                                        img=state.img, filename=filename)
-        state.counter += 1
 
 
 def find_closest(state, ch_j, l_candidates_chi, l_no_intersection_j, ch_i, location, symmetric_check=True):
@@ -466,6 +377,8 @@ def intersection_chains(M, candidate_chain: ch.Chain, l_sorted_chains_in_neighbo
                                 set.cad.id in inter_next_chain and candidate_chain.id != set.cad.id]
 
     return l_intersections_candidate
+
+
 def get_all_chain_in_subset_that_satisfy_condition(state: SystemStatus, ch_j: ch.Chain, ch_i: ch.Chain,
                                                    endpoint: int, radial_distance: float, candidate_chain: ch.Chain,
                                                    l_intersections_candidate):
@@ -653,8 +566,6 @@ def update_chains_ids(state, ch_k):
             new_id = ch_old.id - 1
             ch_old.change_id(new_id)
 
-
-from lib.interpolation_nodes import interpolate_nodes_two_chains
 
 def merge_two_chains(ch_j:ch.Chain, ch_k:ch.Chain, endpoint:ch.TypeChains, ch_i:ch.Chain, support2:ch.Chain = None):
     """
@@ -1061,3 +972,12 @@ def compute_intersection_matrix(chains_list: List[ch.Chain], nodes_list: List[ch
 
     return M
 
+
+####Debugging
+
+def debugging_chains(state, chains_to_debug, filename):
+    if state.debug:
+
+        ch.visualize_selected_ch_and_chains_over_image_([ch for ch in chains_to_debug if ch is not None], state.l_ch_s,
+                                                        img=state.img, filename=filename)
+        state.counter += 1
