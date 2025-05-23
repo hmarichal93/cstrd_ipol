@@ -17,7 +17,7 @@ from lib.preprocessing import preprocessing
 from lib.canny_devernay_edge_detector import canny_devernay_edge_detector
 from lib.filter_edges import filter_edges
 from lib.sampling import sampling_edges
-from lib.connect_chains import merge_chains
+from lib.merge_chains import merge_chains
 from lib.postprocessing import postprocessing
 from lib.utils import chain_2_labelme_json, save_config, saving_results
 
@@ -48,7 +48,7 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
      - l_ch_s: Debug Output. Intermediate results. Chain lists after connect stage.
      - l_ch_p: Debug Output. Intermediate results. Chain lists after posprocessing stage.
     """
-    # Line 1 Preprocessing image. Algorithm 7 in the paper. Image is  resized, converted to gray
+    # Line 1 Preprocessing image.   Image is  resized, converted to gray
     # scale and equalized
     im_pre, cy, cx = preprocessing(im_in, height, width, cy, cx)
     # Line 2 Edge detector module. Algorithm: A Sub-Pixel Edge Detector: an Implementation of the Canny/Devernay Algorithm,
@@ -56,15 +56,13 @@ def TreeRingDetection(im_in, cy, cx, sigma, th_low, th_high, height, width, alph
     # Line 3 Edge filtering module.
     l_ch_f = filter_edges(m_ch_e, cy, cx, gx, gy, alpha, im_pre)
     # Line 4 Sampling edges. Algorithm 2 in the paper.
-    l_ch_s, l_nodes_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug)
-    # Line 5 Connect chains. Algorithm 3 in the paper. Im_pre is used for debug purposes
-    l_ch_c,  l_nodes_c = merge_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
-    # Line 6 Postprocessing chains. Algorithm 16 in the paper. Im_pre is used for debug purposes
-    l_ch_p = l_ch_c#postprocessing(l_ch_c, l_nodes_c, debug, debug_output_dir, im_pre)
-    # Line 7
+    l_ch_s = sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=debug)
+    # Line 5 Merge chains. Algorithm 3 in the paper. Im_pre is used for debug purposes
+    l_ch_c = merge_chains(l_ch_s, cy, cx, nr, debug, im_pre, debug_output_dir)
+    # Line 6 Postprocessing chains. Algorithm 7 in the paper. Im_pre is used for debug purposes
+    l_ch_p = postprocessing(l_ch_c, debug, debug_output_dir, im_pre)
     l_rings = chain_2_labelme_json(l_ch_p, height, width, cy, cx, im_in, debug_image_input_path, -1)
-
-    # Line 8
+    # Line 7
     return im_in, im_pre, m_ch_e, l_ch_f, l_ch_s, l_ch_c, l_ch_p, l_rings
 
 

@@ -29,7 +29,7 @@ def get_image_shape(im_in: np.array):
 
 def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     """
-    Resize image and keep the center of the image in the same position. Implements Algorithm 8 in the paper.
+    Resize image and keep the center of the image in the same position.
     @param im_in: Gray image to resize.
     @param height_output: output image height_output. If None, the image is not resized
     @param width_output: output image width_output. If None, the image is not resized.
@@ -37,14 +37,10 @@ def resize(im_in: np.array, height_output, width_output, cy=1, cx=1):
     @param cx: x's center coordinate in pixel.
     @return: 
     """
-    # Line 1
     img_r = resize_image_using_pil_lib(im_in, height_output, width_output)
-    # Line 2
     height, width = get_image_shape(im_in)
-    # Line 3
     cy_output, cx_output = convert_center_coordinate_to_output_coordinate(cy, cx, height, width, height_output,
                                                                           width_output)
-    # Line 4
     return img_r, cy_output, cx_output
 
 
@@ -110,7 +106,7 @@ def equalize_image_using_clahe(img_eq):
 
 def equalize(im_g):
     """
-    Equalize image using CLAHE algorithm. Implements Algorithm 9 in the paper.
+    Equalize image using CLAHE algorithm.
     @param im_g: gray scale image
     @return: equalized image
     """
@@ -145,7 +141,6 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - image resize
     - image is converted to gray scale
     - gray scale image is equalized
-    Implements Algorithm 7 in the paper.
     @param im_in: segmented image
     @param height_output: new image img_height
     @param width_output: new image img_width
@@ -156,17 +151,12 @@ def preprocessing(im_in, height_output=None, width_output=None, cy=None, cx=None
     - cy: pith y's coordinate after resize
     - cx: pith x's coordinate after resize
     """
-    # Line 1 to 6
     if NONE in [height_output, width_output]:
         im_r, cy_output, cx_output = ( im_in, cy, cx)
     else:
-        # Algorithm 8
         im_r, cy_output, cx_output = resize( im_in, height_output, width_output, cy, cx)
 
-    # Line 7
     im_g = rgb2gray(im_r)
 
-    # Line 8. Algorithm 9
     im_pre = equalize(im_g)
-    # Line 9
     return im_pre, cy_output, cx_output

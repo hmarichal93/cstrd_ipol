@@ -163,6 +163,17 @@ def interpolate_nodes_two_chains(inward_support_chain, outward_support_chain, ch
 
 
 def interpolate_nodes_given_chains(ch_i, ch_j_endpoint, ch_k_endpoint, endpoint, ch_j, support2=None):
+    """
+    Interpolate between two chains using a support chain or two support chains. Logic used in the Algorithms 4 and 5 in
+    the paper.
+    :param ch_i: support chain
+    :param ch_j_endpoint: source chain endpoint
+    :param ch_k_endpoint: destination chain endpoint
+    :param endpoint: endpoint type (A or B)
+    :param ch_j: source chain
+    :param support2: optional second support chain
+    :return: interpolated nodes
+    """
     interpolated = []
     if support2:
         interpolate_nodes_two_chains(ch_i, support2, ch_j_endpoint, ch_k_endpoint, endpoint,

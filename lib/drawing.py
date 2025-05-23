@@ -106,3 +106,16 @@ class Drawing:
         image = cv2.line(img, start_point, end_point, color, thickness)
 
         return image
+
+    @staticmethod
+    def fill_region(exterior, interior, image, color):
+        mask_exterior = np.zeros(image.shape[:2], dtype=np.uint8)
+        exterior = np.array(exterior.get_nodes_coordinates()).astype(int)
+        cv2.fillPoly(mask_exterior, [exterior.T], 255)
+        mask_interior = np.zeros(image.shape[:2], dtype=np.uint8)
+        interior = np.array(interior.get_nodes_coordinates()).astype(int)
+        cv2.fillPoly(mask_interior, [interior.T], 255)
+        mask = cv2.bitwise_xor(mask_exterior, mask_interior)
+        image[mask == 255] = color
+        return image
+

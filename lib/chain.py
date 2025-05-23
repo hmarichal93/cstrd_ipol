@@ -84,7 +84,8 @@ class ClockDirection:
 
 class Chain:
     def __init__(self, chain_id: int, Nr: int, center, img_height: int, img_width: int,
-                 type: TypeChains = TypeChains.normal, A_outward=None, A_inward=None, B_outward=None, B_inward=None):
+                 type: TypeChains = TypeChains.normal, A_outward=None, A_inward=None, B_outward=None, B_inward=None,
+                 parent=None, split_node=None):
         self.l_nodes = []
         self.id = chain_id
         self.size = 0
@@ -96,6 +97,8 @@ class Chain:
         self.A_inward = A_inward
         self.B_outward = B_outward
         self.B_inward = B_inward
+        self.parent = parent
+        self.split_node = split_node
 
         #Less important attributes
         self.center = center # center of the disk (pith pixel location)
@@ -105,7 +108,18 @@ class Chain:
     def __eq__(self, other):
         if other is None:
             return False
-        return self.id == other.id and self.size == other.size
+
+        if self.size != other.size:
+            return False
+
+        x,y = self.get_nodes_coordinates()
+        nodes_matrix_k = np.array([x,y])
+        x, y = other.get_nodes_coordinates()
+        nodes_matrix = np.array([x, y])
+        norm = np.linalg.norm(nodes_matrix - nodes_matrix_k)
+
+        return norm == 0
+        #return self.id == other.id and self.size == other.size
 
     def is_closed(self, threshold=0.95):
         if len(self.l_nodes) >= threshold * self.Nr:

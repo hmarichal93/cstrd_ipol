@@ -68,7 +68,6 @@ class Ray(LineString):
 
 def build_rays(Nr, M, N, center):
     """
-    Algorithm 11 in the paper
     @param Nr: total rays
     @param N: widht image
     @param M: height_output image
@@ -227,12 +226,11 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=False):
     """
     # Line 1
     height, width = im_pre.shape
-    # Line 2. Algorithm 11 in the paper
     l_rays = build_rays(nr, height, width, [cy, cx])
-    # Line 3
+    # Line 2
     l_nodes_s, l_ch_s = intersections_between_rays_and_devernay_curves([cy, cx], l_rays, l_ch_f, mc, nr,
                                                                        height, width)
-    # Line 4
+    # Line 3 and 4
     generate_virtual_center_chain(cy, cx, nr, l_ch_s, l_nodes_s, height, width)
 
     # Debug purposes, not illustrated in the paper
@@ -241,4 +239,4 @@ def sampling_edges(l_ch_f, cy, cx, im_pre, mc, nr, debug=False):
         draw_ray_curve_and_intersections(l_nodes_s, l_rays, l_ch_f, img_draw, './dots_curve_and_rays.png')
 
     # Line 5
-    return l_ch_s, l_nodes_s
+    return l_ch_s
