@@ -1,11 +1,12 @@
 {
    "general": {
-      "demo_title": "CS-TRD: a Tree Ring Detection method for tree cross sections",
-      "description": "This work describes a Tree Ring Delineation method for Wood Cross Section Images. It was developed and tested over images of the species Pinus Taeda. The method needs the pith location as input. It can be marked manually over the input image. In case it is not marked manually, automatic pith detection method proposed in https://doi.org/10.5201/ipol.2022.338 is used",
-      "requirements": "docker"
+      "demo_title": "CS-TRD: a Cross-Section Tree Ring Detection Method",
+      "description": "This work describes a Tree Ring Delineation method for Wood Cross Section Images. It was developed and tested over images of the species Pinus Taeda. The method needs the pith location as input. It can be marked manually over the input image. In case it is not marked manually, automatic pith detection method proposed in https://doi.org/10.5201/ipol.2022.338 is used. Image background is removed using the U2Net architecture.",
+      "requirements": "docker",
+      "xlink_article": "https://www.ipol.im/pub/pre/485/"
    },
    "build": {
-      "url": "git@github.com:hmarichal93/dendrometria-ipol",
+      "url": "git@github.com:hmarichal93/cstrd",
       "rev": "origin/ipol",
       "dockerfile": ".ipol/Dockerfile"
    },
