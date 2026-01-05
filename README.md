@@ -162,13 +162,14 @@ docker run -v YOUR_DATA_FOLDER:/workdir/bin/output -it hmarichal/cstrd:v1.0 /
 
 ## Citation
 ```
-@misc{marichal2023cstrd,
-      title={CS-TRD: a Cross Sections Tree Ring Detection method}, 
-      author={Henry Marichal and Diego Passarella and Gregory Randall},
-      year={2023},
-      eprint={2305.10809},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@article{ipol.2025.485,
+    title   = {{CS-TRD: a Cross-Section Tree Ring Detection Method}},
+    author  = {Marichal, Henry and Passarella, Diego and Randall, Gregory},
+    journal = {{Image Processing On Line}},
+    volume  = {15},
+    pages   = {78--107},
+    year    = {2025},
+    note    = {\url{https://doi.org/10.5201/ipol.2025.485}}
 }
 ```
 
